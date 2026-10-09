@@ -1,0 +1,16 @@
+{
+  "title": "生成模型 RL · 每日精读",
+  "subtitle": "多模态生成模型（diffusion / flow / 自回归 / 统一模型）× 强化学习：online RL、偏好优化、reward 设计与 reward hacking。",
+  "base_url": "https://thughy.github.io/genrl-daily",
+  "directions": [
+    {"id": "online-rl",      "label": "Online RL（GRPO 等）"},
+    {"id": "offline-dpo",    "label": "Offline / DPO"},
+    {"id": "diff-reward",    "label": "可微 reward 优化"},
+    {"id": "ar-unified-rl",  "label": "AR / 统一模型 RL"},
+    {"id": "reward-model",   "label": "Reward model 与 hacking"},
+    {"id": "video-rl",       "label": "视频生成 RL"},
+    {"id": "distill-rl",     "label": "少步 / 蒸馏与 RL"},
+    {"id": "test-time",      "label": "Test-time scaling"},
+    {"id": "other",          "label": "其他"}
+  ]
+}
