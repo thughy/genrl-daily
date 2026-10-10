@@ -152,3 +152,10 @@ ul.brief{margin:4px 0 6px;padding-left:1.1em;font-size:14.5px}
 ul.brief li{margin:6px 0}
 details.revision{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:2px 14px;font-size:14.5px}
 @media (max-width:600px){table.lin{min-width:560px}table.lin tbody th{width:7em}ul.quick .qb{flex-direction:row;flex-wrap:wrap}}
+
+/* v2.1：等价形式 / 最强基线对照 / 可迁移原理 */
+.eqf{margin:.4rem 0 .6rem;padding:.45rem .7rem;border-left:3px solid #6b5bd2;background:rgba(107,91,210,.07);border-radius:4px}
+.eqf.base{border-left-color:#c27c0e;background:rgba(194,124,14,.07)}
+.eqf.prin{border-left-color:#1a8f5a;background:rgba(26,143,90,.08)}
+.eqf-l{display:inline-block;font-size:.78rem;font-weight:600;letter-spacing:.02em;opacity:.85;margin-bottom:.15rem}
+.eqf .md p{margin:.15rem 0}

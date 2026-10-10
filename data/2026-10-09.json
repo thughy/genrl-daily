@@ -2,7 +2,7 @@
   "date": "2026-10-09",
   "version": 2,
   "headline": "本期没有必读。MEND 的机制有增量，但和它直接改写出来的 DiffusionOPSD 在同一协议下比，四个 reward 全部落后，消融也找不到「逐样本判定」本身的贡献，降为了解即可。本期唯一带来新知识的是语音质量指标可 hack 性那篇：测量协议上的两个新发现。",
-  "revision_note": "v2（2026-10-10）按 Henry 的「原创性优先」标准重排：先看相对已有工作带来了多少**事先预测不到的新知识**，扎实度只是门槛。每篇最接近的已有工作都下载了全文，读了方法和相关实验章节后才写 delta。评级变化：MEND 必读 → 了解即可；WorldAlign、DreamTrue 值得看 → 重做类一行；语音那篇保持值得看；Rubric-CEPR 保持重做。v1 原文保留在仓库历史（commit 11eebe5）。",
+  "revision_note": "v2（2026-10-10）按 Henry 的「原创性优先」标准重排：先看相对已有工作带来了多少**事先预测不到的新知识**，扎实度只是门槛。每篇最接近的已有工作都下载了全文，读了方法和相关实验章节后才写 delta。评级变化：MEND 必读 → 了解即可；WorldAlign、DreamTrue 值得看 → 重做类一行；语音那篇保持值得看；Rubric-CEPR 保持重做。v1 原文保留在仓库历史（commit 11eebe5）。\n\n**10-10 更正**：WorldAlign 一行里，Epipolar-DPO 对「训成静止画面」的问题是「部分修过」而不是「已修」：加 static penalty 后 Dynamic Degree 0.710，仍低于 base 0.751（Epipolar-DPO 原文表 7）。",
   "papers": [
     {
       "id": "speech-hack",
@@ -176,7 +176,7 @@
       "link": "https://arxiv.org/abs/2610.12382",
       "originality": "redo",
       "credibility": "doubtful",
-      "line": "主要是组件替换：[GeoFlow](https://arxiv.org/abs/2605.18365) 的静/动分区从光流换成 SAM3 语义 mask，动态主体从 DINO 外观一致性换成 VLM checklist，再加一个相机 hinge，作用和 [Epipolar-DPO](https://arxiv.org/abs/2510.21615) 已有的 static penalty 相同。「几何 reward 会把视频训成静止画面」这件事 Epipolar-DPO 原文已经写过，并且已经修过（Dynamic Degree 0.627→0.710）。语义 mask 是否优于光流，只有定性图，没有 RL 消融。另外，论文说 Epipolar-DPO「没有防静止机制」，和 Epipolar-DPO 原文不符。v1 值得看 → v2 一行。"
+      "line": "主要是组件替换：[GeoFlow](https://arxiv.org/abs/2605.18365) 的静/动分区从光流换成 SAM3 语义 mask，动态主体从 DINO 外观一致性换成 VLM checklist，再加一个相机 hinge，作用和 [Epipolar-DPO](https://arxiv.org/abs/2510.21615) 已有的 static penalty 相同。「几何 reward 会把视频训成静止画面」这件事 Epipolar-DPO 原文已经写过，并且部分修过：加 static penalty 后 Dynamic Degree 从 0.627 回到 0.710，仍低于 base 的 0.751。语义 mask 是否优于光流，只有定性图，没有 RL 消融。另外，论文说 Epipolar-DPO「没有防静止机制」，和 Epipolar-DPO 原文不符。v1 值得看 → v2 一行。"
     },
     {
       "title": "DreamTrue（2610.12468）",

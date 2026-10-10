@@ -76,6 +76,12 @@
 - `counterfactual.value`：`unpredictable`（预测不到，是新知识）/ `partly`（部分能预测）/ `predictable`（能预测到，属于重做类）。
 - 旧字段 `context` 在 v2 卡片里会显示在表格下方。
 
+### v2.1 补充（2026-10-10，认知优先六条）
+- `lineage.equivalent_form`（可选，Markdown）：等价形式，把方法化简成「实际的梯度或回归目标 = ?」，显示在 ① 顶部。
+- `lineage.baseline`（可选，Markdown）：该方法线当前最强基线（见 lineage.md）及本文是否在其协议下正面比过。
+- `principle`（可选，Markdown）：可迁移原理，一句脱离本文和本模态也成立的规律；有它时 ⑥ 标题变为「可迁移原理 + 对 Henry 的启发」。写不出来的论文不能进必读或值得看。
+旧数据没有这些字段，渲染不变。
+
 ### `reward_check`（可选）
 
 ```json

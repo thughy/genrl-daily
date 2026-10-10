@@ -120,7 +120,7 @@ def load_days(data_dir, assets_dir, errors, warnings):
             for dname in p.get("directions", []):
                 if dname not in DIRECTIONS:
                     errors.append(f"{pw}: 未知方向 {dname}，可选 {list(DIRECTIONS)}")
-            for k, _ in CARD_FIELDS + [("details", ""), ("solidity", ""), ("takeaway", "")]:
+            for k, _ in CARD_FIELDS + [("details", ""), ("solidity", ""), ("takeaway", ""), ("principle", "")]:
                 try:
                     p[k] = resolve_text(p.get(k), data_dir)
                 except DataError as ex:
@@ -365,10 +365,16 @@ def lineage_html(p):
     head = f'<tr><th>最接近的工作</th><th>它怎么做</th><th>{e(lin.get("change_header") or "本文改了哪一处")}</th></tr>'
     cf = lin["counterfactual"]
     lab, cls = COUNTERFACTUAL[cf["value"]]
+    # v2.1（2026-10-10）：等价形式、最强基线对照，均可选
+    top = ""
+    if lin.get("equivalent_form"):
+        top += f'<div class="eqf"><span class="eqf-l">等价形式</span><div class="md">{md(lin["equivalent_form"])}</div></div>'
+    if lin.get("baseline"):
+        top += f'<div class="eqf base"><span class="eqf-l">最强基线对照</span><div class="md">{md(lin["baseline"])}</div></div>'
     note = f'<div class="md">{md(lin["note"])}</div>' if lin.get("note") else ""
     ctx = f'<div class="md">{md(p["context"])}</div>' if p.get("context") else ""
     return (f'<div class="field lineage"><div class="label">① 脉络与增量</div>'
-            f'<div class="lin-scroll"><table class="lin">{head}{"".join(rows)}</table></div>{note}{ctx}'
+            f'{top}<div class="lin-scroll"><table class="lin">{head}{"".join(rows)}</table></div>{note}{ctx}'
             f'<div class="cf {cls}"><span class="cf-q">懂这些工作的人能否预测到结果？</span>'
             f'<span class="cf-v">{lab}</span><div class="cf-t md">{md(cf["text"])}</div></div></div>')
 
@@ -392,6 +398,10 @@ def v2_fields_html(p, rel):
                 parts.append(f'<div class="field"><div class="label sub-l">代码</div><div class="md">{md(p["code_analysis"])}</div></div>')
             if any(parts):
                 fields.append(f'<div class="field solidity"><div class="label">{label}</div>{"".join(parts)}</div>')
+        elif k == "takeaway" and p.get("principle"):  # v2.1：⑥ = 可迁移原理 + 对 Henry 的启发
+            body = (f'<div class="eqf prin"><span class="eqf-l">可迁移原理</span><div class="md">{md(p["principle"])}</div></div>'
+                    + (f'<div class="md">{md(p["takeaway"])}</div>' if p.get("takeaway") else ""))
+            fields.append(f'<div class="field takeaway"><div class="label">⑥ 可迁移原理 + 对 Henry 的启发</div>{body}</div>')
         elif p.get(k):
             cls = {"concerns": " concerns", "takeaway": " takeaway"}.get(k, "")
             fields.append(f'<div class="field{cls}"><div class="label">{label}</div><div class="md">{md(p[k])}</div></div>')

@@ -1,0 +1,238 @@
+{
+  "date": "2026-10-10",
+  "version": 1,
+  "headline": "本期没有必读。arXiv 自 10-09 后没有新公告（周五晚不发），本期来自补查本周漏扫。唯一值得看的是跨域诊断 CriticHack：RL 会放大所有「reward 均值高于总体均值」的结果类别，所以成功率和「动错物体」能一起涨；不拟合参数的类别协方差就能事先预测。",
+  "fyi_open": true,
+  "papers": [
+    {
+      "id": "critichack",
+      "rating": "worth",
+      "originality": "finding",
+      "credibility": "solid",
+      "rating_reason": "新发现 × 站得住（限两项仿真任务）。没进必读：放大的方向可以由 KL-tilt 公式推出来；实验是机器人 diffusion policy，没有在图像或视频生成上验证。这条边界请 Henry 定。",
+      "directions": [
+        "reward-model",
+        "other"
+      ],
+      "title": "CriticHack: Evaluating Visual Rewards Under Robot Policy Optimization",
+      "institutions": [
+        "Johns Hopkins University",
+        "Dalian University of Technology",
+        "Rutgers University",
+        "Baidu",
+        "UC Santa Barbara"
+      ],
+      "published": "arXiv 2026-10-01（cs.RO，v1）；本期补扫漏掉的论文",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.02527",
+        "other": [
+          {
+            "label": "Robometer（被检验的 RM）",
+            "url": "https://arxiv.org/abs/2603.02115"
+          }
+        ]
+      },
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "unavailable",
+        "note": "正文和附录 H、I、L.6 精读；样例只看了论文的 Fig.1/3/4；文中提到 CPU artifact，但没给链接，GitHub 搜不到。最接近的 Kim 2025 只读了摘要。"
+      },
+      "tldr": "RL 会放大所有「在当前策略样本上 reward 均值高于总体均值」的结果类别，而不只是 RM 排错的那一类。所以任务成功率在涨、RM 总体 AUROC 有 0.81 时，「动错物体」的失败也能同时多出 9.2pp（相对真值 reward）。不用拟合任何参数的一阶协方差 Cov(类别, 标准化 reward) 就能预测哪类会涨（ρ=0.82）；初始 AUROC 做不到（ρ=−0.76）。",
+      "delta": "相对 Gao 2023 等「过优化 = 金标准指标先升后降」，这篇给出一种金标准曲线看不到的信号：成功率和某一类语义失败一起涨；还用 KL-tilt 把它变成训练前就能算的审计量。",
+      "lineage": {
+        "equivalent_form": "这是诊断，不是新训练方法。核心是 KL 正则最优解 `π* ∝ π₀·exp(r/β)` 的类别版：`p_β(c) = p₀(c)·M_c(β)/M(β)`，其中 `M_c = E_π₀[exp(r/β) | c]`；弱优化时 `∂log p(c)/∂(1/β) = E_π₀[r|c] − E_π₀[r]`。也就是说，**某类结果是否被放大，只看它在当前策略样本上的 reward 均值是否高于总体均值**（一阶上等于 `Cov_π₀(1_c, r)`），和它与「成功」两两谁排得高无关。",
+        "baseline": "L7（reward 可靠性）没有「最强方法」，只有协议要求：评测必须独立于训练 reward。本文的对照是同一初始化、同一优化器、同一预算下换成模拟器真值 reward（5 次独立训练对 5 次），并在等 KL 距离下比较，是这条线能做到的最强对照。",
+        "rows": [
+          {
+            "work": "Robometer（Liang 2026）",
+            "link": "https://arxiv.org/abs/2603.02115",
+            "how": "progress + 轨迹偏好训练机器人 RM；文中称用它做 DSRL 能「学会避免动错物体」等 base 错误，并指出 RoboReward 对失败轨迹仍给高分",
+            "change": "受控仿真里 Robometer **自己**给动错物体的轨迹打 0.70，成功轨迹只有 0.65；优化它会让动错物体多 +9.2pp。它公开的 success-termination 配方在 89% 的动错物体轨迹上触发，成功轨迹只有 73%"
+          },
+          {
+            "work": "Gao 2023 / Zhang 2024（RM 过优化）",
+            "link": "https://arxiv.org/abs/2210.10760",
+            "how": "过优化 = 随 KL 增大，金标准指标先升后降",
+            "change": "给出金标准曲线看不到的「共存」信号：成功率在涨，某类语义失败也在涨。并在等 KL 下排除了「只是走得更远」的解释"
+          },
+          {
+            "work": "Kim 2025 / Wen 2025（RM 评测）",
+            "link": "https://arxiv.org/abs/2505.12763",
+            "how": "静态排序准确率和优化后的表现相关性弱，于是改进 benchmark 的构造方式",
+            "change": "给出机制：`AUROC = λ·A_SW + (1−λ)·A_SN`，常见且好分的失败（`A_SN`=0.959，占负样本 75%）把总体撑高，掩盖了倒置的 `A_SW`=0.372。还提出不需要拟合的预测量：Cov(类别, 标准化 reward)"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "**方向能预测**：懂 KL-tilt（Korbak 2022）的人，只要拿到各类结果的平均 reward，就能推出「高于均值的类会涨」。**预测不到的有三点**：① 主流新 RM（Robometer）在这个任务上恰好存在倒置，而总体 AUROC 有 0.81，并且和它原论文的说法相反；② 2.5 亿参数的 PPO 全量微调，在一阶上真的沿 tilt 走（动错物体预测 +7.2，实测 +10.2；成功率预测 +9.7，实测 +10.0），但对强 reward 会高估（product 预测 +27.7，实测 +15.5）；③ 不拟合参数的协方差在 26 个设置上预测力（ρ=0.82）远强于初始 AUROC（−0.76），在 drawer-Robometer 同族内是 0.80 对 0.10。"
+        }
+      },
+      "insight": "**ΔR>0 且 ΔS<0** 是常见的过优化信号；**ΔR>0、ΔS>0 且 ΔW>0** 是本文研究的「共存」信号，此时日常监控的两个量（RM 总体判别力、任务成功率）都显得健康。",
+      "method": "- 设置：Chi 2023 的 diffusion policy，251.7M 去噪器参数全部用 PPO 训练（5 步随机 DDIM，σ=0.05，按 denoising-MDP 算 likelihood）。reward 是 Robometer 读 8 帧后给出的终端成功概率。每次训练 40 次迭代、5,040 个 episode，在 512 个共享种子上评测。另有受约束实验：解码器冻结，只学 24 条固定噪声序列上的类别选择器，比较 PPO 和 GRPO、Robometer 和 LIV、drawer 和 stacking 三组变量。\n- 结果分三类：成功（S）、动错物体（W，目标未完成且干扰物被拉开超过 20mm）、其他失败（N），都由 MuJoCo 状态判定，与 reward 独立。\n- Tilt 模型（Eq. 4）：受约束选择器的 KL 最优解是 24 条序列上的 softmax，所以是精确解；全量微调只能做一阶描述，因为微调会产生初始策略没有的新行为。\n- 修复：`R_P = r̄_b·p_θ`，用冻结的、按结果标签训练的 verifier 去乘 critic。",
+      "evidence": "**机制是否真起作用（这里指：增益/失败是否真来自 critic 的打分）**\n\n| 对照（5 次训练 / 512 种子，95% 交叉 bootstrap） | ΔS（pp） | ΔW（pp） |\n|---|---|---|\n| 监督初始化 → Robometer | +10.2 [6.9, 13.6] | **+10.9 [7.3, 14.4]** |\n| 监督初始化 → 真值完成度 reward | +13.9 [9.5, 18.3] | +1.6 [−1.9, 5.2] |\n| 两者之差 | −3.7 [−7.5, 0.1] | **+9.2 [5.5, 13.0]**，置换 p=.008；加 3 次重复后 8 对 8 为 +8.3，p=.0002 |\n| warm start → critic × verifier（Product） | +15.5 | −0.6 [−3.4, 2.1] |\n| warm start → 只用 verifier | +15.8 | −1.2；与 Product 无差别 |\n\n- **排除「走得更远」**：每步去噪链相对初始策略的 KL，critic 是 2.15 nats，Product 2.38，只用 verifier 2.45。后两者走得更远，W 却不涨。\n- **排除采样器**：换回原生 100 步采样器，结果仍是 +10.9 / +5.0 [1.0, 9.0]。干扰物阈值在 5–40mm 之间都成立。\n- **配对执行**：warm start 下，302 个原本的「其他失败」变成了成功，189 个变成了动错物体。策略是在把失败同时转成这两种结果。\n- **Tilt 预测**：26 个受约束设置上，W 的 ρ=0.89，S 的 ρ=0.79（每个设置拟合 1 个强度参数）。drawer-Robometer-GRPO 预测 −13.5 / +73.5，实测 −12.5 / +71.9。\n- **数字来源**：全部自跑，没有抄录别人的数字；每个对比都有独立训练种子和置信区间。",
+      "solidity": "- 训练 reward（Robometer / LIV）和评测（模拟器物理状态）完全独立，有真值 reward 作同预算对照，这是 reward 核查最理想的形态。\n- 方差：主结论 5+3 次独立训练，配交叉 bootstrap 和精确置换检验；作者也承认 p=.008 已是 5 对 5 能达到的最小值。\n- 风险：附录 L.6 / 表 23 坦白，最终协议之前有 7 个权重级配置没能证明可学性，有路径选择（forking paths）的风险。但 critic 对真值的对比是在同一最终协议内做的，不受这个影响。\n- 真机：每个策略 40 次试验、各 1 次训练，方向与仿真一致，但差异不显著（作者自己也这么说）。",
+      "reward_check": {
+        "train_reward": "Robometer 终端成功概率（全量微调）；受约束实验另加 LIV",
+        "eval_reward": "MuJoCo 关节/接触状态判定的成功、动错物体、其他失败",
+        "overlap": {
+          "value": "no",
+          "note": "评测完全不经过 reward"
+        },
+        "heldout": "有：模拟器真值，加同预算真值 reward 训练对照；真机 40 次×3 个策略属案例研究",
+        "hacking_signs": "Fig.1：拉开错误抽屉得 0.84，拉开目标抽屉得 0.82；Fig.3：Robometer 对 W 的中位分高于 S"
+      },
+      "samples": "只看了论文图（Fig.1 帧、Fig.3 分数分布、Fig.4 预测对实测），没有拿到 rollout 视频或 artifact。Fig.4 中 stacking-LIV 有几个点明显在等值线上方：预测约 0、实测 +38 到 +55。可见条件选择器被当成无条件来近似时，tilt 会低估。",
+      "media": [
+        {
+          "src": "assets/2026-10-10/critichack-critichack-fig1.webp",
+          "caption": "Fig.1（原文）：只用 critic 训练会拉开错误抽屉（0.84 分），critic×verifier 训练拉开目标抽屉（0.82 分）"
+        },
+        {
+          "src": "assets/2026-10-10/critichack-critichack-fig3.webp",
+          "caption": "Fig.3（原文）：Robometer 对动错物体打分高于成功（S 对 W 的 AUROC 0.372），常见的「其他失败」几乎都打低分，于是把总体 AUROC 撑到 0.81"
+        },
+        {
+          "src": "assets/2026-10-10/critichack-critichack-fig4.webp",
+          "caption": "Fig.4（原文）：tilt 预测对实测，W 的 ρ=0.89，S 的 ρ=0.79；stacking-LIV 有几个点被明显低估"
+        }
+      ],
+      "code_analysis": "不可得：文中说有 CPU artifact（打分结果、冻结配置、分析脚本），但正文没有链接，GitHub 搜「CriticHack」为 0 个结果（2026-10-10）。所以无法给 文件:行号 级别的核对。",
+      "concerns": "- **跨域**：两项仿真任务，全量微调只用了一个 critic（Robometer）和两个 drawer 布局。在 T2I/视频 RL 上还没有人做过同样的测量。\n- **Tilt 的拟合口径**：ρ=0.89 是每个设置按实测 reward 增益拟合 1 个强度参数后得到的，不算完全事前预测。真正事前可用的是不拟合的协方差（ρ=0.82）。\n- **强 reward 下高估**：Product 预测 +27.7，实测 +15.5；只用 verifier 预测 +33.3，实测 +15.9。warm-start critic 的成功率则被低估（+4.1 对 +8.4）。\n- **verifier 的标签来源**：drawer verifier 的 384 条训练轨迹里包含 critic 优化过的开发策略，它属于任务专用的诊断工具，不能当通用修复。\n- 真机结果不显著；没有公开代码。",
+      "principle": "**RL 放大的是「在当前策略样本上 reward 均值高于总体均值」的每一类结果，而不只是 RM 两两排错的那类。常见、好分的失败会把总体 AUROC 或准确率撑高，从而掩盖这种放大。** 所以评估 RM，要按失败类别看它在策略自己样本上的平均分，即 Cov(类别, 标准化 reward)；训练时要用独立于 reward 的结果指标逐类监控。",
+      "takeaway": "- **可以直接用到图像和视频 RL 的事前检查**：训练前从 base 采几百张或几十段视频，人工或用程序标出几类典型失败（计数错、属性绑定错、乱码文字、视频静止、换了主体），算每类的平均标准化 reward。高于总体均值的类，GRPO/NFT 之后大概率会变多，即使 GenEval 或人评总分在涨。这比报一个 RM 准确率更有用。\n- **修复思路和 Arena 的单边 veto 一致**（lineage P7）：用一个按结果训练的 verifier 去乘偏好 reward；本文中 verifier 单独使用和相乘效果一样。\n- **与 P2 的关系**：MEND 显示「逐样本控制」管不住实际更新；这里显示在**类别分布**这一层，实际 PPO 在一阶上确实沿 KL-tilt 走，所以按分布做的预测比按样本做的控制可靠。\n- 什么时候值得用：reward 是 VLM 或学出来的 RM、任务存在「看起来像完成」的语义错误时，这个检查必做。"
+    },
+    {
+      "id": "robotapo",
+      "rating": "fyi",
+      "originality": "mechanism",
+      "credibility": "insufficient",
+      "rating_reason": "新机制 × 证据不足：对抗学出的困难负样本是真增量，但训练层面缺少「同范数高斯负样本」这个等强度对照；主评测只有 VideoScore2，且是单次运行；真机成功率相对 DPO 的 CI 跨 0。",
+      "directions": [
+        "video-rl",
+        "offline-dpo"
+      ],
+      "title": "RobotAPO: Adversarial Physics Preference Optimization for Robotic Manipulation Video Generation",
+      "institutions": [
+        "CASIA",
+        "GigaAI",
+        "BIT"
+      ],
+      "published": "arXiv 2026-10-07（cs.RO）",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.09454"
+      },
+      "coverage": {
+        "paper": "full",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "正文和附录 A 精读；没有代码和数据链接，没看样例视频"
+      },
+      "tldr": "在 flow-matching 视频 DPO 里加一个对抗 LoRA 分支，在胜者的噪声 latent 上学出「偏向物理失败」的速度方向，用来造困难负样本。VideoScore2 物理软分比 Diffusion-DPO 高 0.24 [0.18, 0.31]；真机成功率 64.7% 对 45.1%，但配对差 CI 是 [−2.0, 41.2]。",
+      "delta": "相对 Diffusion-DPO / RealDPO：负样本不再只来自静态数据集，而是由一个和策略对抗的分支在线生成，位置贴着正样本。",
+      "lineage": {
+        "equivalent_form": "`L = Σ_{y⁻ ∈ {策划负样本, y_h}} −log σ(γ[R_π(y⁺) − R_π(y⁻)]) + E_π(y⁺) + ‖LoRA‖²`，其中 `R_π(y) = −E_π(y) + sg(E_SFT(y))`，E 是速度回归误差（相当于常数 β 的 Flow-DPO 形式）。`y_h` 的速度 = `û_π + λ(û_a − û_π)`，在胜者的噪声 latent 上取。对抗分支 a 最大化策略在 `y_h` 上的损失。也就是 **Flow-DPO + 胜者 SFT 锚 + 一个由对抗分支在线生成的额外负样本**。",
+        "baseline": "L5 目前没有可信的最强基线，最低要求是和常数 β 的 Flow-DPO 以及 RFT 正面比。本文比的是 Diffusion-DPO 和 RealDPO（同 SFT 初始化、同数据、同 LoRA 预算），没有单独的「胜者 SFT/RFT」对照；它的「w/o CF/Adv」= DPO + 锚，物理软分 3.134，和 Diffusion-DPO 的 3.172 相当。",
+        "rows": [
+          {
+            "work": "Diffusion-DPO（Wallace 2024）",
+            "link": "https://arxiv.org/abs/2311.12908",
+            "how": "对胜者和负者的去噪误差（相对 ref）做 logistic",
+            "change": "负样本集里多了一个在线对抗负样本；ref 用 SFT 模型；外加胜者锚"
+          },
+          {
+            "work": "RealDPO（Cheng 2025）",
+            "link": "https://arxiv.org/abs/2510.14955",
+            "how": "真实视频作胜者、模型生成作负者，做 DPO",
+            "change": "负样本从「自己生成的失败」进一步推到「贴着胜者、被对抗推向物理失败的速度扰动」"
+          },
+          {
+            "work": "SPIN-Diffusion / 自对弈式负样本",
+            "how": "把模型自己的样本当负样本，随训练刷新",
+            "change": "刷新的方式不是重新采样，而是学一个专门降低策略偏好间隔的方向（min-max）"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "「在线困难负样本优于静态负样本」可以从对比学习和 GAN 的经验预测出来。预测不到的部分是：学出的方向确实偏向局部物理失败。盲评 64 对样本，局部物理失败是同范数高斯扰动的 1.85 倍（95% CI [1.14, 3.38]）。但这只说明方向有意义，没有说明用它训练比用高斯负样本训练更好。"
+        },
+        "note": "SPIN-Diffusion 一行是按 RealDPO 和本文的相关工作转述，没有读原文。"
+      },
+      "method": "Wan2.2-TI2V-5B，两个 LoRA（策略 π、对抗 a），SFT 模型冻结作为中心化参照。先做策略预热，再交替训练策略和对抗分支。数据是 AgiBot-PhysPref：1 万对条件匹配的「真实成功视频对生成失败视频」，失败经 VLM 初筛和双人标注（Krippendorff α=0.78）。",
+      "evidence": "- **主表**（200 个 held-out 条件×5，VideoScore2）：物理软分 SFT 3.041 / Diffusion-DPO 3.172 / RealDPO 3.008 / RobotAPO 3.489。按条件聚类的 bootstrap，相对 DPO +0.243 [0.178, 0.309]。\n- **机制消融**：λ_adv=0（对抗分支不和策略耦合）物理软分 3.270，默认 0.05 是 3.489，0.10 是 3.421。都是单次运行，没有误差条。\n- **source 对照（数据替换）**：胜者和负者都换成同一 SFT 生成器的样本，数据量同为 1 万对，RobotAPO 相对 DPO 仍 +0.232 [0.132, 0.336]。说明增益不全是「真实对生成」这个来源线索。\n- **跨骨干**：CogVideoX-5B 上相对 DPO +0.144 [0.058, 0.245]。\n- **真机**（51 次，AnyPos 抽动作）：64.7% 对 SFT 33.3%（+31.4 [15.7, 49.0]），对 DPO 45.1%（+19.6 [−2.0, 41.2]）。\n- **缺少的对照**：训练时把对抗负样本换成同范数高斯负样本。这是 scope 第 2 条要求的等强度朴素对照。",
+      "solidity": "- 主评测是 VideoScore2 这一个 learned judge，没有对 1,000 段视频做人评。物理偏好训练却让 Visual-S 涨了 0.58，说明 judge 的各维度不独立，存在被 hack 的可能。\n- 训练只跑了一次；数据和代码都没有发布声明。",
+      "concerns": "- 「w/o Anchor/Reg」掉得很厉害（物理软分 3.079），说明胜者锚承担了很大一部分稳定作用，而没有单独的「锚 + 高斯负样本」对照。\n- 真机 51 次的统计功效不足以区分它和 DPO。",
+      "takeaway": "先记住思路，暂不采信：静态偏好对用久了会失去信息量，可以在模型自己的速度空间里贴着正样本学出困难负样本。要信它，至少还需要训练层面的高斯负样本对照、多次运行，以及人评或物理仿真评测。"
+    }
+  ],
+  "brief": [
+    {
+      "title": "IDRF（2610.03641）",
+      "link": "https://arxiv.org/abs/2610.03641",
+      "originality": "redo",
+      "credibility": "insufficient",
+      "line": "组件组合：用 IDLM 的反向蒸馏 gap 替代序列 KL，再接 RLOO-PPO（思路同 Diff-Instruct++ 在连续域的积分 KL 正则）。图像实验只有 10 类 ImageNet MaskGIT，CLIP 作 reward，单个训练种子。最关键的「同步数下 RLOO + 逐步 KL」等强度对照没做，DNA 上的 KL 基线是 128 步的 DRAKES。"
+    },
+    {
+      "title": "BoNG（2610.05108）",
+      "link": "https://arxiv.org/abs/2610.05108",
+      "originality": "redo",
+      "credibility": "doubtful",
+      "line": "等价形式：引导项 = (x̂₀_best − x̂₀_i)/σ_t²，即 reward-tilted 后验均值的 SNIS 估计取 λ→∞，相对 LiDAR 只换了估计器（拿粒子自己的 x̂₀ 当 proposal）。ImageReward 既用来引导又用来评测；主要实验在 SD1.5/SDXL，FLUX 只跑了一个种子；只和 LiDAR 做了墙钟匹配。"
+    },
+    {
+      "title": "AuraSE-IPO（2610.06632）",
+      "link": "https://arxiv.org/abs/2610.06632",
+      "originality": "redo",
+      "credibility": "doubtful",
+      "line": "在线迭代 DPO（ref = 上一轮模型），候选来自 8 种推理配置（CFG、温度、步数）。属于 reward 问题：训练 reward（DNSMOS OVRL/WER/SIM）和评测指标重叠；有盲听，但规模没核实。"
+    },
+    {
+      "title": "PWM（2610.04920）",
+      "link": "https://arxiv.org/abs/2610.04920",
+      "originality": "redo",
+      "line": "GRPO 和 DiffusionNFT 原样用于 Yume-5B 世界模型的场景定制；reward 逐分量归一化是已知做法（Arena）。世界模型方向，转多模态文献追踪。"
+    },
+    {
+      "title": "Personalize at Test Time（2610.09015）",
+      "link": "https://arxiv.org/abs/2610.09015",
+      "originality": "redo",
+      "credibility": "doubtful",
+      "line": "个性化 reward = 50 维属性分的线性组合，按 BT 拟合用户权重（已知的低秩个性化做法），生成侧用 DNO 做噪声优化。属于 reward 问题：生成评测只有 GPT-5.5 判官，没有人评；held-out 两两准确率 77%。"
+    },
+    {
+      "title": "Kana-CER TTS RL（2610.07575）",
+      "link": "https://arxiv.org/abs/2610.07575",
+      "originality": "redo",
+      "line": "只换了 reward 的表示（假名域 CER），目标汉字读音错误降约 26%；「不加 KL 时输出被拉长」属已知的长度 hacking。"
+    },
+    {
+      "title": "AgenticTTS-Forge（2610.04488）",
+      "link": "https://arxiv.org/abs/2610.04488",
+      "originality": "redo",
+      "line": "单条 agent 轨迹的案例研究：测试集从合同没读的通道泄漏、自定义 reward 推高代理指标、分开调好的策略合不到一起。都已在 P6/P7 中，属于重做。"
+    },
+    {
+      "title": "Safe Image Generation via RL（2610.05908）",
+      "link": "https://arxiv.org/abs/2610.05908",
+      "line": "安全方向，降级：RL 学 SLD 式安全引导的逐步强度，模型本身冻结。"
+    },
+    {
+      "title": "VibeEdit（2610.12229）",
+      "link": "https://arxiv.org/abs/2610.12229",
+      "originality": "redo",
+      "line": "编辑模型，RL 部分是 forward-process 更新加 VLM rubric reward，属于 reward 问题：主评测也是 VLM rubric 分（79.9），奖励和评测同源。"
+    },
+    {
+      "title": "FASTER（2610.04538）",
+      "link": "https://arxiv.org/abs/2610.04538",
+      "line": "test-time reward 引导编辑：对每张源图和每个目标训一个小网络，骨干不进内循环，编辑耗时加速 6.91×（SD3）/ 24.14×（SD1.5）。没有深读。"
+    },
+    {
+      "title": "Masked-diffusion TTS 的 test-time compute（2610.03320）",
+      "link": "https://arxiv.org/abs/2610.03320",
+      "line": "不是 RL：增加 refinement 步数主要补可懂度，best-of-K 搜索主要补音色（4 个独立编码器上胜率 64.6–79.0%），15 个模型×3 个种子。可以作为「不同能力卡在不同算力轴上」的旁证。"
+    }
+  ],
+  "trend_summary": "**这两期 reward 线的共同认识：RM 的问题不在「总体准不准」，而在「被优化推到的那部分样本上排序对不对」。**\n- 10-09 语音那篇：测量协议本身（参照物、攻击者种子）带来的误差，和防御效果一样大。\n- 10-10 CriticHack：总体 AUROC 0.81 掩盖了一个子集上的倒置，而 RL 恰好放大这个子集。按类别看「均值是否高于总体」，比看 AUROC 更能预测会长出什么。\n- 两者合起来就是审计流程：往返参照 → 最坏攻击者 → 随机基线 → 按失败类别算协方差 → 训练中用独立指标逐类监控。\n\n方法线这期没有能进精读的新算法。IDRF、BoNG 都是在已知形式上换估计器或换正则；RobotAPO 的对抗负样本是真增量，但缺少等强度对照。\n\n**覆盖说明**：本期扫了 11 个 arXiv 分类的 new 和 pastweek（去重 4,604 篇）、HF Daily 10-08/09/10（10-10 为空），以及 X 上按 arXiv 号的检索（只有一条 bot 转发）。"
+}
