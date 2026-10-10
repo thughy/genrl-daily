@@ -42,6 +42,17 @@ CARD_FIELDS = [  # 固定顺序
     ("code_analysis", "代码结论"),
     ("concerns", "疑点与信息缺口"),
 ]
+# ---- v2：原创性优先（Henry 2026-10-10）。以下字段都可选；卡片含 lineage 时改用 V2 顺序，旧数据不受影响
+ORIGINALITY = {"mechanism": ("新机制", "o-mech"), "finding": ("新发现", "o-find"), "redo": ("重做", "o-redo")}
+CREDIBILITY = {"solid": ("站得住", "c-solid"), "doubtful": ("存疑", "c-doubt"), "insufficient": ("证据不足", "c-insuf")}
+COUNTERFACTUAL = {"unpredictable": ("预测不到", "cf-new"), "partly": ("部分能预测", "cf-part"), "predictable": ("能预测到", "cf-old")}
+V2_FIELDS = [  # ① 脉络与增量 单独渲染，其后按此顺序
+    ("method", "② 机制"),
+    ("evidence", "③ 证据：增益是否来自这处改动"),
+    ("solidity", "④ 扎实度"),
+    ("concerns", "⑤ 疑点"),
+    ("takeaway", "⑥ 对 Henry 的启发"),
+]
 MAX_IMAGE_BYTES = 600 * 1024
 MAX_VIDEO_BYTES = 2 * 1024 * 1024
 IMAGE_EXT = {".webp", ".png", ".jpg", ".jpeg", ".gif", ".svg"}
@@ -109,7 +120,7 @@ def load_days(data_dir, assets_dir, errors, warnings):
             for dname in p.get("directions", []):
                 if dname not in DIRECTIONS:
                     errors.append(f"{pw}: 未知方向 {dname}，可选 {list(DIRECTIONS)}")
-            for k, _ in CARD_FIELDS + [("details", "")]:
+            for k, _ in CARD_FIELDS + [("details", ""), ("solidity", ""), ("takeaway", "")]:
                 try:
                     p[k] = resolve_text(p.get(k), data_dir)
                 except DataError as ex:
@@ -117,6 +128,22 @@ def load_days(data_dir, assets_dir, errors, warnings):
             for k, v in (p.get("coverage") or {}).items():
                 if k in dict(COVERAGE_KEYS) and v not in COVERAGE_VALUES:
                     errors.append(f"{pw}.coverage.{k}: 取值必须是 {list(COVERAGE_VALUES)}")
+            if p.get("originality") is not None and p["originality"] not in ORIGINALITY:
+                errors.append(f"{pw}.originality: 取值必须是 {list(ORIGINALITY)}")
+            if p.get("credibility") is not None and p["credibility"] not in CREDIBILITY:
+                errors.append(f"{pw}.credibility: 取值必须是 {list(CREDIBILITY)}")
+            lin = p.get("lineage")
+            if lin is not None:
+                if not isinstance(lin, dict) or not isinstance(lin.get("rows"), list) or not lin["rows"]:
+                    errors.append(f"{pw}.lineage: 必须是对象且 rows 为非空数组")
+                else:
+                    for j, r in enumerate(lin["rows"]):
+                        for k in ("work", "how", "change"):
+                            if not r.get(k):
+                                errors.append(f"{pw}.lineage.rows[{j}]: 缺少 {k}")
+                    cf = lin.get("counterfactual")
+                    if not cf or cf.get("value") not in COUNTERFACTUAL or not cf.get("text"):
+                        errors.append(f"{pw}.lineage.counterfactual: 需要 value ∈ {list(COUNTERFACTUAL)} 和 text")
             rc = p.get("reward_check")
             if rc is not None:
                 if not isinstance(rc, dict):
@@ -157,6 +184,17 @@ def load_days(data_dir, assets_dir, errors, warnings):
                     warnings.append(f"{pw}: 图片 {src} {size/1e3:.0f}KB 偏大，建议 optimize_assets.py 压缩成 webp")
                 elif ext not in IMAGE_EXT | VIDEO_EXT:
                     errors.append(f"{pw}: 不支持的媒体类型 {src}")
+        for j, b in enumerate(d.get("brief", []) or []):
+            if not b.get("title") or not b.get("line"):
+                errors.append(f"{where} brief[{j}]: 缺少 title 或 line")
+            if b.get("originality") is not None and b["originality"] not in ORIGINALITY:
+                errors.append(f"{where} brief[{j}].originality: 取值必须是 {list(ORIGINALITY)}")
+            if b.get("credibility") is not None and b["credibility"] not in CREDIBILITY:
+                errors.append(f"{where} brief[{j}].credibility: 取值必须是 {list(CREDIBILITY)}")
+        try:
+            d["revision_note"] = resolve_text(d.get("revision_note"), data_dir)
+        except DataError as ex:
+            errors.append(f"{where}.revision_note: {ex}")
         try:
             d["trend_summary"] = resolve_text(d.get("trend_summary"), data_dir)
         except DataError as ex:
@@ -304,6 +342,62 @@ def media_html(p, rel):
     return "".join(out)
 
 
+def axes_html(x):
+    """两维评级小标签：原创性 × 可信度（缺哪个就不显示哪个）。"""
+    out = []
+    if x.get("originality") in ORIGINALITY:
+        lab, cls = ORIGINALITY[x["originality"]]
+        out.append(f'<span class="axis {cls}" title="原创性">{lab}</span>')
+    if x.get("credibility") in CREDIBILITY:
+        lab, cls = CREDIBILITY[x["credibility"]]
+        out.append(f'<span class="axis {cls}" title="可信度">{lab}</span>')
+    return f'<span class="axes">{"<i>×</i>".join(out)}</span>' if out else ""
+
+
+def lineage_html(p):
+    lin = p["lineage"]
+    rows = []
+    for r in lin["rows"]:
+        work = e(r["work"])
+        if r.get("link"):
+            work = f'<a href="{e(r["link"])}" target="_blank" rel="noopener">{work}</a>'
+        rows.append(f'<tr><th scope="row">{work}</th><td>{md_inline(r["how"])}</td><td class="chg">{md_inline(r["change"])}</td></tr>')
+    head = f'<tr><th>最接近的工作</th><th>它怎么做</th><th>{e(lin.get("change_header") or "本文改了哪一处")}</th></tr>'
+    cf = lin["counterfactual"]
+    lab, cls = COUNTERFACTUAL[cf["value"]]
+    note = f'<div class="md">{md(lin["note"])}</div>' if lin.get("note") else ""
+    ctx = f'<div class="md">{md(p["context"])}</div>' if p.get("context") else ""
+    return (f'<div class="field lineage"><div class="label">① 脉络与增量</div>'
+            f'<div class="lin-scroll"><table class="lin">{head}{"".join(rows)}</table></div>{note}{ctx}'
+            f'<div class="cf {cls}"><span class="cf-q">懂这些工作的人能否预测到结果？</span>'
+            f'<span class="cf-v">{lab}</span><div class="cf-t md">{md(cf["text"])}</div></div></div>')
+
+
+def v2_fields_html(p, rel):
+    fields = [lineage_html(p)]
+    for k, label in V2_FIELDS:
+        if k == "method":
+            body = md(p.get("insight")) + md(p.get("method"))
+            if body:
+                fields.append(f'<div class="field"><div class="label">{label}</div><div class="md">{body}</div></div>')
+        elif k == "solidity":  # ④ = 文字 + reward 核查表 + 样例(含图) + 代码
+            parts = []
+            if p.get("solidity"):
+                parts.append(f'<div class="md">{md(p["solidity"])}</div>')
+            parts.append(reward_check_html(p))
+            media = media_html(p, rel)
+            if p.get("samples") or media:
+                parts.append(f'<div class="field samples"><div class="label sub-l">样例</div><div class="md">{md(p.get("samples"))}</div>{media}</div>')
+            if p.get("code_analysis"):
+                parts.append(f'<div class="field"><div class="label sub-l">代码</div><div class="md">{md(p["code_analysis"])}</div></div>')
+            if any(parts):
+                fields.append(f'<div class="field solidity"><div class="label">{label}</div>{"".join(parts)}</div>')
+        elif p.get(k):
+            cls = {"concerns": " concerns", "takeaway": " takeaway"}.get(k, "")
+            fields.append(f'<div class="field{cls}"><div class="label">{label}</div><div class="md">{md(p[k])}</div></div>')
+    return fields
+
+
 def card_html(p, rel):
     inst = " · ".join(p.get("institutions", []) or [])
     meta = []
@@ -312,7 +406,7 @@ def card_html(p, rel):
     if p.get("published"):
         meta.append(e(p["published"]))
     fields = []
-    for k, label in CARD_FIELDS:
+    for k, label in ([] if p.get("lineage") else CARD_FIELDS):
         if k == "samples":  # 样例结论 = 文字结论 + 图 / 对比网格
             media = media_html(p, rel)
             if p.get(k) or media:
@@ -323,6 +417,8 @@ def card_html(p, rel):
             fields.append(f'<div class="field{cls}"><div class="label">{label}</div><div class="md">{md(p[k])}</div></div>')
         if k == "evidence":
             fields.append(reward_check_html(p))
+    if p.get("lineage"):
+        fields = v2_fields_html(p, rel)
     details = (f'<details><summary>完整细节</summary><div class="md">{md(p["details"])}</div></details>'
                if p.get("details") else "")
     reason = f'<span class="reason">{e(p["rating_reason"])}</span>' if p.get("rating_reason") else ""
@@ -331,16 +427,31 @@ def card_html(p, rel):
 <h3 style="margin-top:8px">{e(p['title'])}</h3>
 <div class="meta">{' ｜ '.join(meta)}</div>
 {links_html(p)}
-<div class="verdict">{badge(p['rating'])}{reason}</div>
+<div class="verdict">{badge(p['rating'])}{axes_html(p)}{reason}</div>
 {coverage_html(p)}
-<div class="tldr"><span class="tl">TL;DR</span>{e(p['tldr'])}</div>
+<div class="tldr"><span class="tl">{"新知识" if p.get("lineage") else "TL;DR"}</span>{e(p['tldr'])}{delta_html(p)}</div>
 {''.join(fields)}{details}
 </article>"""
 
 
+def delta_html(p):
+    return f'<span class="delta"><b>相对谁</b>{e(p["delta"])}</span>' if p.get("delta") else ""
+
+
 def quick_li(p):
-    return (f'<li>{badge(p["rating"])}<a href="#p-{e(p["id"])}"><span class="t">{e(p["title"])}</span>'
-            f'<span class="s">{e(p["tldr"])}</span></a></li>')
+    return (f'<li><span class="qb">{badge(p["rating"])}{axes_html(p)}</span><a href="#p-{e(p["id"])}"><span class="t">{e(p["title"])}</span>'
+            f'<span class="s">{e(p["tldr"])}</span>{delta_html(p)}</a></li>')
+
+
+def brief_html(items):
+    lis = []
+    for b in items:
+        t = e(b["title"])
+        if b.get("link"):
+            t = f'<a href="{e(b["link"])}" target="_blank" rel="noopener">{t}</a>'
+        lis.append(f'<li>{axes_html(b)} <b>{t}</b>：{md_inline(b["line"])}</li>')
+    return f'<ul class="brief">{"".join(lis)}</ul>'
+
 
 
 # ---------------------------------------------------------------- 页面
@@ -357,9 +468,12 @@ def render_day(d, prev_d, next_d, weeks_by_id):
     n_worth = sum(p["rating"] == "worth" for p in papers)
 
     quick = []
-    if main:
-        quick.append(f'<div class="zone"><ul class="quick">{"".join(map(quick_li, main))}</ul></div>')
-    if not main:
+    q_items = main + [p for p in fyi if p.get("lineage")]  # v2：有深度卡的「了解即可」也进速览
+    if q_items:
+        quick.append(f'<div class="zone"><ul class="quick">{"".join(map(quick_li, q_items))}</ul></div>')
+    if d.get("brief"):
+        quick.append(f'<div class="zone brief-zone"><h4>重做类 / 未入选（一行带过）</h4>{brief_html(d["brief"])}</div>')
+    if not q_items:
         quick.append('<p class="sub">今天没有达到「值得看」标准的论文。</p>')
 
     week_id = "%d-W%02d" % dt.date.fromisoformat(d["date"]).isocalendar()[:2]
@@ -369,12 +483,14 @@ def render_day(d, prev_d, next_d, weeks_by_id):
             f'<h1>{e(d["date"])} 精读</h1>',
             f'<p class="sub">必读 {n_must} · 值得看 {n_worth} · 了解即可 {len(fyi)}{week_link}</p>',
             f'<div class="headline">{e(d["headline"])}</div>',
+            (f'<details class="revision"><summary>本期改版说明</summary><div class="md">{md(d["revision_note"])}</div></details>'
+             if d.get("revision_note") else ""),
             '<h2 id="quick">速览</h2>', "".join(quick)]
     if main:
         body.append('<h2 id="cards">逐篇精读</h2>')
         body += [card_html(p, rel) for p in main]
     if fyi:
-        body.append(f'<details class="fyi" id="fyi"><summary>了解即可（{len(fyi)} 篇，默认折叠）</summary>'
+        body.append(f'<details class="fyi" id="fyi"{" open" if d.get("fyi_open") else ""}><summary>了解即可（{len(fyi)} 篇，默认折叠）</summary>'
                     + "".join(card_html(p, rel) for p in fyi) + "</details>")
     if d.get("trend_summary"):
         body.append(f'<h2 id="trend">趋势总结</h2><div class="md">{md(d["trend_summary"])}</div>')

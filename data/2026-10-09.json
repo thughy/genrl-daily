@@ -1,232 +1,198 @@
 {
- "date": "2026-10-09",
- "headline": "MEND 把 flow 模型的 reward 后训练改成逐样本的近端判断（收益大于位移代价才动），等预算下超过 ReFL 和 DiffusionNFT，但多样性下降、没有人评；WorldAlign 展示了视频 RL 中几何 reward 如何诱导「不动」，以及怎么防。",
- "papers": [
-  {
-   "id": "mend",
-   "rating": "must",
-   "highlight": true,
-   "directions": [
-    "diff-reward",
-    "online-rl",
-    "reward-model"
-   ],
-   "title": "MEND: RL For Flow Models via Proximal Velocity Matching",
-   "institutions": [
-    "UT Austin",
-    "Google",
-    "CU Boulder"
-   ],
-   "published": "arXiv 2026-10-05 (cs.LG)",
-   "links": {
-    "paper": "https://arxiv.org/abs/2610.05954",
-    "code": "https://github.com/shreshthsaini/MEND-RL",
-    "other": [
-     {
-      "label": "HF 权重",
-      "url": "https://huggingface.co/collections/shreshthsaini/mend-rl-for-flow-models-via-proximal-velocity-matching-6ac5d201a2821178270f97ce"
-     }
-    ]
-   },
-   "rating_reason": "机制新且讲得清楚，等预算对比公平，代码和权重齐全，并主动报告了过优化；扣分点：没有人评，多样性下降，训练和评测用的 RM 本身可被 hack。",
-   "coverage": {
-    "paper": "full",
-    "samples": "partial",
-    "code": "partial",
-    "note": "看了 uncurated 页 Fig.25；代码只核对了关键函数，本机无 GPU，未运行"
-   },
-   "tldr": "逐样本判断「reward 收益是否大于位移的二次代价」，再用纯回归拟合目标，不需要 KL 和参考模型；100 次更新在等预算下，4 个训练 reward 上都超过 ReFL 和 DiffusionNFT。",
-   "insight": "现有方法都不在单个样本上判断「这次修改值不值得」：GRPO/NFT 只是给已有样本重新加权，ReFL 对所有样本做梯度上升。MEND 在包含「不动」的有限候选集上求近端点：`J(y)=min(R(y),κ)−‖y−x‖²/(2τ)`。",
-   "context": "属于 ReFL/DRaFT/AlignProp 这一类可微 reward 方法，补上了「哪些样本动、动多远」。最接近的同期工作是 DiffusionOPSD（Zhou et al. 2026），MEND 沿用了它的 Protocol O 等预算设定和 launcher。与 Flow-GRPO（策略梯度加 KL）、DiffusionNFT/AWM（加权回归）的区别：MEND 构造新的局部目标并逐个验证，而不是调整已有样本的权重。",
-   "method": "- **Cap**：组内 75% 分位以上的样本 d=0，只受 keep 项（λ_keep=10）锚定。去掉 cap 后被移动比例从 34% 升到 45%，多样性从 0.297 降到 0.287。\n- **Propose**：沿归一化 reward 梯度取 η∈{0.1,0.2,0.4} 三个候选，每个都解码并重新打分。\n- **Verify（price）**：只有截断后的 reward 增益大于 ‖d‖²/2τ 才接受；Prop.1 证明步长 ≤ √(2τ(κ−R))，越接近上限步长越小，相当于逐样本信赖域，取代 KL。τ 根据接受率调整到 30–60%。\n- **Regress**：在 t≈0.278 的存储态上回归到 `x̂_old(z_q)+d`，不直接回归终点 y*，避免混入与 reward 无关的 rollout 误差。Prop.2：梯度等于只对被接受样本、按步长加权的 reward backprop，不需要穿过采样器反传。\n- behavior adapter 用 EMA 跟随训练中的 adapter（不是冻结参考）。",
-   "evidence": "| 训练 reward（等预算 100 次更新） | MEND | ReFL | DiffusionNFT |\n|---|---|---|---|\n| PickScore | **24.03** | 23.92 | 23.43 |\n| HPSv2.1 | **0.360** | 0.358 | 0.336 |\n| ImageReward | **1.51** | 1.28 | 1.46 |\n| CLIPScore | **0.314** | 0.308 | 0.298 |\n\n对比 Flow-GRPO 官方 adapter（约 4k 次更新），同 base 距离 0.313：PickScore 23.70 vs 23.52，HPSv3 7.15 vs 7.04，ImageReward 1.32 vs 1.27，aesthetic 5.88 vs 5.90。GenEval 0.74 vs 0.74，**OCR 0.53 vs 0.68（更低）**。训练成本 10 GPU-h（3×GB200），重复启动一次 update 50 只差 0.01。",
-   "reward_check": {
-    "train_reward": "PickScore / HPSv2.1 / ImageReward / CLIPScore（单独训练）",
-    "eval_reward": "DrawBench 上 6 个 RM、GenEval、OCR、DreamSim 多样性和离 base 距离",
-    "overlap": {
-     "value": "partial",
-     "note": "主表 PickScore 既训练又评测"
-    },
-    "heldout": "HPSv3、ImageReward、GenEval、OCR 是 held-out，但全是自动指标；**没有人评**",
-    "hacking_signs": "多样性 0.578→0.202（guidance 1），headline 设定下 0.144（Flow-GRPO 为 0.202）；作者承认饱和度上升；用 LAION aesthetic 训练后其他指标全部崩溃",
-    "note": "PickScore/HPS/ImageReward 本身可被 hack，**指标可能不可靠**"
-   },
-   "samples": "看了 Fig.25 uncurated 页（seed 0，14 个 prompt）。三种 RL 方法都把画面推向高对比、高饱和、HDR、戏剧光照的「PickScore 风格」。MEND 基本保留了 base 构图，比 DiffusionNFT 克制（NFT 在城堡、木屋上过度处理最明显）。MEND 人像的饱和度和对比度明显上升，铁匠例子多出了火花。结论：不是灾难性 hacking，但审美漂移是真的。",
-   "media": [
+  "date": "2026-10-09",
+  "version": 2,
+  "headline": "本期没有必读。MEND 的机制有增量，但和它直接改写出来的 DiffusionOPSD 在同一协议下比，四个 reward 全部落后，消融也找不到「逐样本判定」本身的贡献，降为了解即可。本期唯一带来新知识的是语音质量指标可 hack 性那篇：测量协议上的两个新发现。",
+  "revision_note": "v2（2026-10-10）按 Henry 的「原创性优先」标准重排：先看相对已有工作带来了多少**事先预测不到的新知识**，扎实度只是门槛。每篇最接近的已有工作都下载了全文，读了方法和相关实验章节后才写 delta。评级变化：MEND 必读 → 了解即可；WorldAlign、DreamTrue 值得看 → 重做类一行；语音那篇保持值得看；Rubric-CEPR 保持重做。v1 原文保留在仓库历史（commit 11eebe5）。",
+  "papers": [
     {
-     "src": "assets/2026-10-09/mend-uncurated-top.webp",
-     "caption": "Fig.25 上半（uncurated，列依次为：SD3.5 无 guidance / SD3.5 guidance 4.5 / Flow-GRPO / DiffusionNFT / MEND）"
+      "id": "speech-hack",
+      "rating": "worth",
+      "originality": "finding",
+      "credibility": "doubtful",
+      "directions": [
+        "reward-model",
+        "other"
+      ],
+      "title": "How Hackable Is Your Speech Quality Metric? A Corrected Protocol, a Benchmark, and What Patching Buys",
+      "institutions": [
+        "Ohio State University"
+      ],
+      "published": "arXiv 2026-10-07",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.10899"
+      },
+      "rating_reason": "本期唯一真正的新知识（测量误差被量化、随机基线推翻了修补的效果），但没有听测、修补只有 3 个种子，所以只给值得看",
+      "coverage": {
+        "paper": "full",
+        "samples": "unavailable",
+        "code": "unavailable",
+        "note": "E1–E3 做了预注册；论文说代码已发布，但没找到链接"
+      },
+      "tldr": "测 reward 的可 hack 程度时，参照物选原音还是处理链往返后的音频，会让同一个防御的测量值差 4 倍（0.31 对 0.08）；只换随机种子，攻击成功率就在 0 到 0.38 之间波动；「攻击、检测、修补」闭环的效果和随机扰动基线差不多",
+      "delta": "Attacking UTMOS 和 Lin et al. 用单个攻击者、以原音为参照；本文把测量误差本身量化出来，并推翻了「对抗修补有效」",
+      "lineage": {
+        "rows": [
+          {
+            "work": "Lin et al. 2022",
+            "link": "https://arxiv.org/abs/2211.06508",
+            "how": "用波形对抗样本攻击 DNSMOS，再做一次对抗训练",
+            "change": "用同一个攻击者、同一扰动预算、同一个 hack 判定，同时比较 4 个常用指标"
+          },
+          {
+            "work": "Attacking UTMOS（Huang & Toda 2026）",
+            "link": "https://arxiv.org/abs/2606.31105",
+            "how": "在 waveform、mel、EnCodec latent 三个空间各训练一个攻击者打 UTMOS，参照物是原音",
+            "change": "参照物换成 codec 往返后的音频 x̂；每个指标训 5 个只差种子的攻击者，取最坏"
+          },
+          {
+            "work": "Asonitis et al. 2026",
+            "link": "https://arxiv.org/abs/2609.13150",
+            "how": "在 6 个人评语料上发现，音频都很干净时，reference-free 指标和听众偏好不一致",
+            "change": "从「相关性」转到「能被攻击到什么程度」，给出可复用的测量协议"
+          },
+          {
+            "work": "LLM RM 对抗训练和 ensemble（Bukharin 2025；Eisenstein 2024）",
+            "how": "对抗训练或 ensemble 能缓解 hacking，但不能消除",
+            "change": "加了一个随机扰动修补基线，发现它和 RL 攻击闭环效果相当"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "「修补只在自己的攻击空间里有效」可以从对抗鲁棒性文献预测到。但下面三点预测不到：①参照物选错会让同一防御的测量值差 4 倍，预注册的 H1 在修正参照后从成立变成不成立；②攻击者种子带来的方差（0.00–0.38）和所有防御效应同量级；③随机扰动对的修补效果和整套闭环一样好。→ **新发现，在测量方法这一层。**"
+        }
+      },
+      "method": "hack 判定为 `R(y) − R(x̂) > τ`，同时 ESTOI、SI-SDR、WER、SpeechBERTScore 中至少一项变差，其中 **`x̂ = Dec(Enc(x))`** 是零扰动往返的结果。可 hack 程度用 ASR 衡量，报告 **5 个攻击者中的最坏值**。\n\n直观理解：如果参照原音，处理链本身带来的分数偏移（NISQA 对 codec 音频 +0.14）会被算到攻击头上。",
+      "evidence": "- **参照物这项改动的影响是直接测出来的**：同一个防御，参照原音是 0.306，参照 x̂ 是 0.082；用修正后的参照，预注册的 H1 不再成立。\n- **攻击者方差**：R0 的 ASR 在 0.000–0.261，R3 在 0.000–0.382（sd 0.13–0.18）。指标之间的差距（NISQA 0.876–0.916，UTMOS 0.042–0.076）远大于这个方差，所以**排名可靠，而防御之间的比较不可靠**。\n- **修补**：R0→R3 的差值换种子后符号不稳定（−0.073 / −0.039 / +0.379）；随机扰动对的 in-space ASR 是 0.019±0.016，所有防御里最低；遇到没见过的 DAC 攻击者，修补后的指标反而更差（0.065 → 0.13–0.16）；分布外 system SRCC 0.731 → 0.637。\n- **下游**：用 R0 做 reward 训练语音增强，reward +0.263，PESQ 却 −0.226；用 R3 时 PESQ 只 −0.034。",
+      "solidity": "- 加分：E1–E3 做了预注册，步数对齐；作者也主动写明「修正后的参照是事后重新分析」。\n- 减分：**没有听测**，判定 hack 的指标面板里有一部分本身就是神经网络；修补实验只有 3 个种子；攻击者偏弱，作者自己也承认；只做了语音增强这一个下游任务，没做 TTS；代码链接找不到。",
+      "reward_check": {
+        "train_reward": "攻击者：被测 MOS 预测器；下游增强：R0 / R3",
+        "eval_reward": "ESTOI、SI-SDR、WER、SpeechBERTScore、PESQ（与被攻击的指标独立）",
+        "overlap": {
+          "value": "no",
+          "note": "判定 hack 用的是独立的客观指标"
+        },
+        "heldout": "没有人评或听测；分布外人类一致性看 13 个测试集的 SRCC",
+        "hacking_signs": "本文的研究对象就是 hacking：NISQA 的 ASR 约 90%"
+      },
+      "concerns": "- τ=0.3 MOS 和 ϵ=0.5 都是在验证集上选的，换到图像 reward 时阈值需要重新标定。\n- random-pair 基线的训练对数（19.9k）多于闭环（5.8k–8.9k），对随机基线有利，作者也写明了这一点。",
+      "takeaway": "- **能直接迁移到图像和视频 reward 的「可 hack 性」测量上**：参照物用 VAE 往返或压缩后的图像，不用原图；攻击者至少训 3–5 个种子，报告最坏值；声称防御有效之前，先跑随机扰动基线。\n- **适用场景**：给 RL 选 reward model，或者审稿和评估「鲁棒 RM」类论文。这是测量协议，不是能拿来直接涨分的方法。\n- 推论：只在一个攻击空间里做修补的 RM，不能声称「更鲁棒」。"
     },
     {
-     "src": "assets/2026-10-09/mend-uncurated-bottom.webp",
-     "caption": "Fig.25 下半"
+      "id": "mend",
+      "rating": "fyi",
+      "originality": "mechanism",
+      "credibility": "insufficient",
+      "directions": [
+        "diff-reward",
+        "online-rl",
+        "reward-model"
+      ],
+      "title": "MEND: RL For Flow Models via Proximal Velocity Matching",
+      "institutions": [
+        "UT Austin",
+        "Google",
+        "CU Boulder"
+      ],
+      "published": "arXiv 2026-10-05 (cs.LG)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.05954",
+        "code": "https://github.com/shreshthsaini/MEND-RL",
+        "other": [
+          {
+            "label": "HF 权重",
+            "url": "https://huggingface.co/collections/shreshthsaini/mend-rl-for-flow-models-via-proximal-velocity-matching-6ac5d201a2821178270f97ce"
+          }
+        ]
+      },
+      "rating_reason": "v1 必读 → 了解即可：和它改写出来的 DiffusionOPSD 在同一协议下四项全输（论文略去了这个对比）；消融里判定和「统一走最短一步」等价；F.1 显示判定控制不了实际更新",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "full",
+        "note": "同时读了 DiffusionOPSD（方法、Table 1、§4.4–4.7、附录 B）、ReFL §3、DRaFT §3–5 和 B.8；没有运行代码"
+      },
+      "tldr": "把「回归到 reward 梯度目标」改成逐样本近端判定：只有 capped 收益大于 ‖d‖²/2τ 才移动，一阶上等价于只对被接受样本做 ReFL",
+      "delta": "DiffusionOPSD：去掉负目标和 advantage 权重，加 cap 和 price。但同协议下全面低于 OPSD，消融也找不到判定本身的贡献",
+      "lineage": {
+        "change_header": "MEND 改了哪一处",
+        "rows": [
+          {
+            "work": "ReFL（Xu 2023）",
+            "link": "https://arxiv.org/abs/2304.05977",
+            "how": "在 t∈[T1,T2] 随机选一个后期去噪步，对**所有样本**的一步 x0 预测做 reward 反传，再加预训练 loss 正则",
+            "change": "只对通过判定的样本做反传（Prop. 2）；梯度在真实终点 x 处求并单位化，不在一步预测处求"
+          },
+          {
+            "work": "DRaFT（Clark 2024）",
+            "link": "https://arxiv.org/abs/2309.17400",
+            "how": "反传最后 K 步（DRaFT-K）或最后一步加多噪声平均（DRaFT-LV）；附录 B.8 发现控制过优化最有效的是 **LoRA scaling**，也就是整体缩小位移，好于 KL 和早停",
+            "change": "把「整体缩小位移」改成逐样本决定动不动、动多远"
+          },
+          {
+            "work": "DiffusionOPSD（Zhou 2026-08-25）",
+            "link": "https://arxiv.org/abs/2608.24646",
+            "how": "在 x̂old(zq) 处沿单位化 reward 梯度构造有界的正、负目标（半径 ρ‖y0‖），按组内 advantage 加权回归，behavior 用 EMA；**附录 B 已证明一阶上等于 ReFL**；还提供可选的 endpoint check（对结果几乎没影响：0.3117→0.3102）。MEND 的代码就是从它改来的",
+            "change": "去掉负目标和 advantage 权重；加组内 75% 分位的 cap；把「固定半径」换成「3 个步长的候选里 capped 收益 > ‖d‖²/2τ 才接受」"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "熟悉 OPSD 和 DRaFT 的人能预测两件事：cap 和更短的步长会用 reward 换多样性（DRaFT 的 LoRA scaling 结论），以及一阶上它仍是 ReFL（OPSD 附录 B 原话）。真正预测不到的只有一个问题：**逐样本「值不值得动」的判定能否带来帕累托改进**。论文自己的消融给出的答案是不能（见③）。→ 机制上有增量，但这个增量的新知识没有被证实，而且多半是负面的。"
+        }
+      },
+      "method": "```\nJ(y) = min(R(y), κ) − ‖y − x‖² / 2τ ,  y* = argmax over {x, x+0.1ĝ, x+0.2ĝ, x+0.4ĝ}\nL(θ) = E_moved ‖x̂θ(zq) − sg[x̂old(zq) + d]‖² + 10 · E_kept ‖x̂θ(zq) − sg[x̂old(zq)]‖²\n−∇L(θold) = (2/|A|) Σ_{i∈A} η_i ∇θ⟨ĥ_i, x̂θ(zq_i)⟩   ← 只对被接受样本、按步长加权的一步 ReFL\n```\n一句话：OPSD 的「回归到 reward 梯度目标」，再给每个样本加一道「收益要付得起距离」的门。",
+      "evidence": "**结论：增益不能归到判定这处改动上。**\n\n**和最接近的工作比（论文没做这个对比）**：同一 Protocol O（SD3.5-M、rank-32 LoRA、48×24、100 次更新、guidance 1、DrawBench 200×5），OPSD 自报的 Table 1 结果如下。MEND 的 ReFL 和 NFT 基线数字就是从这张表抄的，但它略去了 OPSD 那一行：\n\n| 训练 reward（各自评测） | MEND | DiffusionOPSD | ReFL | DiffusionNFT |\n|---|---|---|---|---|\n| PickScore | 24.03 | **24.94** | 23.92 | 23.43 |\n| HPSv2.1 | 0.360 | **0.390** | 0.358 | 0.336 |\n| ImageReward | 1.51 | **1.76** | 1.28 | 1.46 |\n| CLIPScore | 0.314 | **0.340** | 0.308 | 0.298 |\n| Z-Image-Turbo · PickScore | 24.10 | **25.15** | 24.54 | 22.28 |\n| 三 reward 联合 300 次（Pick/CLIP/HPS） | 23.89/0.300/0.344 | **25.51/0.333/0.389** | – | 23.62/0.294/0.340 |\n\nMEND 仓库里能看到 OPSD 一直被当作基线：`infra/tasks/table.sh:8` 的默认对比列表、`judge_pair.sh:10` 默认的 VLM judge 对手，都是 `opsd_pickscore_O`；`infra/results_tasks.py:89` 生成的 `tab:pareto` 也包含 OPSD 一列。但最终论文里没有任何 OPSD 的数字，相关工作只写了一句 \"Concurrently, Zhou et al.\"。\n\n- **对 ReFL 的 +0.11 PickScore**：ReFL 的数字是从 OPSD 论文抄来的，没有重跑，两边都是单次运行；HPSv2.1 只领先 +0.002。这个差距不能算高于噪声。\n- **cap 和 price 消融**（Table 12，每个分支 1 个种子，完整 DrawBench 上的 PickScore / 多样性）：MEND 23.10 / 0.297；**不做逐样本判定、cap 以下统一走 η=0.1：23.16 / 0.301，和 MEND 相同**；去掉 price 23.21 / 0.291；去掉 cap 23.27 / 0.287；统一走 η=0.2 23.45 / 0.260。这些点基本落在同一条「reward 换多样性」曲线上，判定本身没有带来帕累托改进。被接受的移动几乎都是最短的 0.1 那一档（F.1）。\n- **附录 F.1 的关键自曝**：每次更新后，模型的实际移动与认证方向的投影中位数只有 **0.001**；被判为「不动」的样本和被判为「动」的样本，实际移动幅度一样大。也就是说，逐样本的判定根本没能控制参数更新后每个样本怎么变。这和 OPSD §4.5「目标构造得好，不等于拟合后实现得好」是同一个现象。\n- 理论：Prop. 1 是近端点的初等界；Prop. 2 是 OPSD 附录 B 的一阶等价再加一个筛选，论文没有注明这一点和 OPSD 已有结果的重叠。",
+      "solidity": "- 和 Flow-GRPO 在相同 base 距离下比，5/6 个指标胜出，但 Flow-GRPO 本身就是个弱基线（OPSD 表里 Flow-GRPO 2k 次更新时 PickScore 只有 22.41）。\n- 多样性（DreamSim 两两距离）：base 是 0.578，MEND 是 0.144–0.202，和 Flow-GRPO 一样塌。**OPSD 的多样性两篇论文都没报告**，所以「MEND 用一点 reward 换来了多样性」这条唯一可能成立的卖点，现在没有证据。",
+      "reward_check": {
+        "train_reward": "PickScore / HPSv2.1 / ImageReward / CLIPScore（单独训练）",
+        "eval_reward": "DrawBench 上 6 个 RM、GenEval、OCR、DreamSim 多样性和离 base 距离",
+        "overlap": {
+          "value": "partial",
+          "note": "主表 PickScore 既训练又评测"
+        },
+        "heldout": "HPSv3、ImageReward、GenEval、OCR 是 held-out，但全是自动指标；**没有人评**",
+        "hacking_signs": "多样性 0.578→0.202（guidance 1），headline 设定下 0.144（Flow-GRPO 为 0.202）；作者承认饱和度上升；用 LAION aesthetic 训练后其他指标全部崩溃",
+        "note": "PickScore/HPS/ImageReward 本身可被 hack，**指标可能不可靠**"
+      },
+      "samples": "看了 Fig.25 uncurated 页（seed 0，14 个 prompt）。三种 RL 方法都把画面推向高对比、高饱和、HDR、戏剧光照的「PickScore 风格」。MEND 基本保留了 base 构图，比 DiffusionNFT 克制（NFT 在城堡、木屋上过度处理最明显）。MEND 人像的饱和度和对比度明显上升，铁匠例子多出了火花。结论：不是灾难性 hacking，但审美漂移是真的。",
+      "media": [
+        {
+          "src": "assets/2026-10-09/mend-uncurated-top.webp",
+          "caption": "Fig.25 上半（uncurated，列依次为：SD3.5 无 guidance / SD3.5 guidance 4.5 / Flow-GRPO / DiffusionNFT / MEND）"
+        },
+        {
+          "src": "assets/2026-10-09/mend-uncurated-bottom.webp",
+          "caption": "Fig.25 下半"
+        }
+      ],
+      "code_analysis": "仓库 shreshthsaini/MEND-RL（1★，0 fork），训练代码完整（`mend/train/sd3.py` 2232 行，附 ReFL/NFT/Flow-GRPO/OPSD 基线）。\n- cap：`mend/algorithm/verdict.py:13-24`\n- verdict：`verdict.py:197-262`（J=capped(r)−‖d‖²/2τ，`best_f > j_x` 才接受），与 Eq.3 一致\n- 回归目标：`targets.py:37-39`（z_q−t_q·v_q+d），与 Eq.4 一致\n- keep 权重：`targets.py:222-231`\n- ⚠️ 默认配置是开发期设定（`configs/mend.py:44-59`：anchored，q=0.9），论文配方在 `configs/best_mend.env`，需要用命令行覆盖；`guides/REPRODUCING.md:126` 写明论文实际 launch 文件不在仓库。\n- HF 上 9 个 adapter 已发布，PickScore 版下载 253 次，ThreeReward 版 378 次。",
+      "concerns": "- 为什么略去 OPSD？论文用的是 OPSD 的协议、代码和基线数字，发布时间比 OPSD 晚 6 周，却称为 \"concurrent\"。\n- 没有在相同多样性下与 OPSD、ReFL 做对比。\n- 大部分实验只有单个种子；没有人评；只适用于可微 reward；只做了 T2I。",
+      "takeaway": "- 如果要做「reward 梯度到回归目标」这条线，**基线用 OPSD，不用 MEND**。想要多样性的话，先试缩小 ρ 或 LoRA scaling（DRaFT 的结论），再考虑 cap。\n- **值得记住的负面知识**：在目标空间做逐样本认证，控制不了参数更新后每个样本的实际变化（F.1 的投影中位数 0.001）。以后任何声称「逐样本信赖域替代 KL」的论文，都要先问它测没测过实际移动。\n- 筛选规则：L2/L3 线的新论文，不在 OPSD 协议下和 OPSD 比的，一律不进入必读。"
     }
-   ],
-   "code_analysis": "仓库 shreshthsaini/MEND-RL（1★，0 fork），训练代码完整（`mend/train/sd3.py` 2232 行，附 ReFL/NFT/Flow-GRPO/OPSD 基线）。\n- cap：`mend/algorithm/verdict.py:13-24`\n- verdict：`verdict.py:197-262`（J=capped(r)−‖d‖²/2τ，`best_f > j_x` 才接受），与 Eq.3 一致\n- 回归目标：`targets.py:37-39`（z_q−t_q·v_q+d），与 Eq.4 一致\n- keep 权重：`targets.py:222-231`\n- ⚠️ 默认配置是开发期设定（`configs/mend.py:44-59`：anchored，q=0.9），论文配方在 `configs/best_mend.env`，需要用命令行覆盖；`guides/REPRODUCING.md:126` 写明论文实际 launch 文件不在仓库。\n- HF 上 9 个 adapter 已发布，PickScore 版下载 253 次，ThreeReward 版 378 次。",
-   "concerns": "1. 没有人评，偏好结论全部依赖可被 hack 的 RM。\n2. 对 ReFL 只多 0.11 PickScore，缺少「相同多样性下」的比较。\n3. 除 PickScore 外都是单次运行。\n4. OCR 比 Flow-GRPO 低 0.15。\n5. 只能用可微 reward。\n6. 只做了 T2I，没有视频。"
-  },
-  {
-   "id": "worldalign",
-   "rating": "worth",
-   "directions": [
-    "video-rl",
-    "online-rl",
-    "reward-model"
-   ],
-   "title": "WorldAlign: Decoupled 4D Reward for World-Consistent Video Generation",
-   "institutions": [
-    "HKUST(GZ)",
-    "HKUST",
-    "KlingAI",
-    "HKU"
-   ],
-   "published": "arXiv 2026-10-08",
-   "links": {
-    "paper": "https://arxiv.org/abs/2610.12382",
-    "project": "https://worldalign.github.io/"
-   },
-   "rating_reason": "reward 设计对视频 RL 有直接参考价值，并用消融展示了运动塌缩这种 hacking；但评测部分用的是自家 judge，单次运行，没有代码。",
-   "coverage": {
-    "paper": "full",
-    "samples": "partial",
-    "code": "unavailable",
-    "note": "只看了 2 组 teaser 逐帧图（取自 arXiv 源码）；项目页当前 404"
-   },
-   "tldr": "用语义 mask 把视频拆成静态背景（几何重投影 reward 加相机运动 hinge）和动态主体（VLM checklist reward）分别对齐，防止 GRPO 把视频训成静止画面。",
-   "insight": "几何 reward 默认场景是静态的，在动态场景里会把正常运动当成误差惩罚，RL 最省事的解就是「不动」。光流/场景流 mask 会把背景的错误形变也排除掉，削弱信号；改用语义追踪 mask，背景错误就能保留在 reward 里。",
-   "context": "前作：Epipolar-DPO、VideoGPA（静态假设）；World-R1；VGGRPO（场景流，未开源）；GeoFlow（光流降权加 DINO）。WorldAlign 把动态区域的划分改成语义 mask，并补上动态主体的 reward。",
-   "method": "- SAM3 追踪条件图里的主体 mask；VGGT-1B 从 25 帧构建只含静态部分的点云，重投影后算 masked MSE，取负作为 R_static。\n- R_cam = −max(0, τ−m)，τ=0.01，m 为相邻帧的平移量加旋转角。\n- Gemini-3.1-Pro 为每个样本生成 4 类二元 checklist，Qwen3.6-Plus 判定，R_dyn 为答 YES 的比例。\n- 三个 reward 在组内分别 z-score 后等权相加，作为 advantage，用 Flow-GRPO 训练（K=8，LoRA r32，Flow-SDE 20 步）。",
-   "evidence": "Wan2.1-I2V-14B，100 个 held-out 条件：\n\n| 方法 | M.Epi↓(独立) | Subject DINO↑(独立) | Checklist↑(同 judge) | Dynamic Degree↑ |\n|---|---|---|---|---|\n| Base | 0.469 | 0.918 | 0.760 | 0.62 |\n| Epipolar-DPO | **0.215** | **0.967** | 0.594 | 0.33 |\n| GeoFlow | 0.336 | 0.936 | 0.807 | 0.65 |\n| WorldAlign | 0.264 | 0.939 | **0.856** | **0.74** |\n\n消融（5B）：只用 masked reprojection 时 DD 降到 0.42；加相机 reward 后 0.70；全量 0.72。人评：20 个条件 × 5 个对手 × 3 人，总体偏好胜率 76.0%，负率 11.3%。",
-   "reward_check": {
-    "train_reward": "masked 重投影（VGGT）、相机运动 hinge、Qwen3.6-Plus checklist",
-    "eval_reward": "M.Epi、M.Reproj、Subject DINO、Checklist Yes、VBench 三项、小规模人评",
-    "overlap": {
-     "value": "partial",
-     "note": "M.Reproj 和 Checklist 与训练 reward 的管线和 judge 完全相同"
-    },
-    "heldout": "M.Epi 和 Subject DINO 独立，但两项上 WorldAlign 都不是最好（最好的是靠不动取胜的 Epipolar-DPO）；人评规模小",
-    "hacking_signs": "论文展示了静止相机、静止主体、只有相机在动三种塌缩模式；相机 hinge 阈值 0.01，可能只学会「刚好够」的运动，论文未报告运动幅度分布",
-    "note": "VBench Dynamic Degree 是按视频的二值粗指标，**指标可能不可靠**"
-   },
-   "samples": "看了 2 组精选 teaser 的逐帧图。火车例子里，base 的车厢颜色和结构逐帧变化，WorldAlign 保持一致；狗例子里，base 的烤箱门和柜子形变，WorldAlign 保持了结构，相机仍在平移。没有看到过饱和或过锐。没有 uncurated 样例，无法判断失败率和多样性。",
-   "media": [
+  ],
+  "brief": [
     {
-     "src": "assets/2026-10-09/worldalign-teaser-train.webp",
-     "caption": "上行 base，下行 WorldAlign（Wan2.1-I2V-14B），第 0/10/20/30/39 帧"
+      "title": "WorldAlign（2610.12382）",
+      "link": "https://arxiv.org/abs/2610.12382",
+      "originality": "redo",
+      "credibility": "doubtful",
+      "line": "主要是组件替换：[GeoFlow](https://arxiv.org/abs/2605.18365) 的静/动分区从光流换成 SAM3 语义 mask，动态主体从 DINO 外观一致性换成 VLM checklist，再加一个相机 hinge，作用和 [Epipolar-DPO](https://arxiv.org/abs/2510.21615) 已有的 static penalty 相同。「几何 reward 会把视频训成静止画面」这件事 Epipolar-DPO 原文已经写过，并且已经修过（Dynamic Degree 0.627→0.710）。语义 mask 是否优于光流，只有定性图，没有 RL 消融。另外，论文说 Epipolar-DPO「没有防静止机制」，和 Epipolar-DPO 原文不符。v1 值得看 → v2 一行。"
     },
     {
-     "src": "assets/2026-10-09/worldalign-teaser-dog.webp",
-     "caption": "同上，狗和烤箱"
+      "title": "DreamTrue（2610.12468）",
+      "link": "https://arxiv.org/abs/2610.12468",
+      "originality": "redo",
+      "credibility": "doubtful",
+      "line": "DiffusionNFT 原样使用，加上 [VideoAlign](https://arxiv.org/abs/2501.13918) 式人工标注训练的 VLM reward model；[WorldCompass](https://arxiv.org/abs/2602.09022) 之前已经在世界模型上用 NFT 做过 RL。唯一的新意是 IK 反事实动作，但它的贡献没有和 reward 拆开。交互缺陷率 6.25% [3.43, 11.12]，GE-Sim 2.0 是 7.50% [4.34, 12.65]，置信区间重叠（更正 v1 的「没有置信区间」）。v1 值得看 → v2 一行。"
+    },
+    {
+      "title": "Rubric-CEPR（2610.12469）",
+      "link": "https://arxiv.org/abs/2610.12469",
+      "originality": "redo",
+      "credibility": "insufficient",
+      "line": "[RAFT](https://arxiv.org/abs/2304.06767)（best-of-K 后 SFT），套上同组 [ASG](https://arxiv.org/abs/2606.27376) 的 proposer/solver/generator 自演化框架，用到编辑任务上。只有 GPT 打分，评测集还参与了 reward 选型。"
     }
-   ],
-   "code_analysis": "未开源；项目页 404，GitHub 搜索无结果。",
-   "concerns": "1. 每种方法和消融只训练一次，种子固定为 42。\n2. 100 条测试视频，每个条件 1 条。\n3. 训练集和测试集同分布（COCO/DAVIS 随机划分）。\n4. World-R1 是删减后的复现。\n5. 各方法算力是否对齐没有说明。"
-  },
-  {
-   "id": "dreamtrue",
-   "rating": "worth",
-   "directions": [
-    "video-rl",
-    "reward-model"
-   ],
-   "title": "DreamTrue: Action-Faithful Robot World Model with Counterfactual Post-Training",
-   "institutions": [
-    "CASIA NLPR",
-    "Amap, Alibaba"
-   ],
-   "published": "arXiv 2026-10-08 (cs.RO)",
-   "links": {
-    "paper": "https://arxiv.org/abs/2610.12468",
-    "project": "https://brave-eai.github.io/DreamTrue"
-   },
-   "rating_reason": "用人工缺陷标注训练 RM，再做 online RL，并有独立人评；但反事实数据和 RL 各自的贡献没有拆开。",
-   "coverage": {
-    "paper": "partial",
-    "samples": "none",
-    "code": "none",
-    "note": "RL 部分精读，其余略读"
-   },
-   "tldr": "用 4.49 万条人工缺陷标注训练视频 reward model，再用 DiffusionNFT 后训练机器人世界模型；人评交互缺陷率从 48.12% 降到 6.25%。",
-   "insight": "真实机器人数据里失败交互很少，模型因此偏向预测「成功」。反事实动作下没有真实未来可以监督，只能靠一个从人工缺陷标注学来的 reward 提供反馈。",
-   "context": "把 GDPO 式的多 reward 归一化和 DiffusionNFT 用到动作条件视频世界模型上。最强基线 GE-Sim 2.0 的交互缺陷率为 7.50%。",
-   "method": "用 IK 构造反事实轨迹；Qwen VLM RM 按 L1 本体、L2 物体、L3 交互三个维度打分；recorded 动作额外加 PSNR reward；每个 reward 在组内归一化后加权求和，再做 batch 归一化，代入 DiffusionNFT 的正负去噪目标。",
-   "evidence": "AgiBot 上 160 个反事实测试条件，3 人标注（Fleiss κ=0.78）：交互缺陷 48.12%→6.25%，物体缺陷 31.88%→3.12%，nDTW 0.8735→0.8831。RM 在 held-out 4893 条视频上平均准确率 86.33%，macro-F1 74.21%。获 AgiBot World Challenge 2026 世界模型赛道第一。",
-   "reward_check": {
-    "train_reward": "VLM RM（L1–L3）+ PSNR",
-    "eval_reward": "人工缺陷标注、nDTW、PSNR/SSIM/LPIPS、EWMScore",
-    "overlap": {
-     "value": "no",
-     "note": "人评独立，但缺陷标注体系与 RM 相同"
-    },
-    "heldout": "有人评（n=160）",
-    "hacking_signs": "只看了论文挑选的图，未见"
-   },
-   "concerns": "1. 「w/o RL」对比的是 Stage I，反事实数据和 reward 的贡献没有拆开。\n2. 人评 n=160，没有置信区间。\n3. 没有报告 RM 在 RL 后分布上的准确率。"
-  },
-  {
-   "id": "speech-hack",
-   "rating": "worth",
-   "directions": [
-    "reward-model"
-   ],
-   "title": "How Hackable Is Your Speech Quality Metric? A Corrected Protocol, a Benchmark, and What Patching Buys",
-   "institutions": [
-    "Ohio State University"
-   ],
-   "published": "arXiv 2026-10-07",
-   "links": {
-    "paper": "https://arxiv.org/abs/2610.10899"
-   },
-   "rating_reason": "给出了测量 reward 可 hack 程度的方法论，可以迁移到图像和视频 RM；规模小，没有听测。",
-   "coverage": {
-    "paper": "full",
-    "samples": "none",
-    "code": "unavailable",
-    "note": "论文称代码已发布，但没找到链接"
-   },
-   "tldr": "以编解码往返输出为参照、取 5 个攻击者中的最坏情况来测：NISQA 被 hack 的比例为 90%，UTMOS 为 6%；「攻击–检测–修补」闭环的效果和随机扰动基线相当。",
-   "insight": "① hack 判定必须以处理链本身的输出为参照，否则处理链自带的分数偏移会被算到攻击头上（某个防御的测量值可在 0.31 和 0.08 之间变化）。② 一个攻击者只是一次抽样：5 个种子的成功率从 0.00 到 0.38，必须报告最坏情况。",
-   "method": "GRPO 攻击者在 EnCodec latent 上加固定 RMS 的扰动（ε=0.5）。判定为 hack 需同时满足：分数比往返原音高出 0.3 以上，且 ESTOI、SI-SDR、WER、SpeechBERTScore 中至少一项变差。修补用 MSE 加 margin ranking loss。",
-   "evidence": "hack 比例（均值/最坏）：NISQA 0.896/0.916，SSL-MOS 0.205/0.252，DNSMOS 0.136/0.200，UTMOS 0.057/0.076。修补后分布外 SRCC 从 0.731 降到 0.637。下游 GRPO 语音增强：用未修补的 RM，reward +0.263，但 PESQ −0.226、SI-SDR −6.1 dB；用修补后的 RM，PESQ 只降 0.034。",
-   "concerns": "没有听测；攻击强度较弱；只有 3 个种子；只覆盖语音增强，没有直接做 TTS。"
-  },
-  {
-   "id": "rubric-cepr",
-   "rating": "fyi",
-   "directions": [
-    "reward-model",
-    "other"
-   ],
-   "title": "Rubric-CEPR: Self-Evolving Image Editing via Reward-Verified Self-Distillation",
-   "institutions": [
-    "MBZUAI",
-    "Aalto University"
-   ],
-   "published": "arXiv 2026-10-08",
-   "links": {
-    "paper": "https://arxiv.org/abs/2610.12469",
-    "code": "https://github.com/riteshthawkar/Rubric-CEPR",
-    "project": "https://riteshthawkar.github.io/Rubric-CEPR/"
-   },
-   "rating_reason": "只有 GPT 评分，评测集参与了 reward 选型，论文主结果的部分代码和 checkpoint 没有放出。",
-   "coverage": {
-    "paper": "full",
-    "samples": "partial",
-    "code": "partial"
-   },
-   "tldr": "编辑器用自己的 VLM/VAE 特征给候选打分，做 best-of-4 拒绝采样再自蒸馏；ImgEdit 4.36→4.60，Extract 3.41→4.26。",
-   "insight": "分解式 rubric 加「任一项不过就淘汰」的硬门槛，防止「看起来合理但没完成编辑」的输出进入训练；本质上是 RAFT 加内部 verifier。",
-   "evidence": "ImgEdit 3 个种子：4.58/4.60/4.62；GEdit 7.39→8.31；Step1X-Edit 的 ImgEdit 3.86→4.16。蒸馏后单次生成达到 best-of-4 水平（4.26 vs 4.22）。",
-   "samples": "Fig.4 里 isolation 的输出普遍是白底。行李箱例子的指令要求「保留背景和植物」，输出却是白底加植物，疑似被 reward 中「边框白度」这类检查牵引。熊例子里 base 多出一只熊，本文修正了。",
-   "media": [
-    {
-     "src": "assets/2026-10-09/rubric-cepr-fig4.webp",
-     "caption": "论文 Fig.4（作者挑选）"
-    }
-   ],
-   "code_analysis": "`docs/RESULTS.md`（Release artifacts 一节）写明论文用到的 extraction 像素检查和 Step1X 训练管线不在仓库中，checkpoint 也单独分发（尚未提供）。`src/rubric_cepr/checks.py:101-127` 做了训练源图和 ImgEdit 737 张图的文件名与哈希去重。",
-   "concerns": "1. 只有 GPT-4o / GPT-4.1 评分，没有人评。\n2. GEdit 的 background 任务参与了 reward 选型。\n3. 附录 Fig.A2 的不同行用了两个不同的 checkpoint。"
-  }
- ],
- "trend_summary": "1. reward 后训练的重点正在从「用哪个 RL 算法」转到「每个样本该不该动、动多少」（MEND）以及「reward 的假设是否覆盖场景」（WorldAlign 把场景拆成静态和动态分别打分）。\n2. 多篇工作主动报告 hacking 症状（运动塌缩、饱和度上升、可 hack 比例），只在自家 reward 上涨分越来越难过关。\n3. 用人工缺陷标注训练的 RM 加独立人评（DreamTrue），比 VLM-as-judge 更可信。\n\n**看过但未入选**：Visual Jev Rewards（单次运行，作者自述无显著优势）、FSD unlearning DPO（安全遗忘方向）、DIGHT（人形动作）、Personalize at Test Time（待深读）、CVAM/SRSP/EmphTTS（评测模型或规划器）、MORCA（加速）、PTD/DuoMatching/Omni-Diffusion-Distill（蒸馏）。\n\n**覆盖缺口**：Semantic Scholar 前向引用被限流（429），基本缺失；10-08 当期只看了标题。"
+  ],
+  "fyi_open": true,
+  "trend_summary": "①「把 reward 梯度变成回归目标」这条线（L2/L3）已由 DiffusionOPSD 定型，OPSD 附录 B 已证明它一阶上等价于 ReFL。之后这条线的论文**必须在 OPSD 的 Protocol O 下和 OPSD 正面比**，否则不进入精读。\n\n② 视频世界一致性 reward 已进入组件替换阶段：mask 来源、judge 和反塌缩项轮换着换，没有新机制。\n\n③ 这次真正的新知识出现在「怎么测 reward」，而不是「怎么优化 reward」。"
 }

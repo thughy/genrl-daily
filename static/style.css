@@ -116,3 +116,39 @@ footer{margin-top:48px;font-size:13px;color:var(--muted)}
   ul.quick li{flex-direction:column;gap:2px}
   .dayhead{gap:4px 10px}
 }
+/* v2：原创性 × 可信度、脉络与增量 */
+.axes{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.axes i{font-style:normal;color:var(--muted);font-size:12px}
+.axis{display:inline-block;font-size:12px;font-weight:600;line-height:1;padding:4px 6px;border-radius:5px;border:1px solid var(--line);vertical-align:2px}
+.o-mech,.o-find{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.o-redo{background:var(--fyi-soft);color:var(--fyi)}
+.c-solid{color:var(--ok);border-color:var(--ok)}
+.c-doubt{color:#a15c00;border-color:#d9a441}
+.c-insuf{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+@media (prefers-color-scheme:dark){.c-doubt{color:#f2c46d;border-color:#8a6a2c}}
+.verdict{flex-wrap:wrap}
+ul.quick .qb{display:inline-flex;flex-direction:column;gap:4px;align-items:flex-start;min-width:8.2em}
+.delta{display:block;font-size:14px;font-weight:400;color:var(--fg);margin-top:3px}
+.delta b{font-size:12px;color:var(--accent);margin-right:6px;letter-spacing:.04em}
+.tldr .delta{margin-top:6px}
+.field.lineage{background:var(--accent-soft);border-radius:8px;padding:10px 14px}
+.lin-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.lin{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0;background:var(--card)}
+table.lin th,table.lin td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+table.lin thead th,table.lin tr:first-child th{color:var(--muted);font-weight:600;background:var(--fyi-soft)}
+table.lin tbody th{width:9.5em;font-weight:600}
+table.lin td.chg{font-weight:500}
+.cf{margin:10px 0 2px;padding:8px 12px;border-radius:8px;background:var(--card);border-left:4px solid var(--line)}
+.cf .cf-q{font-size:13px;color:var(--muted);margin-right:8px}
+.cf .cf-v{font-weight:700}
+.cf.cf-new{border-left-color:var(--accent)}.cf.cf-new .cf-v{color:var(--accent)}
+.cf.cf-part{border-left-color:#d9a441}.cf.cf-part .cf-v{color:#a15c00}
+.cf.cf-old{border-left-color:var(--warn)}.cf.cf-old .cf-v{color:var(--warn)}
+.cf .cf-t p{margin:4px 0 0}
+.field .label.sub-l{font-size:12.5px;margin-top:8px}
+.field.takeaway{border-left:3px solid var(--accent);padding-left:12px}
+.brief-zone{background:var(--fyi-soft)}
+ul.brief{margin:4px 0 6px;padding-left:1.1em;font-size:14.5px}
+ul.brief li{margin:6px 0}
+details.revision{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:2px 14px;font-size:14.5px}
+@media (max-width:600px){table.lin{min-width:560px}table.lin tbody th{width:7em}ul.quick .qb{flex-direction:row;flex-wrap:wrap}}

@@ -13,6 +13,10 @@
 | `headline` | ✔ | 一句话头条：今天最重要的进展 |
 | `papers` | ✔ | 论文数组，可为空 `[]`（当天没有达标论文） |
 | `trend_summary` |  | 当天趋势总结（Markdown） |
+| `brief` |  | v2：重做类和未入选论文「一行带过」，显示在速览底部。数组项为 `{"title", "line", "link"?, "originality"?, "credibility"?}`，`line` 支持行内 Markdown |
+| `revision_note` |  | 改版说明（Markdown），在头条下方折叠显示 |
+| `fyi_open` |  | `true` 时「了解即可」区默认展开（降级但仍有深度卡的论文需要被看到时使用） |
+| `version` |  | 内容版本号（仅记录，不影响渲染） |
 | `draft` |  | `true` 时不发布 |
 | `example` |  | 仅示例数据使用；正式 `data/` 中出现会被 build.py 拒绝 |
 
@@ -20,6 +24,9 @@
 
 卡片按下面顺序固定展示（空字段自动省略）：
 **评级 + 评级理由 → 核查深度 → TL;DR → 核心 insight → 与已有工作的区别/脉络 → 方法（机制）→ 关键证据 →（Reward 核查表）→ 样例结论（含图/对比网格）→ 代码结论 → 疑点与信息缺口 → 完整细节（默认折叠）**
+
+**v2 卡片（原创性优先，2026-10-10 起）**：只要论文写了 `lineage`，卡片就改用下面的顺序，旧数据不受影响：
+**评级 + 原创性×可信度 + 评级理由 → 核查深度 → 新知识（`tldr`）+ 相对谁（`delta`）→ ① 脉络与增量（`lineage` 小表 + 反事实结论）→ ② 机制（`insight` + `method`）→ ③ 证据（`evidence`）→ ④ 扎实度（`solidity` + Reward 核查表 + 样例/图 + 代码结论）→ ⑤ 疑点（`concerns`）→ ⑥ 对 Henry 的启发（`takeaway`）→ 完整细节**
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
@@ -44,6 +51,30 @@
 | `code_analysis` |  | 代码结论（实现是否与论文一致，写 文件:行号） |
 | `concerns` |  | 疑点与信息缺口 |
 | `details` |  | 完整细节，`<details>` 默认折叠 |
+| `originality` |  | v2 两维评级之一：`mechanism`（新机制）/ `finding`（新发现）/ `redo`（重做） |
+| `credibility` |  | v2 两维评级之二：`solid`（站得住）/ `doubtful`（存疑）/ `insufficient`（证据不足）。必读 = 原创（mechanism/finding）且 solid |
+| `delta` |  | 半句「相对谁」：相对最接近的已有工作，本文改了哪一处。显示在速览和 TL;DR 下面 |
+| `lineage` |  | ① 脉络与增量，见下。有这个字段，卡片就切换为 v2 顺序 |
+| `solidity` |  | ④ 扎实度的文字部分（reward 重叠、hacking、人评、样例、代码），后面接 `reward_check`、`samples`/`media`、`code_analysis` |
+| `takeaway` |  | ⑥ 对 Henry 的启发：可迁移性、什么时候值得用 |
+
+### `lineage`（v2，可选）
+
+```json
+"lineage": {
+  "rows": [
+    {"work": "DiffusionOPSD（Zhou 2026）", "link": "https://arxiv.org/abs/2608.24646",
+     "how": "它怎么做（行内 Markdown）", "change": "本文改了哪一处（行内 Markdown）"}
+  ],
+  "change_header": "可选，覆盖第三列表头，默认「本文改了哪一处」",
+  "note": "可选补充（Markdown），显示在表格下方",
+  "counterfactual": {"value": "partly", "text": "懂这些工作的人能否预测到结果，以及为什么（Markdown）"}
+}
+```
+
+- `rows` 必填且非空，每行都要有 `work`、`how`、`change`；放最接近的 2–3 篇，而且必须真的读过。
+- `counterfactual.value`：`unpredictable`（预测不到，是新知识）/ `partly`（部分能预测）/ `predictable`（能预测到，属于重做类）。
+- 旧字段 `context` 在 v2 卡片里会显示在表格下方。
 
 ### `reward_check`（可选）
 
