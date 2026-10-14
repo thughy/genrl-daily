@@ -15,6 +15,7 @@
 **按格预判**（本期是回扫，预判在部分结果已知后补写，不计入周五命中率）：③ 格先查「参考/状态错配」和多样性；GuidanceNFT 预判命中（核心收益来自修参考，但多样性没量）。② × B/C 先查训练 judge 与评测是否同源：SpatialCritic、VocalSep 命中（评测与训练 reward 同族/同指标）。任意 × C 先查运动/相机是否被压：GeoFix 自己测到了（去掉校准后 Dynamic 0.425→0.395）。
 
 **放不进格子的（发现类，挂在它检验的格子下）**：
+
 - *Imperfect Verifiers / CS-VGB*（推断时，不训练）：挂在 ③ 的前提上——「去噪核和重加噪核必须配对，配对错误的平稳分布偏差随错配大小而变」，是 P10 在推断时的同构旁证。
 - *GeoFix 的 overlap 偏差*：挂在 C 列——几何一致性类 reward 会把「相机少动」误当成「几何更好」。
 - *SpatialCritic 的 GenEval 泛化崩溃*：挂在 C 列——拿 GenEval 规则当训练 reward，SD3.5 七项 OOD 均分从 78.4 掉到 51.9（Flow-GRPO）。
