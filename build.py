@@ -197,6 +197,9 @@ def load_days(data_dir, assets_dir, errors, warnings):
             errors.append(f"{where}.revision_note: {ex}")
         try:
             d["trend_summary"] = resolve_text(d.get("trend_summary"), data_dir)
+            for _k in ("notice", "overview", "incident"):
+                if d.get(_k):
+                    d[_k] = resolve_text(d.get(_k), data_dir)
         except DataError as ex:
             errors.append(f"{where}.trend_summary: {ex}")
         days.append(d)
@@ -495,6 +498,9 @@ def render_day(d, prev_d, next_d, weeks_by_id):
             f'<div class="headline">{e(d["headline"])}</div>',
             (f'<details class="revision"><summary>本期改版说明</summary><div class="md">{md(d["revision_note"])}</div></details>'
              if d.get("revision_note") else ""),
+            (f'<div class="notice" id="notice" style="border:2px solid #c0392b;border-radius:8px;padding:10px 14px;margin:12px 0;background:rgba(192,57,43,.06)"><div class="md">{md(d["notice"])}</div></div>'
+             if d.get("notice") else ""),
+            (f'<h2 id="overview">结论与框架</h2><div class="md overview">{md(d["overview"])}</div>' if d.get("overview") else ""),
             '<h2 id="quick">速览</h2>', "".join(quick)]
     if main:
         body.append('<h2 id="cards">逐篇精读</h2>')
@@ -502,6 +508,8 @@ def render_day(d, prev_d, next_d, weeks_by_id):
     if fyi:
         body.append(f'<details class="fyi" id="fyi"{" open" if d.get("fyi_open") else ""}><summary>了解即可（{len(fyi)} 篇，默认折叠）</summary>'
                     + "".join(card_html(p, rel) for p in fyi) + "</details>")
+    if d.get("incident"):
+        body.append(f'<h2 id="incident">事故复盘</h2><details class="incident"><summary>展开完整复盘</summary><div class="md">{md(d["incident"])}</div></details>')
     if d.get("trend_summary"):
         body.append(f'<h2 id="trend">趋势总结</h2><div class="md">{md(d["trend_summary"])}</div>')
     pv = (f'<a href="{rel}{day_url(prev_d)}">← 前一天 {prev_d}</a>' if prev_d else '<span class="disabled">← 没有更早的了</span>')

@@ -1,0 +1,361 @@
+{
+ "date": "2026-10-14",
+ "version": "v1（10-14 补发，替代当天早上错误的「无产出」说明）",
+ "headline": "10-14 期补发：GuidanceNFT 值得看；跨篇收敛出一条原理——NFT 类 RL 的参考速度和训练状态必须对上实际采样分布，否则会多出一项与 reward 无关的推力（三篇独立论文印证）。",
+ "notice": {
+  "file": "2026-10-14/notice.md"
+ },
+ "overview": {
+  "file": "2026-10-14/overview.md"
+ },
+ "incident": {
+  "file": "2026-10-14/incident.md"
+ },
+ "fyi_open": true,
+ "papers": [
+  {
+   "id": "guidancenft",
+   "rating": "worth",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "highlight": true,
+   "rating_reason": "新机制（找到 NFT 在引导采样下崩溃的具体项并给出修法），核心论断有推导、玩具精确解和四类模型的一致证据；但每个设置只训一次，主应用里相对预训练 CFG 模型的画质/偏好分有退步，图像多样性没量，所以是「值得看」不是「必读」。可迁移原理分最高。",
+   "directions": [
+    "online-rl",
+    "diff-reward",
+    "distill-rl"
+   ],
+   "title": "GuidanceNFT: NFT-Based Reward Fine-Tuning of Guided Diffusion Models",
+   "institutions": [
+    "Tsinghua University",
+    "Duke University"
+   ],
+   "published": "arXiv 2026-10-11 (v1)，10-14 批次公告",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.15856",
+    "other": [
+     {
+      "label": "HTML 全文",
+      "url": "https://arxiv.org/html/2610.15856v1"
+     }
+    ]
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "partial",
+    "code": "unavailable",
+    "note": "全文含附录 A–G 逐节读完，主表与附录表数字逐个对过原文；样例只有作者挑选的图（Fig.4、Fig.11），我裁成网格并测了饱和度；论文没给代码链接。"
+   },
+   "tldr": "直接对 CFG 采样出的样本做 NFT 会崩，原因是 NFT 默认把「冻结的条件预测」当参考速度，而 CFG 采样分布的真实条件均值速度不是它；在 rollout 上在线拟合一个参考速度并用它修正正负两支，崩溃消失。",
+   "delta": "相对 DiffusionNFT：只改参考速度从哪来（冻结的 v_old → 在 guided rollout 上在线 flow matching 拟合的 v_φ），损失结构不变。",
+   "lineage": {
+    "equivalent_form": "NFT 在状态 x_t 上的最优位移 `β·d* = Δ + (1−2α)(C − C_q)`，其中 Δ = 2α(1−α)(v⁺−v⁻) 是想要的 reward 方向，C 是所用参考，C_q 是 rollout 分布在 x_t 的条件均值速度（= rollout 重加噪分布的 score 的仿射函数）。GuidanceNFT = 令 C ≈ C_q：`C = v_old + sg(v_φ − v_old)`，v_φ 用不加权 FM 在同一批 guided 端点上拟合（原文核对 Eq.10/12、App.A.1 Eq.21）。",
+    "baseline": "L3 最强基线是 DiffusionNFT：**正面比了**，SD3.5-M 上用 NFT 官方实现与其超参（App.C），在 GenEval / OCR / Learned3 三个目标上同协议对比，并加了「NFT + 预训练空条件分支」对照。没比 DiffusionOPSD（reward 可微时应比，L2 规则）和 Flow-GRPO（CFG 采样原生支持）。",
+    "rows": [
+     {
+      "work": "DiffusionNFT（Zheng 2026）",
+      "link": "https://arxiv.org/abs/2509.16117",
+      "how": "CFG-free 训练；参考 = 冻结旧策略 v_old，正负两支 r / 1−r 加权回归重加噪端点的速度",
+      "change": "指出 v_old 只有在「模型速度 = rollout 条件均值速度」时才是对的参考；在 CFG 下改用在线拟合的 v_φ"
+     },
+     {
+      "work": "CEDR（Cheng 2026，2609.35694）",
+      "link": "https://arxiv.org/abs/2609.35694",
+      "how": "自条件 CFG 模型上做 NFT：代数重建一个 base 预测当参考",
+      "change": "不靠代数重建，直接在当前 rollout 上拟合参考，同时覆盖显式 CFG 与内置 guidance；GSM8K Pass@1 42.16→43.03（差距约 1 个 bootstrap std）"
+     },
+     {
+      "work": "DiffusionART（10-13，2610.12572）",
+      "link": "https://arxiv.org/abs/2610.12572",
+      "how": "把 NFT 力分解为 2g + (2q−1)e，e = 前向 − 采样速度，用 prompt 级聚合方向绕开",
+      "change": "同一个偏置项、独立推导（互不引用）；GuidanceNFT 直接估计并消掉 e，ART 是换目标绕开它"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "懂 NFT 推导和「CFG 采样分布 ≠ 重加噪分布」（Bradley & Nakkiran 2025）的人，能预测「参考有偏」；**预测不到的**是偏置项的大小和后果：玩具里偏置 RMS 是预期更新的约 2.4 倍（0.32 vs 0.13），且它不是降 reward 而是把覆盖从 73 格压到 8 格；SD3.5 上用「解析 CFG 场」当参考反而崩得更快（场分歧 5.43→148.06）——直觉上最自然的修法是错的。"
+    }
+   },
+   "insight": "NFT 的正负两支是「借一个共享参考速度」把 v⁺ − v⁻ 拆成两个可以从样本直接算的回归。这个拆法要求参考恰好是 rollout 分布的条件均值速度。CFG（以及 Model Guidance、ELF 自条件 guidance）采样出来的分布，其重加噪后的条件均值速度既不是条件预测 v_c，也不是 CFG 场 v_w——因为 guided score 一般不对应任何一个端点分布的前向加噪族（App.A.2 给了高斯精确反例：t=1/4 时采样器方差 25/52，重加噪方差 37/64）。",
+   "method": "每轮外循环（Alg.1）：\n1. **谁生成**：冻结的旧策略以 CFG-4（SD3.5）/ CFG-1.5（SiT）/ 内置 guidance 采样端点 X。\n2. **谁打分**：reward 模型给 X 打分，组内中心化后映射到 r∈[0,1]（App.C Eq.31）。\n3. **新增一步**：对 X 重加噪得到 (x_t, U)，用**不加权**的 flow matching 更新辅助网络 v_φ（持久化、EMA 0.9，每轮 1 个 epoch），v_φ 估计 rollout 的条件均值速度。\n4. **更新谁**：策略 v_θ 的条件分支；目标是 NFT 两支，但把参考 v_old 换成 v_old + sg(v_φ − v_old)（Eq.12）。v_φ 只在训练时用，部署不多一次前向。\n代价：SD3.5 每轮迭代中位时长 387.9 s → 672.4 s，1.73×（Learned3 1.77×，原文核对 Tab.9）。",
+   "evidence": "- **偏置项真的存在且量级大**（原文核对 App.B.2，玩具树模型、精确计算无网络）：单独施加偏置项，v_ref=v_c 时命中率 28.4%→0.0%；与 Δ 相加仍能命中（96.4–97.4% vs 97.9%），但覆盖格数 v_w 40、v_c 8，匹配参考 73。\n- **与崩溃同步**（原文核对 App.E，SD3.5 5 步 CFG-4 三条 run）：前十步到后十步平均 reward，analytic 修正 0.3085→0.0186，不修正 0.3251→0.0953，GuidanceNFT 0.3198→0.4977；σ=0.5 场分歧在 update 50→100：不修正 0.156→0.219，analytic 5.43→148.06，GuidanceNFT ≈0.008。**这是相关，不是干预**——没有「只人为注入 e」的真实模型实验。\n- **主表**（原文核对 Tab.1/7，update 200，2 个评测种子，1 次训练）：GenEval 目标下 GenEval 0.877 vs NFT-CFG1 0.855 / NFT-CFG4 0.565；OCR 目标下 OCR 0.974 vs 0.971，而 held-out GenEval 0.488 vs NFT-CFG1 0.035。\n- **Learned3 上几乎没差**（原文核对 Tab.6 配对差）：对 NFT-CFG1 −0.0019 ± 0.0398，对「NFT+预训练空分支 CFG4」−0.0049 ± 0.0408。\n- **跨模型**（原文核对 Tab.10/2）：SiT CFG1.5 PickScore 21.579 vs NFT 最佳 checkpoint 20.476；MG 21.580 vs 20.010；GSM8K Pass@1 43.03±1.10 vs NFT 41.68±1.08、CEDR 42.16±1.11（差距在 1–1.3 个 bootstrap std 内）。\n- **checkpoint 选择不对称但对 NFT 有利**：NFT 取其最佳 checkpoint，GuidanceNFT 用固定 checkpoint（Tab.5）。",
+   "solidity": "- **reward 重叠**：Train reward 列就是训练目标；Learned3 = PickScore + HPSv2.1 + CLIPScore，评测七列里这三项与训练重叠（论文自己标灰）。held-out 只指 prompt 不相交。\n- **相对预训练 CFG 模型有退步**（原文核对 Tab.1）：GenEval 目标下 PickScore 21.83 < 预训练 CFG 22.38，Aesthetic 4.947 < 5.252，ImageReward 0.682 < 0.820；OCR 目标下 GenEval 0.488 < 预训练 CFG 0.636。论文说的「整体对齐更好」是相对 NFT，不是相对出发点。\n- **样例实测**：作者挑选的 Fig.4 里，GuidanceNFT 那一行平均 HSV 饱和度 0.55，NFT-CFG1 0.24、NFT-CFG4 0.41（实测，8 格，挑选样例，不能代表总体）；Fig.11（GenEval）里 NFT-CFG4 是黑色剪影式塌缩，GuidanceNFT 0.18 介于两者之间（实测）。高饱和是 A 列 reward 的典型 hack 信号，需要独立样本确认。\n- **没有人评，没有图像多样性指标**（只有玩具的覆盖格数和语言的 token 熵）。\n- **方差**：每个设置 1 次训练；评测种子 2–3 个，作者明说 std 不含训练方差。",
+   "reward_check": {
+    "train_reward": "GenEval / OCR / Learned3（PickScore+HPSv2.1+CLIPScore）；ImageNet 类名 PickScore；GSM8K 正确率",
+    "eval_reward": "GenEval、OCR、PickScore、CLIPScore、HPSv2.1、Aesthetic、ImageReward；ImageNet PickScore；OWT 困惑度–熵；GSM8K Pass@k",
+    "overlap": {
+     "value": "partial",
+     "note": "每个目标的训练 reward 都在评测列里（论文标灰）；Learned3 三项全重叠；SiT/MG 只用 PickScore 训练与评测"
+    },
+    "heldout": "prompt 层面 held-out（训练与评测 prompt 不相交）；Aesthetic、ImageReward 对所有目标都是 held-out；无人评",
+    "hacking_signs": "OCR 目标下 NFT-CFG1 GenEval 0.035（典型 hack：只写字不画场景）；GuidanceNFT 缓解但未回到预训练 CFG 的 0.636。挑选样例中 GuidanceNFT 饱和度最高（实测 8 格）。"
+   },
+   "samples": "同一 prompt 三行对比（作者挑选，我只裁剪、未改色）：NFT 无 CFG、NFT 训练后再加 CFG-4、GuidanceNFT（CFG-4 训练也 CFG-4 采样）。GenEval 例子里「NFT 后加 CFG」直接塌成黑色剪影；OCR 例子里 NFT 无 CFG 只剩一块写字的牌子、场景丢失；GuidanceNFT 场景和文字都在，但颜色明显更艳。",
+   "media": [
+    {
+     "grid": {
+      "cols": [
+       "NFT（CFG 1）",
+       "NFT 后加 CFG 4",
+       "GuidanceNFT（CFG 4）"
+      ],
+      "rows": [
+       {
+        "label": "GenEval：红色火车和紫色熊",
+        "cells": [
+         "assets/2026-10-14/guidancenft-gen0-nft-w1.webp",
+         "assets/2026-10-14/guidancenft-gen0-nft-w4.webp",
+         "assets/2026-10-14/guidancenft-gen0-guid.webp"
+        ]
+       },
+       {
+        "label": "GenEval：斑马在床右边",
+        "cells": [
+         "assets/2026-10-14/guidancenft-gen3-nft-w1.webp",
+         "assets/2026-10-14/guidancenft-gen3-nft-w4.webp",
+         "assets/2026-10-14/guidancenft-gen3-guid.webp"
+        ]
+       },
+       {
+        "label": "GenEval：键盘和笔记本",
+        "cells": [
+         "assets/2026-10-14/guidancenft-gen5-nft-w1.webp",
+         "assets/2026-10-14/guidancenft-gen5-nft-w4.webp",
+         "assets/2026-10-14/guidancenft-gen5-guid.webp"
+        ]
+       }
+      ]
+     },
+     "caption": "原文 Fig.11（GenEval 目标，update 200；图中旧名 CC-NFT 即 GuidanceNFT）裁剪。实测平均饱和度：0.14 / 0.23 / 0.18。"
+    },
+    {
+     "grid": {
+      "cols": [
+       "NFT（CFG 1）",
+       "NFT 后加 CFG 4",
+       "GuidanceNFT（CFG 4）"
+      ],
+      "rows": [
+       {
+        "label": "Learned3：橙色三角相框",
+        "cells": [
+         "assets/2026-10-14/guidancenft-f40-nft-w1.webp",
+         "assets/2026-10-14/guidancenft-f40-nft-w4.webp",
+         "assets/2026-10-14/guidancenft-f40-guid.webp"
+        ]
+       },
+       {
+        "label": "Learned3：伞放在勺子上",
+        "cells": [
+         "assets/2026-10-14/guidancenft-f42-nft-w1.webp",
+         "assets/2026-10-14/guidancenft-f42-nft-w4.webp",
+         "assets/2026-10-14/guidancenft-f42-guid.webp"
+        ]
+       },
+       {
+        "label": "OCR：山顶路牌「Elevation 8000 Feet」",
+        "cells": [
+         "assets/2026-10-14/guidancenft-f46-nft-w1.webp",
+         "assets/2026-10-14/guidancenft-f46-nft-w4.webp",
+         "assets/2026-10-14/guidancenft-f46-guid.webp"
+        ]
+       },
+       {
+        "label": "OCR：全息「AI Training Zone」",
+        "cells": [
+         "assets/2026-10-14/guidancenft-f47-nft-w1.webp",
+         "assets/2026-10-14/guidancenft-f47-nft-w4.webp",
+         "assets/2026-10-14/guidancenft-f47-guid.webp"
+        ]
+       }
+      ]
+     },
+     "caption": "原文 Fig.4 裁剪（作者挑选）。实测 8 格平均饱和度：0.24 / 0.41 / 0.55——GuidanceNFT 最艳，需独立样本确认是否是 reward hack。"
+    },
+    {
+     "src": "assets/2026-10-14/guidancenft-toy-fig2.webp",
+     "caption": "原文 Fig.2（玩具树模型）：匹配参考把样本分散到各个奖励分支；错误参考把样本挤到少数分支；单独施加偏置项会把样本带离目标。"
+    }
+   ],
+   "code_analysis": "论文没有代码链接（HTML 与摘要页里只有 arXiv 自身的 GitHub 链接），未能跑评测脚本；App.C 给了完整超参与 reward 映射公式。",
+   "concerns": "- 「参考误差导致崩溃」只有相关证据：三条 SD3.5 run 的崩溃速度与参考误差同序，但没有在真实模型上做「固定其他、只注入/扣除 e」的干预。\n- 主收益设置（CFG-4 训练）与 NFT 基线（CFG-1 训练）的 rollout 分布不同；更公平的对照是「CFG-4 rollout + 换成 Flow-GRPO」，没做。\n- 平均分可能盖住的东西：GenEval 只报总分与六类 macro，没拆哪一类涨；论文 App.D 说增益集中在某些任务，但主文只给均值。\n- 训练成本 1.73× 只算每轮时长，没给到达同 reward 的总 GPU 时。\n- 图像端没有多样性指标；玩具里偏置的后果恰恰是覆盖收窄，所以这是最该补的一项。\n- 视频/音频没做；我们关心的 DMD 少步模型（本身就是 CFG 蒸馏）没测。",
+   "principle": "**用「回归到样本速度」做 RL 时，参考速度必须等于当前 rollout 分布的条件均值速度；采样器一旦不是「纯条件 ODE」（CFG、内置 guidance、少步蒸馏、AR 历史），默认参考就错了，错多少就多一项与 reward 无关的推力。** 修法有两类：在线拟合参考（GuidanceNFT），或让训练状态就是采样器实际访问的状态（Fork-NFT）。",
+   "takeaway": "- **何时值得用**：任何「训练时和部署时都要带 guidance」的模型——我们的 CFG 蒸馏、DMD 少步学生都属于这类。直接把 NFT 套上去，先测一下参考误差 G_q = E‖v_old − C_FM‖²（论文 App.E 的诊断，只需在冻结 checkpoint 上拟合 100 步辅助 FM），它比 reward 曲线更早报警。\n- **对我们训练的含义**：DMD / CFG 蒸馏后的学生，其采样分布与「对端点重加噪」的分布不同，NFT 默认参考会有偏——这和 Fork-NFT 在 8 步 AR 模型上「重加噪训练比不训还差」是同一件事。上 RL 时先跑三组对照：默认 NFT、在线拟合参考、回放采样器状态；指标除 reward 外必须看多样性、饱和度和 Dynamic Degree。\n- **不改变的选择**：用不用 NFT 族本身不变；改变的是「参考和训练状态从哪来」必须作为显式设计项。",
+   "details": "**预测 vs 实际**（本期是回扫：审计时已看过部分结果，预测不是在读结果前写的，**不计入命中率**）：补写的预测「修参考能止住崩溃；相对 NFT-CFG1 的最终 reward 提升很小；多样性不报」。实际：前两条命中（GenEval 0.914 vs 0.900；Learned3 配对差 −0.0019），第三条命中。未命中：OCR 目标下 held-out GenEval 从 0.035 到 0.488 的幅度比我预期大。\n\n**等价形式盲审**：本期没有调用 Codex 盲审（时间与权限原因），等价形式由我自己按 App.A 推导核对，属单人判断。\n\n**按格预判（③×A/C）**：应在「参考/状态错配」与「多样性收窄」上出问题——命中（前者是本文主题，后者论文只在玩具里量了）。"
+  },
+  {
+   "id": "fork-nft",
+   "rating": "fyi",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "directions": [
+    "video-rl",
+    "distill-rl",
+    "online-rl"
+   ],
+   "title": "Fork-NFT（ICLR'27 匿名投稿，OpenReview WGavcJGfuS；文献追踪转来）",
+   "rating_reason": "有价值的诊断（重加噪训练比不训还差；视频质量方差 98% 在前缀之间），是 P10 的独立来源；但单次运行、无人评、没和最接近的 Astrolabe 正面比。按发现类单独评：测量本身可信度中等。",
+   "links": {
+    "paper": "https://openreview.net/forum?id=WGavcJGfuS"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "none",
+    "code": "unavailable",
+    "note": "10-14 上午已读全文（浏览器下载 PDF）；Tab.1a、Tab.4 数字今天回原文再核一次。"
+   },
+   "tldr": "在 22B 八步 AR 音视频模型上，NFT 默认的「独立重加噪端点」训练 JavisScore 0.162，比不做 RL 的 0.186 还低；改成回放采样器实际经过的成对状态，升到 0.205。",
+   "delta": "相对 DiffusionNFT/Astrolabe：训练状态从「重加噪端点」换成「采样器实际状态 + 当前策略重建 KV」，另加分模态 credit 窗口与历史边缘注意力 KL。",
+   "lineage": {
+    "equivalent_form": "NFT 损失不变；输入换成采样器实际经过的成对 (x_v, x_a) 状态；共享前缀兄弟组内归一化 advantage；按模态的 credit 掩码；外加只约束「历史边缘」的跨模态注意力 KL（笔记转述 read-log 10-14，今日回原文核对 Tab.4）。",
+    "baseline": "AR 视频 NFT 的事实基线 Astrolabe（2603.17051）未正面比；只比了自己重实现的 OmniNFT。",
+    "rows": [
+     {
+      "work": "Astrolabe（2603.17051）",
+      "link": "https://arxiv.org/abs/2603.17051",
+      "how": "端点重加噪 NFT + 滚动 KV 局部窗口",
+      "change": "改为回放采样器状态（我只读过 Astrolabe 摘要，待补读）"
+     },
+     {
+      "work": "OmniNFT（2605.12480）",
+      "link": "https://arxiv.org/abs/2605.12480",
+      "how": "联合音视频 NFT，模态级 credit",
+      "change": "加入 AR 前缀分叉与分模态窗口"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "「状态应来自采样器」可预测；「重加噪会比不训还差」这个幅度预测不到。"
+    }
+   },
+   "evidence": "原文核对 Tab.4（单次运行，JavisBench 全集）：no RL 0.186 / w/o 采样器状态回放 0.162 / 完整 0.205；AQ 4.919 / 4.681 / 5.042。Tab.1a：VideoAlign-VQ 方差 98.1% 在组间、1.9% 在组内；AudioBox-PQ 41.3% 在组内（笔记转述，10-14 原文核对过）。",
+   "principle": "训练状态必须取自部署采样器真实访问的分布；对少步/AR 采样器，「重加噪端点」不是这个分布（P10 的状态那一半）。",
+   "takeaway": "对我们 AR 音视频训练：上 NFT 前先做组内/组间 reward 方差分解（零训练成本），决定在哪分叉；训练状态用采样器回放。",
+   "concerns": "VQ +0.80 来自与训练 reward 同源的 VideoAlign；held-out JavisScore 对 OmniNFT 只 0.192→0.205；无 CI、无人评（VA-Judger 测得 JavisScore 与人类一致率仅 57%）。"
+  },
+  {
+   "id": "diffusionart",
+   "rating": "fyi",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "directions": [
+    "online-rl"
+   ],
+   "title": "DiffusionART: Efficient, Stable and Scalable Reinforcement of Diffusion Models（10-13 已读，本期作为跨篇收敛来源重列）",
+   "rating_reason": "理论分解（NFT 力含 (2q−1)e）是 P10 的独立来源；视频结论训练=评测 VideoReward、无 DD/人评，方法本身维持了解即可。",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.12572",
+    "code": "https://github.com/vanzll/DiffusionART"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "partial",
+    "code": "partial",
+    "note": "10-13 精读：§1–5、App.A/C、art.py/covariance.py（读代码，未运行）。"
+   },
+   "tldr": "NFT 的更新里藏着一项与 reward 无关的「一致性力」(2q−1)e，e = 前向速度 − 采样场；正负两支只能跨样本部分抵消它。",
+   "delta": "相对 DiffusionNFT：方向从逐样本残差改为 prompt 级聚合的共享方向，从而绕开 e。",
+   "lineage": {
+    "equivalent_form": "回归目标 = v_old + G(c)，G(c) = prompt 内 Cov(R, x0) 归一化后的共享速度偏移（原文核对 Eq.5，10-13）。",
+    "rows": [
+     {
+      "work": "DiffusionNFT",
+      "link": "https://arxiv.org/abs/2509.16117",
+      "how": "逐样本 (2r−1)(u_t − v_old)",
+      "change": "改 prompt 级聚合"
+     },
+     {
+      "work": "GuidanceNFT（本期）",
+      "link": "https://arxiv.org/abs/2610.15856",
+      "how": "在线估计并消掉 e",
+      "change": "ART 绕开 e，GuidanceNFT 修正 e"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "分解本身可推，但 pair-local vs prompt-global 0.78 vs 0.91 的形状消融强于预期。"
+    }
+   },
+   "evidence": "Prop.1：F_NFT = 2g + (2q−1)e（原文核对 10-13，推导我手算核过）。无「只扣除 e」的干预实验。",
+   "principle": "同 P10：参考与采样场的差 e 会以 (2q−1) 为权进入更新。",
+   "takeaway": "它和 GuidanceNFT 是同一个偏置项的两种处理：绕开（换目标）vs 修正（估参考）。"
+  }
+ ],
+ "brief": [
+  {
+   "title": "FlowGRPO for Vocal Separation（2610.15780）",
+   "link": "https://arxiv.org/abs/2610.15780",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "全文读完。Flow-GRPO 原样用于 1B 潜空间人声分离；新意是训练前用「组内 best−mean 差」回归数据质量因子来改 ViSQOL（按声道 RMS 对齐、只评首末活跃帧）并加样本过滤。Tab.II：完整配置 ViSQOL 3.675 / SI-SDR 7.045，比只用 MRSTFT 的 3.594 / 6.858 只多一点，MRSTFT 反而是单项最好。**reward 问题**：三个训练 reward 同时是评测指标；测试集只有 50 条内部混音；单次运行；无听测。可记的一点：训练前看「组内 reward 差」能提前发现哪类数据让 reward 没信号（与 P9 训练前审计同思路）。"
+  },
+  {
+   "title": "Imperfect Verifiers, Exact Targets / CS-VGB（2610.15281）",
+   "link": "https://arxiv.org/abs/2610.15281",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "line": "§1–4 + App.B 读完，定理只读陈述未核证明。推断时 MCMC：去噪/重加噪交替，过程 verifier 只引导探索，平稳分布由终端 reward 精确决定；配对误差带来有界偏差（Thm C.5）——是 P10 的推断时旁证。实验：2D 高斯混合能恢复目标而 SMC/RERD 不能；ImageNet（HPSv2 优化、VQAScore held-out）、CelebA、多机器人规划。**口径**：按 NFE 比，不是墙钟（scope 第 7 条），且只用 HPSv2 当优化目标。test-time 线，了解即可。"
+  },
+  {
+   "title": "SpatialCritic / Getting Space Right（2610.14852）",
+   "link": "https://arxiv.org/abs/2610.14852",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "§1–5 读完。带视觉工具的 8B agent RM，SpaRW-Eval 95.1%（自建评测）。值得记的是**发现**：拿 GenEval 规则当训练 reward，SD3.5 七项 OOD 均分 78.4 → Flow-GRPO 51.9 / NFT 59.1 / AWM 65.4（Tab.3，原文核对）——规则 reward 在域内涨、域外崩。方法本身：不加课程时 81.9 低于 NFT+GenEval-2 的 82.3，增益主要来自课程；评测用 Qwen3-VL-235B，而偏好数据也由 Qwen-VL-235B 过滤（同族裁判）；无人评、单次运行。"
+  },
+  {
+   "title": "GeoFix（2610.14293）",
+   "link": "https://arxiv.org/abs/2610.14293",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "摘要 + §3.2/§4.5 读过。几何一致性 reward（跨视角深度一致）随相机 FOV 重叠增大而变好，所以**相机少动就能刷分**；PickScore 也随相机运动系统性变化。做 FOV 校准后用 NFT 训练。Tab.4：去掉校准 Dynamic 0.425→0.395（列标签在 HTML 里丢失，行对应关系是我按正文推断）。对我们：世界模型上任何「一致性」reward 都要先对相机/运动幅度去相关。"
+  },
+  {
+   "title": "Audio8-TTS（2610.14776）",
+   "link": "https://arxiv.org/abs/2610.14776",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "只读摘要。0.6B TTS：SFT → GRPO(WER+SIM) → GRPO(realism critic，用「身份擦除」防止 critic 认生成器指纹)。critic 去指纹这一步可迁移到我们的音频 reward，待读全文看是否有人评与 hack 检查。进观察名单。"
+  },
+  {
+   "title": "GenRevisit（2610.16224）",
+   "link": "https://arxiv.org/abs/2610.16224",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "只读摘要。agent 式组图：可回到历史图像继续编辑，GRPO 加按动作贡献分配优势（NACA）。GenEval2 训练也评测（重叠）。归 L8 统一模型/agent。"
+  },
+  {
+   "title": "Prospective Forcing（2610.14654）",
+   "link": "https://arxiv.org/abs/2610.14654",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "只读摘要。不是 RL：AR 长视频多头预测未来块 + 学习的 verifier 选候选/回退。属于 AR 抗漂移，转世界模型训练追踪。"
+  },
+  {
+   "title": "Golden Anchor（2610.13217）",
+   "link": "https://arxiv.org/abs/2610.13217",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "10-14 上午已读全文。= 用冻结 I2V 渲染视频的 VideoReward 给 T2I 锚图打标签做 Flow-DPO，结构同 VPO；值得记：去掉 scaffold 后训练 reward 更高但 DD 由 +5.6% 变 −2.3%。"
+  },
+  {
+   "title": "WorldRIDE（OpenReview VhOfSK33iK）",
+   "link": "https://openreview.net/forum?id=VhOfSK33iK",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "10-14 上午已读 §3–4。= Reward Forcing 的 reward 加权 DMD 换成组内 softmax 自归一化；消融 77.1 vs 76.7/76.9 在单种子噪声内。归少步蒸馏同事。"
+  },
+  {
+   "title": "VA-Judger（2608.18607 / OpenReview jFgYpTS1gE）",
+   "link": "https://arxiv.org/abs/2608.18607",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "发现类单独评：1,150 对人评留出集上，VideoAlign/SynchFormer/JavisScore 等与人类一致率 50–57%（域外 44–52%），测量本身可信度中等（留出集规模可以，人评盲法未写）。方法（VA-Judger RM 68.4%）存疑。"
+  },
+  {
+   "title": "其余 36 篇候选（宽关键词命中，摘要/方法层分诊）",
+   "line": "**不是生成模型 RL，落选**：Δ Flow Matching（机器人，历史作源分布——转世界模型训练追踪作旁证）、CFG-Policy、DriftSpread、InsQL（机器人/控制 RL）、Verify-Act-Distill、Flow-Support-Weighted Proposals（VLA test-time）、TraceSampler（少步采样纠错——转少步蒸馏）、ConicFlow / Reward-tilted Flows 上混（推断时控制，test-time 旁证）、DiffGA（材料）、AnyEdit、U-SRA 音乐、TASTE、PAG-Agent、AegisVox、NVVSpeech 综述、OmniRSI、TRIG（纹理真实度指标，可作 metrics.md 候选）、EmoTrace-Bench（T2V 情绪评测）、Totem、Demiurge、FrameFold（AR KV 压缩——转世界模型训练追踪）、SSRS/MSAV-Script-100K（多镜头音视频数据——转开源数据追踪）、CoBit 多模态共生成、TIDE（prompt 优化）、Reels-RSI、Controllable Diverse Sampling、日文手写 DPO（小规模 DPO 应用，重做）、UID-PO 与 Tilted Temperature（纯 LLM）、AnchorDLM / Rate-Resolved Eval（文本扩散）、ANTE、ObsSpec、Screening Collapse、SpecWM、OT-FlowRec、Topology 速度基线。"
+  }
+ ],
+ "trend_summary": "**本期认知变化**：L3（前向过程/NFT 族）新增原理候选 P10——参考速度与训练状态必须匹配实际采样分布。它同时解释了三件此前分散的事：NFT 在 CFG 下崩（GuidanceNFT）、NFT 在少步蒸馏模型上退化（lineage L3「已证实」最后一条，OPSD 重跑）、AR 模型上重加噪训练比不训还差（Fork-NFT）。\n\n**reward 列的两条新旁证**：GeoFix（几何 reward 会被「相机少动」刷分）与 SpatialCritic（GenEval 规则 reward 域内涨、域外崩）——C 列「最难被 hack」的说法要加限定：规则/检测器 reward 难被像素级 hack，但会被「改变任务难度」（少动、少物体）绕过。\n\n**覆盖说明**：arXiv API 10-14 批次 878 篇（列表页因 CDN 缓存约 48h 当天早上未见）；宽关键词命中 46 篇，本期全部至少读到摘要/方法层，其中全文 4 篇（GuidanceNFT、FlowGRPO-VocalSep、CS-VGB、SpatialCritic）+ GeoFix 关键节；另含 10-14 上午已精读的 OpenReview 4 篇。本期未调用 Codex 盲审，等价形式为单人判断。"
+}
