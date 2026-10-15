@@ -1,0 +1,290 @@
+{
+ "date": "2026-10-15",
+ "version": "v1",
+ "headline": "IsoVRBench 必读：视频 reward model 普遍看不出帧顺序（打乱 6 段，人 100%，最好的 RM 60.8%），因为视频偏好基准的标签 74–78% 只靠「哪两个生成器」就能猜中；我在 200 对官方数据上复核，一个不看顺序的统计也有 59%。本期内容大半来自 10-14 批次漏扫的后半批（第二次召回事故，已复盘）；本期因 run 中断延到 10-16 发布。",
+ "notice": {
+  "file": "2026-10-15/notice.md"
+ },
+ "overview": {
+  "file": "2026-10-15/overview.md"
+ },
+ "incident": {
+  "file": "2026-10-15/incident.md"
+ },
+ "papers": [
+  {
+   "id": "isovrbench",
+   "rating": "must",
+   "originality": "finding",
+   "credibility": "solid",
+   "highlight": true,
+   "rating_reason": "新发现 × 站得住：「视频 RM 看不出帧顺序」「偏好基准的标签 74–78% 只靠生成器身份就能猜中」两条测量结论，有 8,000 对、9 个 RM 和两个 VLM、人类 96.4% 一致、5 折交叉验证支撑；我在 200 对官方数据上复核过关键数字。论文另一半（用干预对训 RM、再训生成器更好）存疑：VBench-2.0 bootstrap CI 跨 0，人评 κ=0.18。可迁移原理分本期最高。",
+   "directions": [
+    "reward-model",
+    "video-rl"
+   ],
+   "title": "IsoVRBench: Video Reward Modeling Without Human Feedback",
+   "institutions": [
+    "University of Washington",
+    "Meta Superintelligence Labs（README 写 Meta FAIR）"
+   ],
+   "published": "arXiv 2026-10-12 (v1)，10-14 批次公告；10-14 回扫漏掉的后半批，今日补读",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.17234",
+    "code": "https://github.com/stellalisy/IsoVRBench",
+    "other": [
+     {
+      "label": "HF 数据集",
+      "url": "https://huggingface.co/datasets/stellalisy/IsoVRBench"
+     },
+     {
+      "label": "作者 X 串",
+      "url": "https://x.com/StellaLisy/status/2110388139617571201"
+     }
+    ]
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "full",
+    "code": "partial",
+    "note": "全文含附录读完，引用数字逐个对过原文表格；从官方 HF 数据随机抽 200 对 Temporal Shuffle、60 对 Frame Hold 自己跑了两个零参数对照；读了 score.py / interventions.py；没跑任何 RM（box 没有 GPU），GRPO 生成器训练代码未公开。"
+   },
+   "tldr": "视频 reward model 普遍看不出帧顺序：同一段视频切 6 段打乱，人 100% 选原片，9 个 RM 里最好的 60.8%，6 个不高于随机；现有偏好基准测不出这一点，因为它们的标签 74–78% 只靠「是哪两个生成器」就能猜中。",
+   "delta": "相对 VideoReward / VideoGen-RewardBench（两个不同生成器各出一段、人评偏好）：改成「只改一个属性」的干预对，偏好方向和被测属性都由构造决定，不需要人标。",
+   "lineage": {
+    "equivalent_form": "不是优化方法。等价视角：**RM 能感知的属性 ⊆ 它训练对之间「单独变化过」的属性。** 人评偏好对 (x_a, x_b) 来自不同生成器，差异 = 画质 + 内容 + 运动 + 生成器身份的混合，RM 学哪一项都能拿分；干预对 (x, T(x)) 只有 T 改的那一项在变，准确率能归因到单一属性。",
+    "baseline": "L7 没有「最强基线」，用最强协议。视频 RM 的事实标准是 VideoReward（VideoAlign，2501.13918）：**正面比了**，同底座（Qwen2-VL）把 182K 人标对换成 160K 干预对训 IsoVRM-Q2，并在 4 个公开基准上同协议比较。没与 VideoScore2 / UnifiedReward 做同数据重训对比。",
+    "rows": [
+     {
+      "work": "VideoAlign / VideoReward（2501.13918）",
+      "link": "https://arxiv.org/abs/2501.13918",
+      "how": "独立生成的视频对 + 人评，训 VQ / MQ / TA 三头 BT 模型",
+      "change": "同底座换成无人标的干预对：VBench-2.0 60.1 vs 56.3，但 VideoGen-RewardBench 71.5 vs 73.2、GenAI-Bench 67.9 vs 69.9 更低"
+     },
+     {
+      "work": "VA-Judger（2608.18607，10-14 读过）",
+      "link": "https://arxiv.org/abs/2608.18607",
+      "how": "测得联合音视频单项指标与人类一致率 50–57%",
+      "change": "给出纯视频上的原因：偏好基准奖励「认生成器」；并把失败定位到具体属性（帧顺序）"
+     },
+     {
+      "work": "CriticHack（P9，10-10 读过）",
+      "link": "",
+      "how": "总体 AUROC 掩盖分层失败（机器人 RM）",
+      "change": "同一结论在视频 RM 上以「按属性分层」出现：VideoReward 总均分最高 73.3，打乱顺序只有 60.8"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "「用受控退化自动造排序对」本身不新（图像质量里的 RankIQA 2017 就这么做）；懂行的人也能猜到「RM 对时间顺序弱」（帧采样稀疏、底座偏图像）。**猜不到的**：①弱到 6/9 不高于随机，加到 48 帧也没有一个超过 66.1%；②5 个公开基准的排名与它的相关只有 −0.15 ~ +0.37；③生成器身份单独就能预测 74–78% 的偏好标签，而且每个基准上都比 VideoReward 准；④RM 学会看顺序后，生成器的 Motion_Order_Understanding 反而没涨（19.9 → 17.1 / 17.7 / 13.8）。"
+    }
+   },
+   "insight": "视频 RM 的能力由训练对决定。人评偏好对比较的是两个不同生成器的输出，它们在画质、内容、运动、生成器指纹上同时不同；RM 只要认出「哪个生成器更强」就能拿高分，不必感知任何具体属性。帧顺序在两段独立生成的视频之间从来不会单独变化，所以 RM 既没被教过，也没被测过。",
+   "method": "- **构造**（IsoGen/interventions.py）：锚视频由 Wan2.2-T2V-A14B / TI2V-5B / Wan2.1-1.3B 50 步生成。8 种干预：Temporal Shuffle（切 6 段错排，任何一段不在原位）、Frame Hold（只保留 8–12 个关键帧，其余帧沿用上一个关键帧）、Motion Re-gen、Attribute Edit（改提示词里一个属性后重渲染）、Reduced Steps（同 seed，8 步 vs 50 步）、三种弱生成器替换。\n- **基准**：8 种 × 1,000 = 8,000 对，选运动最大的锚（运动分 18.3–56.1，典型片约 12）；平局算错。人工只验证一次「这种干预人看得出来」：360 对里 347 对与构造标签一致（96.4%）。\n- **训 RM**：160K 干预对，同 VideoReward 底座训 IsoVRM-Q2，从 VideoReward 继续训得 IsoVRM-VR。\n- **训生成器**：分别用三个 RM 作 reward，GRPO 训 Wan2.2-TI2V-5B（128×H200，每个 reward 一次 run，KL 参考每 10 步更新）。",
+   "evidence": "- **Temporal Shuffle**（Tab.2，原文核对）：VideoReward 60.8，PickScore 45.0，UnifiedReward-Flex-9B 47.7，VisionReward 27.7，LiFT 11.9；GPT-4.1 58.9，Qwen3-VL-8B 57.1；人 100。Frame Hold 最好的也只有 71.6。\n- **加帧不救**（§5）：从 4 帧加到最佳帧数，只有 VideoReward 在 Shuffle 上涨到 66.1%；GPT-4.1、Qwen3-VL-8B 反降 6.6、6.1 点。\n- **公开基准测不出**（Tab.14）：5 个基准的排名与 Shuffle 准确率的 ρ 在 −0.15 ~ +0.37，都不显著。\n- **生成器身份捷径**（App.I Tab.9，5 折交叉验证，预测器不看视频）：VideoGen-RewardBench 77.4 / GenAI-Bench 74.1 / VBench-2.0 78.2，VideoReward 是 73.2 / 69.9 / 50.6。VideoReward 把训练集里出现过的生成器打高（CogVideo：模型隐含胜率 40.9，人类 28.1，App.J）。\n- **训 RM**（Tab.3）：IsoVRM-Q2 在 VBench-2.0 上 60.1 vs 56.3（+3.8），另三个基准更低；IsoVRM-VR 63.5。\n- **训生成器**（Tab.4 / Tab.18）：VBench-2.0 47.3 → 49.0（VideoReward）/ 49.8（Q2）/ 51.5（VR）；三方人评胜出频率 55.4 / 51.2 / 43.3%（80 个 prompt，3 轮）。但 VR 对 VideoReward 的 bootstrap 均差 CI [−1.9, +7.8]，只去掉 Multi-View_Consistency 一项（30.7 → 70.3）符号就反转；**Motion_Order_Understanding 19.9 → 17.1 / 17.7 / 13.8**，三个 reward 都没让生成器更会排顺序。",
+   "solidity": "- **我跑的复核**（官方 HF 数据随机抽 200 对 Temporal Shuffle，脚本在 box `/workspace/genrl-digest/2026-10-15/samples/isobench/run3.py`）：\n  - 零参数「相邻帧差平滑度」（只看帧差序列有没有尖峰）判对 184/200 = **92.0%**（95% CI 87–95%）；60 对 Frame Hold 上 60/60。顺序信号在像素层很容易拿到，RM 失败不是信息不够，而是没被训练去看。\n  - **不看顺序**的对照统计（全帧平均清晰度）也判对 118/200 = **59.0%**（CI 52–66%，单侧 p=0.007）：打乱后重新编码，片子平均糊了约 0.5%。也就是说这个基准上「看不见顺序也能拿到约 59%」，最好的 RM 的 60.8% 与它没有可分辨差别——比论文说的「略高于随机」更糟。反过来，这也说明基准在像素层没有完全隔离（编码残留），用它训 RM 时要防模型学编码痕迹。\n- **样例**：我下载 5 个示例锚视频及其 Shuffle / Hold 版本逐帧比对：打乱版 81 帧与原片一一对应（单帧最大重编码误差 ≤4.8/255），段间跳变 3–5 处；Hold 版 80 次帧间切换里 70–72 次静止（即 9–11 个关键帧），和代码一致。\n- **人评**：干预可感知性 347/360；生成器三方人评 κ=0.18，一致性低。\n- **方差**：生成器训练每个 reward 一次 run；RM 训练没报多 seed。\n- **第二意见**：让 Codex 只看摘要盲审，它认为最可能的混淆是「RM 只看稀疏采样帧、人看完整视频」。论文已测：加到 48 帧也没有模型超过 66.1%，基本排除。\n- **外部反馈**：X 上只有作者本人的宣传串（64 赞）和一个转述号，没有第三方评价（10-15 查）。GitHub stellalisy/IsoVRBench：2 star、0 fork、近 30 天 0 issue。",
+   "reward_check": {
+    "train_reward": "VideoReward / IsoVRM-Q2 / IsoVRM-VR（各一次 GRPO）",
+    "eval_reward": "VBench-2.0 18 维 + 三方人评",
+    "overlap": {
+     "value": "no",
+     "note": "评测不用训练 RM"
+    },
+    "heldout": "VBench-2.0 和人评都独立于训练 reward；人评 80 个 prompt、κ=0.18",
+    "hacking_signs": "Multi-View_Consistency 单项 30.7 → 70.3 主导均分（去掉后排序反转），是否来自相机运动变少没查；Dynamic Degree 没报（VBench-2.0 无此项）。生成器样例未看到（论文未放 RL 前后对比视频）"
+   },
+   "samples": "看的是基准本身的样例（论文没放 RL 前后生成器样例）。下图每张三行：原片 / 打乱 / 定帧，在同一时间点各取 6 帧。打乱版内容逐帧相同、只是顺序变了，人一眼能看出动作倒跳；定帧版肉眼像低帧率。",
+   "media": [
+    {
+     "src": "assets/2026-10-15/isovr-strip-monkey.webp",
+     "caption": "示例 p017149（训练集样例）：原片 / Temporal Shuffle / Frame Hold，各取 6 个等距时间点。我从官方仓库下载后自己截帧"
+    },
+    {
+     "src": "assets/2026-10-15/isovr-strip-2.webp",
+     "caption": "示例 p046256：低运动片，打乱后的段间跳变能被帧差直接检测到（我测到 5 处）"
+    },
+    {
+     "src": "assets/2026-10-15/isovr-fig1.webp",
+     "caption": "论文 Fig.1：干预构造 → 偏好对 → 训 RM → 训生成器"
+    }
+   ],
+   "code_analysis": "- `IsoVRBench/score.py:54–63`：两边分数相等判平局，主表平局算错；`:66–93` 按干预分组，同时给「平局算错」和「只算有判定」两种口径。和论文一致。\n- `IsoGen/interventions.py:44–60`：打乱 = 6 段、错排（最多随机 400 次，失败退成倒序）。错排只保证每段不在原位，相邻两段仍可能连在一起，所以有的样例只有 3 处跳变。\n- `IsoGen/interventions.py:28–41`：定帧。`motion_score` 注释写「每 4 帧」；论文写基准按每 3 帧、训练集按每 4 帧，不矛盾。\n- 没跑 RM（无 GPU）；GRPO 训练代码未公开。",
+   "concerns": "- 生成器侧结论：每个 reward 只一次 run，bootstrap CI 跨 0，人评一致性低（κ=0.18）。\n- 编码残留让不看顺序的统计也有 59%：用这些对训 RM，模型可能学到「重编码更糊」而不是「顺序错」，论文没测（例如拿真实生成视频里的顺序错误来测）。\n- 「RM 看得见、生成器学不会」（Motion order 没涨）作者没有讨论原因。\n- 只与 VideoReward 做了同底座重训比较。",
+   "principle": "一个 learned reward 只能感知它训练对里**单独变化过**的属性；用独立生成的样本做偏好对，差异会和来源（模型、seed、风格指纹）纠缠，RM 学到的是来源而不是属性。要教或测某个属性，就构造只差这一项的对。另外，「RM 能感知」只是必要条件：base 很少产生正确样本时，RL 照样学不会（P5）。",
+   "takeaway": "- 我们用 VideoReward 或 VLM judge 当视频 RL reward 之前，先拿 IsoVRBench 的 Shuffle / Hold 对测一遍（官方 HF 数据 + score.py），低于约 60% 就等于对时序不设防。\n- 自己的偏好评测集也做一个「只看生成器身份」的预测器：超过 70% 就说明这个评测在测生成器排名，不在测属性。\n- 视频 RL 的时序问题光换 RM 不够：本文 RM 看得出顺序，生成器 Motion order 仍没涨；base 侧要先有足够的正确样本（数据或课程）。"
+  },
+  {
+   "id": "self-verifier-capture",
+   "rating": "worth",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "rating_reason": "新发现：把统一模型「自己给自己打分」的失败拆成两种可分开测量的机制——裁判与策略共享权重时被改写（capture），冻结时随分布漂移而过时（staleness）；2×2 设计、5 个 seed、有人评。存疑：没有代码；底座小（1.5B 级）；GenEval 既是主评测又是「是否被利用」的判据；修复方法赢强对照不多，强对照调得够不够没法核实。可迁移原理清楚，所以是值得看。",
+   "directions": [
+    "ar-unified-rl",
+    "reward-model"
+   ],
+   "title": "Self-Verifier Capture in Unified Visual Generators: Diagnosing and Repairing Closed-Loop Self-Rewarding",
+   "institutions": [
+    "University of Science and Technology of China"
+   ],
+   "published": "arXiv 2026-10-12 (v1)，10-14 批次公告；10-14 回扫漏掉的后半批，今日补读",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.16500",
+    "other": [
+     {
+      "label": "HTML 全文",
+      "url": "https://arxiv.org/html/2610.16500v1"
+     }
+    ]
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "partial",
+    "code": "unavailable",
+    "note": "全文含附录读完，主表数字对过原文；样例只有作者挑的 Fig.2B（3 个 prompt），我逐张看过；没有代码链接。"
+   },
+   "tldr": "统一模型用自己的理解分支给自己的生成打分做 RL：共享权重时 5 个 seed 全部「自评分涨、外部评测降」（GenEval −9.4，DPG −3.9），裁判本身的判别力也被改写（固定探针 AUC 0.812 → 0.630）；冻结裁判也会随策略漂移而失准（与外部评审 Spearman 0.76 → 0.18），用自己生成的标签刷新救不回来。",
+   "delta": "相对 CoRe（共演化 RM 防 escape）和 SpectraReward（统一模型理解分支当 reward）：把「被利用」拆成共享 / 冻结两条可分开的路径，并说明共演化必须用独立标签（自标刷新 5 轮，峰值 0.50 → 0.19）。",
+   "lineage": {
+    "equivalent_form": "自奖励 GRPO：r(x) = J_φ(x, c)，J 是统一模型理解分支的读出。共享：φ = θ（读出随策略一起更新，梯度虽被 stop-grad，但共享权重被策略更新间接改写）；冻结：φ = θ₀ 快照。修复 = 前 W=250 步共享后锁快照 + 1/16 rollout 用外部面板（HPSv2 + PickScore + ImageReward）作稀疏锚 + 多噪声层 latent 自奖励 + 漂移触发的 TopK 控制器。",
+    "baseline": "L6（统一模型 RL）证据薄，没有公认最强。本文的强对照是「每次 rollout 都用外部 Qwen2.5-VL-7B 判」（grounding steelman），正面比过；没与 CoRe、SpectraReward 同协议比。",
+    "rows": [
+     {
+      "work": "CoRe（2609.36245）",
+      "link": "https://arxiv.org/abs/2609.36245",
+      "how": "固定 latent RM 几百步被 escape，RM 与策略共演化来缓解",
+      "change": "共演化若用自己生成的标签，判别力救不回（自标刷新峰值 0.50 → 0.19）；需要参数不相交、标签独立的外部锚"
+     },
+     {
+      "work": "UMM-Reflection（2609.35767）",
+      "link": "https://arxiv.org/abs/2609.35767",
+      "how": "外部 reward 做 RL 后，理解探针 AUC 0.804 → 0.815 几乎不变",
+      "change": "reward 读出一旦与策略共享并被优化，判别力会被改写（0.812 → 0.630）；「RL 不改判别力」只在 reward 来自外部时成立"
+     },
+     {
+      "work": "SpectraReward（2607.11886）",
+      "link": "https://arxiv.org/abs/2607.11886",
+      "how": "统一模型理解分支的 teacher-forced 似然作 reward",
+      "change": "给出这类自奖励的风险边界和可测指标（探针 AUC、与外部评审的相关）"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "共享参数 + Goodhart → 自评分涨、外部降，能预测。**预测不到的**：①冻结裁判（只 stop-grad）也掉 GenEval 7.6，而且样本仍在流形上（NLL 0.345 / 0.378 < p95 0.414）、多样性不降——不是常见的 hack 症状；②共享比冻结多掉 3.93 点（5/5 seed，精确单侧 p≈0.004），多出的来自裁判判别力被改写；③自标刷新恢复不了校准。"
+    }
+   },
+   "insight": "两种失败机制可以分开测：**capture**——判别力被改写，用固定探针集的 AUC 测；**staleness**——判别力还在，但与外部标准的相关随策略漂移衰减。stop-grad 只挡住了直接梯度，挡不住共享权重通过策略更新间接改写读出。",
+   "method": "- 底座：Scale-RAE（Qwen2.5-1.5B + 2.4B DiT）与 Show-o2-1.5B；KVPO TVE–Gibbs GRPO，G=12，2,000 步，5 个 seed，LoRA r16；prompt 取 COCO train 并去污染。\n- 2×2：语义裁判 / 去噪裁判 × 共享 / 冻结读出。\n- 修复：warm-up W=250 后锁读出（单独用能去掉 89% 的共享效应，但外部掉分仍 ≥3.2 倍容差）→ 再加稀疏外部锚、多噪声层 latent 自奖励、漂移触发控制器。KL 扫描替代不了（有同强度朴素对照）。",
+   "evidence": "- **冻结也被利用**：GenEval −7.6（判据阈值 4.0），DPG −3.0；去噪裁判几乎不掉（−0.3 / −0.2）。多样性：语义裁判 0.91 / 0.85，去噪裁判 0.60 / 0.56。\n- **共享更糟**：GenEval / DPG −9.4 / −3.9；5 个共享 seed 的掉分全部大于 5 个冻结 seed（p≈0.004，中位差 +3.93）；固定探针 AUC 冻结 0.812，共享降到 0.630。\n- **过时**：冻结裁判与外部评审的 Spearman 随漂移 0.76 → 0.18；自标刷新 5 轮的峰值 0.50 → 0.19。\n- **修复**（Tab.1，Scale-RAE，GenEval / DPG）：θ₀ 0.495 / 76.9；只锁终端 0.449 / 74.5；外部面板每步 0.515 / 77.8；强对照（每次 rollout 用 Qwen2.5-VL-7B）0.560 / 79.0；终端锚 1/16 0.544 / 78.3；密集固定 1/16 0.585 / 80.5；**控制器 1/16 0.602 / 81.3**（比强对照 +4.2 / +2.3，下界 +2.20 / +1.47）。Show-o2：0.730 / 85.0 → 控制器 0.792 / 86.5，强对照 0.768 / 85.9。",
+   "solidity": "- **reward 重叠**：外部锚（HPSv2 + PickScore + ImageReward）进训练；评测用 GenEval / DPG + 人评，不重叠。但 GenEval 同时被当作「是否被利用」的判据。\n- **人评**：3 名非专家（4 人中 1 人没过注意力检查被排除），100 个 prompt。θ₀ 对冻结版胜 0.679、对共享版 0.741；控制器对强对照 0.611 [0.517, 0.703]；画质无差别。失败标签：动作 / 姿态 41–44%、空间关系 33–36%、语境 29–31%。人评与面板一致率 0.759。\n- **样例**（作者挑的 Fig.2B，我看过）：共享版把「猫望向车窗外」变成猫脸特写、窗户没了；「穿红裙的女人在人行道上走」变成半身肖像，没有走路也没有人行道；「白色卡车停在砖楼前」变成面包车。漂移方向是「主体特写、丢掉关系和动作」，和人评失败标签一致——是构图偏置，不是常见的过饱和。\n- **方差**：5 个 seed。\n- **没有代码**；X 上查不到讨论（10-15）。",
+   "reward_check": {
+    "train_reward": "自奖励（统一模型理解读出）+ 1/16 外部面板 HPSv2 / PickScore / ImageReward",
+    "eval_reward": "GenEval、DPG-Bench、人评",
+    "overlap": {
+     "value": "partial",
+     "note": "GenEval 也被用作「被利用」判据阈值"
+    },
+    "heldout": "GenEval / DPG 与训练 reward 不同；人评 3 人 × 100 prompt",
+    "hacking_signs": "Fig.2B（3 个 prompt，作者挑选）可见主体特写化、丢动作与空间关系；未见过饱和"
+   },
+   "media": [
+    {
+     "src": "assets/2026-10-15/sv-fig2.webp",
+     "caption": "论文 Fig.2：A 自评分 vs 外部面板；B 样例（θ₀ / 冻结 / 共享）；C 固定探针 AUC；D 冻结裁判过时；E 自标刷新"
+    }
+   ],
+   "code_analysis": "论文没给代码链接，无法核对。",
+   "concerns": "- 无代码；底座小（1.5B 级），结论能否放大到 7B+ 统一模型未知。\n- 强对照（每次 rollout 用 7B VLM）的调参细节有限，赢它 +4.2 是否稳定没法核实。\n- GenEval 既是主评测又是判据阈值。\n- 单篇、单组；还没人在别的统一模型上复现「共享 vs 冻结」的分离。",
+   "principle": "裁判和被训练者共享参数时，stop-grad 不够：共享权重会通过策略更新间接改写裁判；冻结的裁判又会随策略分布漂移而失准，用自己生成的标签无法重新校准。可靠的自奖励需要「锁住的快照 + 少量参数不相交、标签独立的外部锚」，并分别监测判别力（固定探针 AUC）和校准（与外部评审的相关）。",
+   "takeaway": "- 我们在统一模型（理解 + 生成同一套权重）上做自奖励 RL 时：reward 读出锁快照；固定一组探针，每 N 步测 AUC（capture）和与外部 judge 的 Spearman（staleness）。\n- 给 1/16 的 rollout 用外部 judge 打分作锚，比每次都调外部大模型便宜，本文报告效果还更好（待复现）。\n- 别指望用自己生成的数据刷新裁判。"
+  }
+ ],
+ "brief": [
+  {
+   "title": "SaTPO（2610.19563，今日批次）",
+   "link": "https://arxiv.org/abs/2610.19563",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "§3–5 + 附录 B 读完。T2I 安全对齐：不安全 prompt 与安全改写在**同一父状态 + 同一噪声**上各走一步，做逐步 DPO，加漂移约束和良性回放。等价形式 = SPO（Liang 2025，同状态候选比较）的 prompt 对比版。SD1.5 / SDXL 上对 AlignGuard：I2P PV 检出 12.70 → 6.00 / 15.04 → 9.30，COCO FID 32.28 → 25.95 / 36.50 → 27.51（仍差于 base 24.55 / 25.32）。同预算对「独立双轨迹」（D3PO 式）：PV 12.40 → 9.80，IP 8.20 → 5.74，FID 26.50 vs 26.81。**reward 问题**：PerspectiveVision 既筛训练对又作评测（部分重叠）；Q16 / IP 未用于筛数据（可算留出）；单次运行；去掉良性回放 FID 25.95 → 69.19。重做，但「共享父状态」是跨篇收敛 1 的数据点。"
+  },
+  {
+   "title": "TextVerifier（2610.19551，今日批次，北大 + 阿里）",
+   "link": "https://arxiv.org/abs/2610.19551",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "§3–4 读完。中文字形渲染校验器（0.36B，IDS 结构编码的双塔），自建逐字基准 7,358 字上 F1 0.844（OCR 0.526、TextPecker 0.590）。「同字不同质量」难例对（来自 inpainting 模型训练轨迹）把 F1 从 0.805 提到 0.844。作 Flow-GRPO reward 训 Qwen-Image：Glyph-Acc 0.812 → 0.915，TextPecker 0.919。**reward 问题**：Glyph-Acc 就是用 TextVerifier 自己判的（训练 reward = 评测器，100% 重叠），和 TextPecker 的比较也由它当裁判；RL 后没有人评。了解即可（metrics.md 记一条：中文字形错误 OCR / VLM 看不见）。"
+  },
+  {
+   "title": "PhyMetric（2610.19823，今日批次）",
+   "link": "https://arxiv.org/abs/2610.19823",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "只读摘要。T2V 物理合理性评测：每个场景 8 个针对性是 / 否问题 + 结构化物理先验，VLM 裁判逐题回答。可记的一点：把针对性问题换成一个笼统的「是否合理」提问，评测器准确率掉到随机水平——和 IsoVRBench 同向：笼统打分测不出具体属性。进 metrics.md 观察，待读全文看人类一致性数字。"
+  },
+  {
+   "title": "BluePixel（2610.19882，今日批次，技术报告）",
+   "link": "https://arxiv.org/abs/2610.19882",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "只读摘要。原生 4K 图像编辑：渐进 VAE 适配 + 持续学习 + 用 RL 调美学–保真权衡，再蒸馏到 4 步；agent 用**训练时同一个 reward model** 校验结果并重试（训练与校验同源，P4 风险）。VINS-4KEval++ 七个模型中第二。技术报告、了解即可；4 步蒸馏部分（SATP）列给少步蒸馏同事。"
+  },
+  {
+   "title": "SyncReward（2610.16338，10-14 后半批）",
+   "link": "https://arxiv.org/abs/2610.16338",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "全文读完。80K 条专业同步评分（8 个生成器）训 1.6B 音视频同步 RM（PE-AV 初始化），1K 留出 bench 上 Spearman 79.7 / 70.5 / 68.1 / 82.1，高于同数据微调的 Qwen3-Omni-30B（69.5 / 68.6 / 64.7 / 77.2）。作 reward 训 LTX-2.3：BoN16 人偏好 63.67 vs SynthSync 52.57，DiffusionNFT 65.78 vs 53.71（作者自称「基于 base 对比的暂定估计」）。**reward 问题**：训练 reward = 评测的 SyncR.（重叠）；没报画质 / Dynamic Degree；有 prompt 忠实度代价（乐器被丢掉）；直接优化 AV-Align 自身指标 0.306 → 0.420 而人偏好低——独立印证 VA-Judger「单项 AV 指标 ≠ 人类偏好」。没与 VA-Judger 比。了解即可。"
+  },
+  {
+   "title": "FlowCred（2610.18142，10-14 后半批）",
+   "link": "https://arxiv.org/abs/2610.18142",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "§3–5 读完，无代码。联合 T2V 系统里按层级分 credit：同 seed 网格使 prompt credit 方差 −27%、生成器 advantage 方差 −31%（prompt 条件的留一法），但 T2V-CompBench 只 62.21 → 62.63；「功能协调」部分 +1.83（3 run，SD 约 0.3），人评 73.6% 非平局胜。受控对比降方差的一个数据点（见跨篇收敛 1），了解即可。"
+  },
+  {
+   "title": "VARI（2610.18189，10-14 后半批，与 FlowCred 同组）",
+   "link": "https://arxiv.org/abs/2610.18189",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "表格与消融读完。同一意图的多种措辞 × 同 seed 采样，结构化意图审计挑正负，再做 GCD 蒸馏 + Form-Contrastive Flow-DPO。等价形式 = 用审计器打标签的 Flow-DPO。T2V-CompBench 52.13 vs VideoDPO 49.60。增益主要来自审计器（负例人工精度 91/100 vs 只看分散度 58/100）；「同 seed 优先」只多 +0.11（51.17±0.13 vs 51.06±0.19），在噪声内——是跨篇收敛 1 的反面边界。重做。"
+  },
+  {
+   "title": "MaskSense（2610.17009，NeurIPS'26，10-14 后半批）",
+   "link": "https://arxiv.org/abs/2610.17009",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "全文读完。离散掩码生成模型（Meissonic）RL：在 k=6 个熵转折步上随机重遮盖 + 混合行为采样器，等价于 GRPO 截断优势加权的掩码 token 损失。GenEval 0.54 → 0.86（位置 0.10 → 0.86），MaskFocus 0.76（基线数字抄自 MaskFocus）。**reward 问题**：训练 reward = 评测（GenEval、HPS）；单次运行；没有「同等多样性的朴素调节」（提温度 / 随机解码顺序）对照 → 按 P3 判调参包装风险高。可记的一点：作者说「沿采样轨迹重遮盖会早期塌缩，随机重遮盖最好」（Fig.5c，只有文字），与 P10 方向相反，记为弱冲突。预测命中「缺朴素对照」，未命中增益幅度（预测 +2–4，实际对 MaskFocus +10）。"
+  },
+  {
+   "title": "D2G / Diagnose-to-Generate（2610.17882，10-14 后半批）",
+   "link": "https://arxiv.org/abs/2610.17882",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "全文读完。patch 级 Flow-GRPO（类 CAST 的空间 credit）+ TPSS 共享早期 ODE 前缀（类 MixGRPO）。结构保真 62.16 → 85.60，人评胜率 82.5%；去掉 TPSS 70.25；匹配 patch 位移 1.8 px vs >15 px。单次运行、增幅偏大。发布 Achilles-600K 数据（已列给开源数据同事，没看到换数据消融）。重做，但「共享前缀」消融是跨篇收敛 1 的数据点。"
+  },
+  {
+   "title": "One-shot AR TTS 说话人个性化（2610.17838）",
+   "link": "https://arxiv.org/abs/2610.17838",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "全文读完。AR TTS 上用说话人相似度作 reward 做 GRPO。SIM 0.647 / WER 3.0 vs zero-shot 0.574 / 3.7；NMOS 3.87 vs 3.83。**reward 问题**：训练 reward = 评测 SIM。重做。"
+  },
+  {
+   "title": "What Matters in Preference Post-Training of Continuous AR Speech LMs（2610.16276）",
+   "link": "https://arxiv.org/abs/2610.16276",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "部分读（§3–4 与表）。连续 AR 语音模型的 flow-matching DPO 经验研究：只换采样噪声、冻结 AR 历史重放时 DNSMOS OVRL −0.282，闭环续写时 +0.013（Tab.1）——偏好对要在模型实际闭环经过的状态上构造（与 P10 同向的弱旁证）；时间 t 固定 0.45 最好，U(0,1) 采样为负（Tab.3，CI 跨 0）。了解即可。"
+  },
+  {
+   "title": "摘要级处理（10-14 后半批其余相关）",
+   "line": "FlashVSR+（2610.17552，reward 加权 DMD，归少步蒸馏同事；放代码 / 模型 / 数据，列给开源数据同事）· SMD（2610.18472，纯少步蒸馏 → 少步蒸馏同事）· Risk-Averse Inference-Time Alignment（2610.17579，test-time 理论，无墙钟）· Fish Audio Drama 3（2610.18010，技术报告，单个 learned 人偏好 RM 做 RL，无可核对细节）· FDDA（2610.17466，解码器训练–生成错配，非 RL，P10 弱支持）· APT / RSIgen / DuplexBridge（2610.18097 / 18688 / 18819，agent 式或统一编辑，归 L8 观察）· MiMaAlign（2610.16482，表征对齐，非 RL）· 范围外：Flow-in-RL 综述（2610.16275）、dLLM 文本 RL（2610.17266）、LongForcing（2610.18289，世界模型 → 文献追踪同事）。"
+  },
+  {
+   "title": "召回补遗：10-15 当期后 248 篇（10-16 补筛，摘要级）",
+   "line": "10-15 run 只拿到当期 653 篇中的 404 篇（编号 2610.19778 之后当时未放出），10-16 按 G9 补拉并宽筛，56 篇关键词命中、全部读到标题和摘要。范围内：**RAP-Walk（2610.20089，视频 GRPO 的成对偏好图里普遍有循环，按可靠性加权的偏好游走聚合 advantage；文献追踪转来）→ 10-16 run 精读**（摘要称同评估器、同查询预算下胜 Pairwise-GRPO，有盲人评；与本期收敛 1/4 同属「比较信号怎么才可信」）· Weighted Adjoint Matching（2610.20035，格⑤，控制代价随时间加权，等价于时变 KL；只有高斯混合和 MNIST 实验，了解即可）· NIL-TTS（2610.20181，Lombard TTS 上 Flow-GRPO 优化可懂度，重做）· CommerceGen-Studio（2610.20603，电商主图生产系统技术报告，RL 细节不可核）。转同事：RepForcing（2610.20111）、Glance Forcing（2610.20220，称 PF-ODE 阶段主要拉直轨迹、分布匹配阶段决定分布质量）、MeanFlow 预测跨度（2610.20071）→ 少步蒸馏 / 世界模型训练追踪；PAWA（2610.20240）、OneLA（2610.20160）→ 文献追踪。范围外：RM-OPD（2610.20174，LLM 生成式 RM）及其余 LLM / agent / 医学类。"
+  }
+ ],
+ "trend_summary": "**本期认知变化**：①L7 新增两条已证实：视频 RM 帧顺序盲、偏好基准的生成器身份捷径（IsoVRBench + 我的 200 对复核）；②自奖励失败拆成 capture / staleness 两种可测机制（Self-Verifier Capture），CoRe「共演化 RM」需加「独立标签」限定；③新增原理候选 P11：可归因信号来自受控对比，共享程度是按组内方差占比调的旋钮（IsoVRBench、D2G、SaTPO 独立印证，Fork-NFT / VARI 给出边界）；④P5 多一条支持：RM 看得见 ≠ 生成器学得会。"
+}
