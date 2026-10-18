@@ -1,0 +1,147 @@
+{
+ "date": "2026-10-16",
+ "version": "v1",
+ "headline": "本期无必读：两条测量更值得记——成对 VLM 评判在视频 GRPO 中越训越分不清（近平局 52.6% → 67.3%），音画一致性自动指标与人 Spearman 全部 ≤ 0.23（AVC-Reward 我复算一致）。本期因 run 中断，延到 10-18 补发。",
+ "notice": {
+  "file": "2026-10-16/notice.md"
+ },
+ "overview": {
+  "file": "2026-10-16/overview.md"
+ },
+ "incident": {
+  "file": "2026-10-16/incident.md"
+ },
+ "papers": [
+  {
+   "id": "rap-walk",
+   "rating": "fyi",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "rating_reason": "只改了「成对比较 → advantage」的聚合器：在严格 BT 下，这个游走算出来的就是「BT 分数 + 胜率」（我手推并数值验证过），唯一的新信息是对「陷在循环里的样本」打折。可增益全部来自单次运行，7 个消融里有 5 个 TA 低于基线，也没有「打乱循环信息」的对照；样例离预训练的距离只有基线的一半，所以增益也可能只是因为「没跑那么远」。同主题的 TCR（2510.15514，LLM）已经在 GRPO 组内处理循环，而且带随机对照，本文没引用。",
+   "directions": [
+    "video-rl",
+    "online-rl",
+    "reward-model"
+   ],
+   "title": "When Pairwise Preferences Cycle: A Reliability-Anchored Preference Walk for Video GRPO",
+   "published": "arXiv 2026-10-14 (v1)",
+   "institutions": [
+    "University of Science and Technology of China",
+    "Huawei Noah's Ark Lab"
+   ],
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.20089",
+    "other": [
+     {
+      "label": "最接近前作 Pref-GRPO 2508.20751",
+      "url": "https://arxiv.org/abs/2508.20751"
+     },
+     {
+      "label": "未引用的同题 LLM 工作 TCR 2510.15514",
+      "url": "https://arxiv.org/abs/2510.15514"
+     }
+    ]
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "partial",
+    "code": "unavailable",
+    "note": "全文 9 页（没有附录）全读；Pref-GRPO 读了 §IV-B/C 和 Tab. III–IV；TCR 读了摘要、§3、Tab. 1/3/4；Rank Centrality / HodgeRank 只按经典定义用，没重读。样例只有论文 Fig. 3 的 8 个 prompt × 每条 4 帧（我自己做了帧差和到预训练的距离）；没有项目页，没有代码（GitHub 检索无结果）；X 按 arXiv 号精确搜，0 条。"
+   },
+   "tldr": "Wan2.1-1.3B + Qwen3-VL-235B 成对评判的视频 GRPO：把「组内平均胜率」advantage 换成「胜率 + 带循环惩罚的偏好游走」后，VideoReward 画质 2.130→2.397，盲评画质 64.6% 胜、33.4% 负；但 Dynamic Degree 只从 28.6 到 29.8（预训练 50.0），而且全是单次运行。我的玩具实验里，它的 advantage 和胜率 advantage 相关 0.93–0.999；「循环普遍且越来越多」用完全可排序的质量 + 近平局噪声就能复现。",
+   "delta": "相对 Pref-GRPO 只换了聚合器（胜率 → 胜率锚定 + Rank-Centrality 式游走 + 对循环节点打折）。相对 TCR（LLM GRPO，把循环当噪声剔除）没引用、也没对比。",
+   "lineage": {
+    "equivalent_form": "令 A = 组内标准化的平均胜率，L_j = 节点 j 周围三角形 log-odds 环流的组内标准化值，h_ij = (c_ij+ε)^{1/4}（c 为边清晰度）。转移概率 T_ij ∝ W_ji·e^{A_j−L_j}·h_ij。**在严格 BT（W_ij=σ(u_i−u_j)）下 L≡0**，细致平衡给出精确稳态 **π_i ∝ e^{A_i+u_i}·D_i**（D_i 为第 i 行归一化常数；我手推，数值验证误差 5.6e-17，toy/toy2.py Q4）。所以图修正 g = G·softmax(a·[A + u_BT − L + log D]) − 1，最终 **Ã = standardize((1−α)A + α·g)**，α = clip(平均清晰度, α−, α+)。用一句话说：**胜率 advantage + 一小份指数锐化的「胜率 + BT 分」奖励，再给陷在循环里的样本扣分**。超出 BT 的信息只有 −L_j 这一项。〔推断 + 实测核对；Codex 盲推独立得到同一形式〕",
+    "baseline": "lineage 里 L4 没有成对评判子线的最强基线。事实上的对照组是 Pref-GRPO（2508.20751）的胜率 advantage，本文在同评判器、同组大小（G=12）、同查询数、同步数（200）下自己复现了它（用软概率 + 双向查询，不是官方代码）。只比了 BT、Rank Centrality 这两种「整体替换」式聚合器；HodgeRank、TCR（最大无环子图）、「随机打破循环」都没比。",
+    "rows": [
+     {
+      "work": "Pref-GRPO（Wang 等 2025，2508.20751）",
+      "link": "https://arxiv.org/abs/2508.20751",
+      "how": "成对 RM 判每一对的胜负，用硬 0/1 指示算组内胜率，标准化后当 GRPO advantage（Eq. 12–13）。主张是逐点打分在组内太挤，标准化后会放大噪声（illusory advantage）。FLUX.1-dev 上 UnifiedReward 3.14→3.26（Tab. III）",
+      "change": "胜率保留为锚点，再混入一份图游走修正 g，权重 α 跟着组内清晰度变；W 用软概率，双向查询取平均"
+     },
+     {
+      "work": "Rank Centrality（Negahban 等 2012）/ BT",
+      "link": "https://arxiv.org/abs/1209.1688",
+      "how": "在比较图上走「败者→胜者」的随机游走，用稳态分布排序；BTL 下它会恢复真实分数",
+      "change": "转移概率乘上 e^{A_j}（胜率先验）、e^{−L_j}（循环惩罚）、c^{1/4}（清晰度），加熵下限做温度校准；不直接替换，只当修正量。表 2 里 Rank Centrality 和 BT 都是直接替换胜率，不是同 α 的修正，所以对照不对等"
+     },
+     {
+      "work": "TCR / Voting with the Graph（Alibaba，2510.15514，LLM）",
+      "link": "https://arxiv.org/abs/2510.15514",
+      "how": "在 GRPO 组内建偏好图，认为循环是 judge 的随机误差，用近似最大无环子图删掉循环边，再用净出度当 reward。Qwen3-14B Arena-Hard：胜率 51.6 / HodgeRank 52.5 / TCR 52.9±1.1；RandomResolve 51.6（Tab. 1/3）",
+      "change": "本文说「循环是信号，不是错误」，可 e^{−L_j} 实际上也是在给循环区域降权，等于软化版的 TCR。**本文没有引用 TCR**，也没有 TCR 那种随机打破循环的对照"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "读过 Pref-GRPO、Rank Centrality 和 TCR 的人，能预测到「换聚合器的增益很小」：TCR 在 LLM 上只比胜率高 1.3，误差 ±1.1，HodgeRank 高 0.9。本文报的增幅更大（VideoReward VQ +0.27，盲评画质 31 个百分点的净胜率），这一点预测不到。但从 Fig. 3 看，基线样本离预训练很远、饱和度也掉了（下面④），更合理的解释是基线在单次运行里跑偏了，而不是图结构信息起了作用。「循环普遍」这个发现，只要知道「G=12 的完全图在零阈值下几乎必然有环」就能预测到（我的玩具实验：76→97%）。"
+    }
+   },
+   "insight": "**这一处改动到底改了什么**：GRPO 只需要每条样本一个标量。胜率只看「赢了几场」；游走还看「赢了谁」，等价于在胜率上叠一个 BT 分（推导见上）。真正超出标量排序的只有 L_j：卷进不一致三角形越多的样本，advantage 扣得越多。所以本文的「把循环当信号」，落到公式里其实是「把循环当不可靠，给它降权」，和 TCR 的「把循环当噪声删掉」是同一方向的软版本。",
+   "method": "操作流程：Wan 视频模型每个 prompt 采 G=12 条（41 帧，30 步，CFG 3）→ 冻结的 Qwen3-VL-30B 或 235B 每条视频均匀抽 10 帧，对 66 对视频各按两种顺序问一次，软概率取平均得到 W → 算 A（胜率 z 分数）、c_ij = 1 − H_b(W_ij)/log2、L_i = 包含 i 的所有三角形 |l_ij+l_jk+l_ki| 的均值（组内标准化）→ T_ij ∝ W_ji·e^{A_j}·e^{−L_j}·(c_ij+ε)^{1/4} → 幂迭代求 π → 取满足 H_norm(q)≥ξ 的最大指数 a，令 q ∝ π^a → g = Gq − 1 → α = clip(平均清晰度, α−, α+) → Ã = (1−α)A + αg，再做一次标准化 → 标准 GRPO 更新（LoRA，lr 3e-4，200 步）。**α−、α+、ξ、ε 正文都没给数值**，也没有附录。",
+   "evidence": "**机制是否起作用（原文 Tab. 4，Wan2.1-1.3B、235B 评判器，均为单次运行）**\n\n| 变体 | Dyn | VQ | MQ | TA |\n|---|---|---|---|---|\n| 预训练 | 50.00 | 1.988 | 0.552 | 0.530 |\n| 胜率 Pairwise-GRPO | 28.60 | 2.130 | 0.289 | 1.173 |\n| 去胜率先验 | 21.20 | 2.283 | 0.633 | 1.109 |\n| 去清晰度 | 30.80 | 2.203 | 0.624 | 1.128 |\n| 去循环惩罚 | 20.60 | 2.342 | 0.561 | 1.084 |\n| 只用 g | 17.20 | 2.135 | 0.518 | 0.995 |\n| α 固定为均值 | 33.20 | 2.045 | 0.350 | 1.054 |\n| α 下限设 0 | 28.60 | 2.186 | 0.471 | 1.196 |\n| 去熵下限 | 34.40 | 2.144 | 0.325 | 1.263 |\n| **完整 RAP-Walk** | 29.80 | 2.397 | 0.655 | 1.238 |\n\n- 这几个变体之间只差很小的 advantage 扰动，Dyn 却在 17.2–34.4 之间跳动，范围 17 分。**7 个消融里有 5 个 TA 低于胜率基线**：去掉任何一个部件，TA 都比完全不用这个方法还差。完整方法的 Dyn 相对基线只多 +1.2，TA 只多 +0.065，都落在这个跳动范围内；VQ 是唯一一项完整方法明显排第一的。〔原文核对；「噪声范围」是推断〕\n- 「α 固定为均值」算是一个等强度的朴素对照，但它只检验 α 要不要随组自适应。**没有检验循环信息本身**：没有打乱 L、没有 graph-free 的 softmax(τA) 锐化、没有 HodgeRank/TCR、没有随机打破循环，也没测「训练后循环比例或到 base 的距离是否改变」。Tab. 1 的循环统计只来自胜率基线的训练过程。〔原文核对〕\n- 「固定 W，开关循环惩罚，L 最低三分之一 +0.616、最高三分之一 −0.544」：在我的玩具里，L 是纯噪声（效用完全可排序），开关它同样让 g 移动 ±0.68–0.72，和原文同一量级。所以这个数字只说明这个旋钮能动 advantage，说明不了 L 带信息。按 α 缩放后，最终 Ã 只移动 ±0.05–0.36。〔实测 toy2.py Q3；「原文这个数字是 g 上的」属推断〕\n\n**数字来源**：所有行都是作者自己跑的单次运行，没有种子数、没有误差条。胜率基线是自己复现的（软概率 + 双向查询，不是 Pref-GRPO 官方实现）。4 个设置（1.3B×2 个评判器、14B、5B）里，VQ/MQ/TA 全部为正（每项 4/4，单项符号检验 p=0.0625），这是增益方向一致的最好证据。但**基线本身在多处低于预训练**：MQ 0.299/0.289 对预训练 0.552（1.3B），5B 上 VQ 2.006 对 2.164、MQ 0.367 对 0.445。逐点 GRPO 在 VideoReward MQ 上反而胜过 RAP-Walk（0.732/0.759 对 0.593/0.655；14B 上 1.051 对 0.897）。\n\n**人评（Tab. 5）**：10 人 × 50 对，盲评，顺序随机。对胜率基线：画质胜 64.6% / 负 33.4%，运动胜 49.6% / 负 36.2%（平 14.2%），文本对齐胜 53.4% / 负 27.8%。如果把 50 个 prompt 当独立单位，每个 prompt 一条视频，净胜率的标准误约 12–13 个百分点：画质约 2.3 倍 SE，对齐约 2.1 倍，**运动只有约 1.0 倍，不显著**（推断，未报评审一致性）。没写人评用的是哪个骨干、哪个评判器的 checkpoint。",
+   "reward_check": {
+    "train_reward": "冻结的 Qwen3-VL-30B / 235B 成对评判（每条视频抽 10 帧，双向查询取平均）",
+    "eval_reward": "VBench 6 维（含 Dynamic Degree）+ VideoReward VQ/MQ/TA + 10 人盲评",
+    "overlap": {
+     "value": "no",
+     "note": "训练评判器没有直接拿来评测。但 VideoReward（VideoAlign）同样建在 Qwen2-VL 上，家族相近；而且 metrics.md 记录它和人的 PLCC 只有 0.33–0.38"
+    },
+    "heldout": "VBench 和人评都算留出。人评 50 个 prompt、每个 prompt 一条视频，没报评审一致性，也没写用的是哪个 checkpoint",
+    "hacking_signs": "运动被压制：所有成对和逐点 GRPO 在 1.3B 上 DD 都远低于预训练的 50（胜率 10.0/28.6，RAP-Walk 27.6/29.8，逐点 23.8/6.0）；只有 Rank Centrality 61–63 高于 base，但它 VideoReward MQ 只有 0.14–0.17。Fig. 3 的 8 个 prompt 里，胜率基线的样本饱和度从 105 掉到 63（HSV-S 均值），构图明显换了；RAP-Walk 99.8，接近预训练",
+    "note": "按 metrics.md：VideoReward 不能单独当证据，DD 必须对照 base 报。本文对照的是「基线」，不是 base。和收敛 4 一致：VideoReward 说逐点 GRPO 运动更好（MQ 0.732 对 0.593），人评却 59.0% 对 26.4% 偏向 RAP-Walk。"
+   },
+   "solidity": "- **样例实测（Fig. 3，论文 PDF 内嵌 389×224 JPEG，8 个 prompt × 每条 4 帧，作者挑选）**：相邻帧平均绝对差（灰度 0–255）预训练 10.6 / 胜率基线 14.4 / RAP-Walk 12.0；RAP-Walk 只在 2/8 个 prompt 上高于基线，帧数太少，分不清运动和闪烁。**到预训练同帧的距离**（64×37 下采样后的平均像素差，论文称初始噪声相同）：基线 57.9，RAP-Walk 30.5，**8/8 个 prompt 都是 RAP-Walk 离预训练更近**；饱和度 105.4 / 63.1 / 99.8，对比度 57.2 / 39.2 / 55.1。〔实测，fig3_motion.txt〕结论：在作者自己挑的样例里，基线跑偏得多（褪色、换构图），RAP-Walk 更像预训练。论文没报到 base 的距离、KL 或 reward 曲线，所以分不出「方向更好」还是「有效步长更小」（P3 风险）。\n- **我的玩具实验（toy/，纯 numpy，超参 α±、ξ 未知，做了扫描）**：①效用完全可排序 + 评判器在部分对上给近平局，零阈值下「组里有环」的比例随近平局占比上升，从 76% 到 97%，三角形环密度 1–4%，和原文 Tab. 1 的 79.7→89.0%、约 5% 同一量级。但原文 m=0.05 时的环率是 18–25%，我的玩具只有 3–6%，所以原文的图里确实比纯噪声多一些「明确的环」。②在所有噪声模型（含 3 准则多数表决造成的真循环）下，Ã 和 A 的相关是 0.93–0.999；恢复潜在效用的 Spearman，RAP-Walk 和胜率、BT 相差不超过 ±0.015，打乱 L 也没有影响。〔实测，toy/results.txt、results2.txt〕\n- **代码**：没有公开（GitHub 检索 \"RAP-Walk\" 和 \"Reliability-Anchored Preference Walk\" 只搜到论文列表类仓库），跑不了，无法核对 advantage 实现，也无法核对 α±、ξ。\n- **种子/方差**：没报。**多样性**：没报同 prompt 多样性，只有 DD。**表格疑点**：Tab. 3 中 Wan2.1-14B 预训练的 Smooth 95.92 和 Back 完全相同，而其他模型 Smooth 都在 98.5–99.5，疑为抄写错误。",
+   "concerns": "1. **增益可能来自「没跑那么远」**：基线 MQ 低于预训练，DD 被压到 10；Fig. 3 里基线离预训练的距离是 RAP-Walk 的约 1.9 倍。缺到 base 的距离、KL、reward 曲线，也缺「胜率 + 更小 lr/更强 KL」的等距离对照。\n2. **没有打乱结构的对照**：L 打乱、softmax(τA) 锐化、HodgeRank、TCR、RandomResolve 都没比；BT 和 Rank Centrality 是整体替换，不是同 α 的修正。\n3. **单次运行**：消融之间的跳动（Dyn 范围 17 分，5/7 个消融 TA 低于基线）已经大于主结论里 Dyn 和 TA 的增幅。\n4. **「循环是有意义的多维权衡」没有证据**：没测重复查询的一致性，没按维度分开问，也没把近平局和明确的环分开分析。零阈值下的「普遍」主要来自近平局，m=0.05 时环率反而随训练从 24.8% 降到 18–19%。\n5. **超参没给**（α−、α+、ξ、ε），也没有代码，无法复现。\n6. **平均分可能盖住什么**：没有按 prompt 类别、运动强度分层，看不出 RAP-Walk 是不是只在静态场景上赢。\n7. **漏引 TCR**（同样是 GRPO 组内偏好循环，2025-10 首版）。",
+   "principle": "**把成对比较聚合成 GRPO advantage 时，只要评判器本质上是「可排序的质量 + 噪声」，胜率、BT 和随机游走算出的 advantage 几乎一样（玩具里相关 0.93–0.999；TCR 的 LLM 实验里各种聚合器的差距也在 ±1 分噪声内）。信号质量真正取决于评判器在近平局上的分辨率，而这个分辨率会随训练下降：本文实测清晰度 0.261→0.132，近平局占比 52.6%→67.3%。** 所以「改聚合器」类工作必须配两个对照：一个是把它利用的结构打乱、保持同强度的对照；另一个是到 base 的距离匹配。〔玩具实测 + TCR Tab. 3 + 本文 Tab. 1，原文核对〕",
+   "takeaway": "**对 Henry 的启发**：这篇的价值不在方法，而在一个测量：成对 VLM 评判在 on-policy 视频组里，随训练越来越分不出好坏，近平局占比到了三分之二。这意味着成对 GRPO 后期大部分梯度在拟合评判器的抛硬币，和「组内同分无信号」（格②的共同失败）是同一件事，只是换成了成对的形式。\n\n**何时值得用**：先别上图聚合。先测两件事：同一对视频重复问两次的一致率，以及每组的近平局占比。近平局少的时候，胜率就够了；近平局多的时候，该做的是换或刷新评判器、增大组内差异（例如受控对比、按分叉步采样，见 P11），而不是换聚合器。\n\n**对我们训练的含义**：\n- 世界模型 AR / 双向视频：如果用 VLM 成对评判做 GRPO，每步记录每组的平均清晰度和近平局占比；超过 60% 就当作信号枯竭的报警线。DD 一定要对照 base 报，成对 reward 同样压运动（本文所有 GRPO 变体 DD 都比 base 低约 20 分）。\n- DMD / 少步：没有直接含义。\n- 音视频：联合 AV 的评判器更弱（VA-Judger 测得 50–57%），近平局只会更多，结论同上，而且更迫切。\n\n格位：②黑盒 reward 策略梯度 × B（VLM 评判）。按这一格，它应该出在「组内信号消失」上，本文 Tab. 1 正好印证。",
+   "context": "盲审对照：Codex 只看摘要 + 方法，独立列出的最接近工作是 Pref-GRPO、Rank Centrality、HodgeRank，等价形式和我的推导一致（BT 下稳态 ∝ e^{A+u}·D）。它的预测是「可能有增益，但更可能来自非线性重加权和降噪；关键对照是同强度的 softmax(τA) 和打乱 L」。TCR 是我用网页检索补到的，Codex 没列。",
+   "details": "**读了哪些**：RAP-Walk 全文（摘要、引言、相关工作、§Preliminaries、§RAP-Walk、§Experiments、Tab. 1–5、Fig. 1–3；无附录）。Pref-GRPO 2508.20751 §IV-B（illusory advantage）、§IV-C（Eq. 12–13）、Tab. III–IV。TCR 2510.15514 摘要、§3.1–3.2、Tab. 1/3/4、App. A 开头。\n\n**原文核对的关键数字**：Tab. 1 m=0 时环率 79.7/87.6/89.0%，m=0.05 时 24.8/18.0/19.3%，清晰度 0.261/0.162/0.132，近平局 52.6/67.6/67.3%，三角形环密度 4.66/5.30/5.22%。Tab. 2：30B 评判器 Dyn 10.00→27.60、VQ 2.126→2.325；235B 评判器 Dyn 28.60→29.80、VQ 2.130→2.397、TA 1.173→1.238。Tab. 3：14B Dyn 36.4→46.4（预训练 47.2），5B Dyn 38.0→43.0（预训练 40.6）。「8/9 指标提升」我逐格核过，属实。\n\n**产物**：toy/toy.py、toy2.py、results*.txt；fig3_motion.txt；codex/codex_blind.txt。"
+  }
+ ],
+ "fyi_open": true,
+ "brief": [
+  {
+   "title": "AVC-Reward（2610.22321，事件级音画一致性 RM + 706 条人评 bench）",
+   "link": "https://arxiv.org/abs/2610.22321",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "§3–5、Tab.2–4、App.F 读完；**代码 / RM / LTX-2 LoRA / bench 已放**（github.com/Tsuki0512/AVC-Reward，HF Tsuki0512），我用官方 `benchmark_eval.py` + CSV 重算 Tab.2，逐项一致（实测）。**测量**：706 条、每条 3 人按 39 个标签打分；13 个现有指标与人 Spearman 全部 ≤ 0.23（DeSync 0.06、JavisScore 0.15、ImageBind 0.15、Gemini-3.1-Pro 0.12），AVC-Reward 0.244，三人互评上限 0.497；Δ>0.2 成对准确率 0.728 vs 最好的现有指标 AV-Align 0.674。RM 本身相对 AGAV-Rater 的 Spearman 只多 0.018；GRPO 校准主要提升 PLCC（0.295 → 0.493），Spearman 不变（0.244 = SFT only）。**RL 部分（③×D）**：OmniNFT（LTX-2）把 DeSync reward 换成它，相对 LTX-2 底座外部 AV 指标 +19–59%（OmniNFT 原版 +1–34%）；100 prompt × 3 人盲评对原版 OmniNFT 胜 57.7–73.1%（Jaccard 一致性 42–44%）。**reward 问题**：AVC-Score 既训又评；外部指标本身与人 ρ ≤ 0.23，不能当证据；文本对齐 IB-TV / CLIP 三个基准都降；没报运动幅度；单次运行；没和 VA-Judger、SyncReward 同集比较。评级：测量部分可信（我复算过），但与 VA-Judger 结论同向、可预测 → 了解即可；作为收敛 4 的第 4 个独立来源。"
+  },
+  {
+   "title": "NPO：Noise-Space Reward Alignment for Few-Step Generative Models（2610.21125）",
+   "link": "https://arxiv.org/abs/2610.21125",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "§1–5 + 附录 C/D/G 读完。生成器冻结，另训一个流策略把高斯噪声搬到「按 reward 倾斜」的噪声分布（确定性生成器下 g#q* = p*）；更新用 ELBO 似然 + 组内优势 + 对参考场的平方正则。**等价形式** = AWM / ELBO 式 PG（Choi 2026）搬到初始噪声空间；噪声空间倾斜本身来自 ODS（Venkatraman 2025）、Noise Hypernetworks（Eyring 2026）——组合，可预测。SD-Turbo 1 步 aesthetic 6.12 → 6.52，推理 2.6× base（BoN-32 6.56 / 44×，ReNO 6.52 / 43×）；4 步 Flow-GRPO reward 更高但 ImageReward、LPIPS 多样性大降，NPO 多样性不低于 base；5 个种子。**reward 问题**：训练 reward 只有 LAION aesthetic 和 JPEG 压缩率（已知可 hack），ImageReward 作留出；无人评、无视频；没和少步 RL 最强基线（DiffusionOPSD / reward 蒸馏）正面比。**对我们**：DMD 学生直接 RL 塌缩时的不动权重备选；上限受生成器支撑限制（P5）。已在少步同事记录里。"
+  },
+  {
+   "title": "RPO：Routing Policy Optimization（2610.22282）",
+   "link": "https://arxiv.org/abs/2610.22282",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "§3–5 读完。探索不再往采样轨迹加噪，而是在少数几个去噪步按模型自己的注意力质量随机屏蔽 key 块；用「以 dense 速度为中心的 Gaussian 似然」做 PG，每组 2 条 rollout 共享 prompt / 初始噪声 / 锚层、只差屏蔽（受控对比，P11 方向）；推理去掉屏蔽、原 ODE 采样器。**等价形式** = Flow-GRPO 的 Gaussian 似然 PG，扰动来源换成结构化的注意力屏蔽。SD3.5-M：dense 验证 HPSv3 50 步 +5.97 vs Flow-GRPO +4.86（**单种子**）；Wan2.2-5B VBench 81.61 → 82.00（4 个模型跨度只 0.81，作者自称只看方向），24.1 vs 75.4 GPU-h（算力未对齐）。**reward 问题**：HPSv3 训练，评测用其它 RM（留出）；无人评；表 1 只列 RPO 胜出的 8 维，**没报 RPO 的 Dynamic Degree**（正文说 Flow-GRPO DD +12.5）；没做「配对 vs 不配对」消融。了解即可。"
+  },
+  {
+   "title": "Multi-Reward Hacking（2610.21404，LLM；只看机制）",
+   "link": "https://arxiv.org/abs/2610.21404",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "摘要 + 主结果。对称加和「主 reward + 辅助 reward」时，确定性条件均值 GRPO 会收敛到「辅助 reward 更容易拿到」的行为，即使每个 reward 单独都有意义（一步决策模型下证明）；Trust-Anchored Gating 先选锚定通道、只在锚定满足时给辅助 credit。Qwen3-4B + 简洁 reward：pass@4 0.581 vs 加和 0.220。纯 LLM，末尾一行；**对我们**：音画同步 + 画质 + 运动的组合 reward 要先检查「哪个通道最容易拿分」，并做单通道漂移对照。"
+  },
+  {
+   "title": "转少步蒸馏同事（待少步定级）",
+   "line": "**Speculative Forcing（2610.22347）**：少步 AR 视频里把中间步的干净估计当草稿，按 token 判断能否提前接受、冻结（无训练 / 学习式两种 verifier），短视频、长视频、世界生成上保持全步质量、减少计算——推理减步，不归 RL。10-16 09:41 已抓到但没转，见复盘。· **FocusOPD（2610.21250）**：多教师 on-policy 蒸馏加深层 / 早期步的特征对齐，GenEval 0.953 → 0.967（对 DiffusionOPD）。· 其余少步关键词命中见周报转发单。"
+  },
+  {
+   "title": "摘要级：评测 / verifier / 多样性（了解即可或落选）",
+   "line": "OmniVerifier-C1（2610.22355，规则型世界建模的分解式打分 verifier，用 RL 训 verifier；观察）· Grounding Generative Verification in 3D（2610.22360，3D 内容事实校验 bench；人工 16 选 1 把完整事实成功率 26.7% → 90.0%，说明「选得准」比「生成得准」更缺；观察）· AVC 之外的评测：VGCap（2610.21758，AIGV 质量评测）、Orbia（2610.20693，生成视频 3D 一致性评测）· 多样性：DetNO（2610.22267，初始噪声上最大化 Tweedie 预测的 log-det，test-time）、MSR（2610.21185，从语料挖属性分布再采样渲染）· SCOPE（2610.22264，T2I prompt 改写 RL，重做）· CleanRM（2610.21138，少量干净标注去噪 RM，LLM）· RL-driven Diffusion 综述（2610.21539）· Temporal Specification Guidance（2610.20822，T2V 时序约束 guidance，非 RL）。"
+  },
+  {
+   "title": "落选（范围外）",
+   "line": "LLM / VLM 的 on-policy 蒸馏与 RL（Waypoint-OPD、Rollout 截断 OPD、Condition-Contrastive OPD、Teacher Selection、OPRD、SCOPED、MMSearch-OPD、Training-Free OPD、Hy-Memory 等）、dLLM（On-Policy Residual、TIPS、SIRS）、机器人 / 规划（GRID-Planner、VeriVLA、Multi-Teacher OPD for VLA、Dexterity from Supervised Play）、表征对齐（Purify Before You Align、MIDI-REPA、Semantic Latent Alignment）、Rethinking CFG for TI2I（非 RL，与 GuidanceNFT 的 CFG 话题相邻，观察）。"
+  }
+ ],
+ "trend_summary": "**本期认知变化**：①收敛 4 加第 4 个独立来源（AVC-Reward，AV 一致性，706 条人评，我复算）；②新观察「评判信号随训练衰减」（RAP-Walk 近平局上升 + Self-Verifier staleness），只有 2 个来源，观察；③L1/L2：RPO 把探索换成结构化扰动、NPO 把对齐搬到初始噪声，都属「改更新从哪来」的重做或证据不足，最强基线不变；④多 reward 聚合会偏向最容易拿分的通道（LLM，机制可迁移到我们的组合 reward）。"
+}

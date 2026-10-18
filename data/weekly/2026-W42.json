@@ -1,0 +1,57 @@
+{
+ "week": "2026-W42",
+ "title": "本周学到的是「信号何时可信」：NFT 参考须匹配采样器（P10）、受控对比才可归因（P11）、笼统自动分数测不出具体属性（收敛 4，音画一致性新增独立来源）；本周 4 起召回 / 交付事故",
+ "summary": {
+  "file": "weekly/2026-W42-summary.md"
+ },
+ "range": [
+  "2026-10-12",
+  "2026-10-16"
+ ],
+ "highlights": [
+  {
+   "date": "2026-10-15",
+   "paper_id": "isovrbench",
+   "title": "IsoVRBench: Video Reward Modeling Without Human Feedback",
+   "note": "必读。视频 RM 对帧顺序近乎看不见（最佳 60.8%），偏好基准 74–78% 可由生成器身份预测 → P11 / 收敛 4 主来源"
+  },
+  {
+   "date": "2026-10-15",
+   "paper_id": "self-verifier-capture",
+   "title": "Self-Verifier Capture in Unified Visual Generators: Diagnosing and Repairing Closed-Loop Self-Rewarding",
+   "note": "自奖励失败拆成 capture（AUC 0.812→0.630）和 staleness（Spearman 0.76→0.18）"
+  },
+  {
+   "date": "2026-10-16",
+   "paper_id": "rap-walk",
+   "title": "When Pairwise Preferences Cycle: A Reliability-Anchored Preference Walk for Video GRPO",
+   "note": "了解即可（方法重做），但测到成对 VLM 评判越训越分不清：近平局 52.6% → 67.3% → 「评判信号衰减」观察"
+  },
+  {
+   "date": "2026-10-16",
+   "paper_id": "",
+   "title": "AVC-Reward（2610.22321，本期速览）",
+   "note": "706 条人评 bench：13 个现有音画一致性指标与人 ρ ≤ 0.23；我用官方脚本复算一致 → 收敛 4 第 4 个独立来源"
+  },
+  {
+   "date": "2026-10-14",
+   "paper_id": "guidancenft",
+   "title": "GuidanceNFT: NFT-Based Reward Fine-Tuning of Guided Diffusion Models",
+   "note": "P10 主来源：参考取错多出的项是 reward 更新的约 2.4 倍；代码 10-16 已公开"
+  },
+  {
+   "date": "2026-10-14",
+   "paper_id": "fork-nft",
+   "title": "Fork-NFT（ICLR'27 匿名投稿，OpenReview WGavcJGfuS；文献追踪转来）",
+   "note": "P10 / P11：端点重加噪 0.162 < 不训 0.186；晚分叉组内方差只占 1.9%"
+  },
+  {
+   "date": "2026-10-14",
+   "paper_id": "diffusionart",
+   "title": "DiffusionART: Efficient, Stable and Scalable Reinforcement of Diffusion Models（10-13 已读，本期作为跨篇收敛来源重列）",
+   "note": "P10 理论来源：F_NFT = 2g + (2q−1)e"
+  }
+ ],
+ "threads": "**更新方向 × reward 来源，本周各线走向**\n\n- **L3 NFT/前向回归**：问题从「怎么回归」转到「回归的参考和训练状态从哪来」。GuidanceNFT（CFG）、Fork-NFT（AR 音视频）、DiffusionART（理论）三篇独立指向 P10。Astrolabe 补读给出边界：4 步 AR 上端点重加噪没跌破基座，但要先去掉自适应权重。\n- **L4/L5 credit 与偏好对**：D2G（共享早期前缀）、SaTPO（共享父状态）、IsoVRBench（同生成器干预对）指向 P11（受控对比）。FlowCred/VARI 的同 seed 增益在噪声内，所以共享程度是旋钮，不是越多越好。\n- **L7 RM/评测**：视频 RM 对帧顺序近乎看不见；偏好基准能被生成器身份预测（成对基准 74–78%，单条打分 bench 只有 17%）；AV 单项指标与人一致只有 50–57%；VLM 物理裁判与人相关 ≤0.29。结论：上 RL 前先测 RM，测针对具体属性的受控对。\n- **L6 自奖励**：Self-Verifier 把失败拆成 capture 和 staleness，修复要靠锁快照 + 外部锚。\n- **L8 视频一致性**：单一画质/几何 reward 会压运动，或被「降低任务难度」绕过（Astrolabe VQ-only、Golden Anchor、GraftOOD、GeoFix、SpatialCritic）。\n- **召回**：本周 4 起（CDN 缓存、API 部分索引、10-15 晚到 248 篇 + 中断、10-16 中断 + Speculative Forcing 未转发）；新发现审核延迟的论文不在 submittedDate 窗口内（提议 G10）。\n\n- **10-16 当期**：RAP-Walk（成对 GRPO 聚合器，重做；评判近平局随训练上升）、AVC-Reward（AV 一致性测量）、NPO（少步模型在初始噪声上对齐）、RPO（注意力屏蔽当探索），均为了解即可。",
+ "watchlist": "- GuidanceNFT 官方代码（Teresa-l23/GuidanceNFT）：CPU toy 错配臂已复现（183.8 → 8.4），参考正确的对照臂待补跑；SD3.5 部分需 GPU\n- Fork-NFT 代码（OpenReview 匿名，仍未放出）\n- SyncReward 评测脚本（需 GPU + 213 GB 视频）；SyncReward-Data 已做标签质量核查\n- 待 Henry 确认：G9（完整性护栏）、G10（审核延迟论文并入筛选集合）、G6 判前检查\n- 对照实验候选：IsoVRBench Shuffle/Hold 测我们的视频 RM；AR 视频 GRPO 按分叉步分解组内方差\n- 11-01 美国夏令时结束，arXiv 公告移到北京 09:00，routine 改约 09:13\n- AVC-Reward / SyncReward / VA-Judger 同一人评集对比（AVC-Benchmark CSV 已在本地，可复算）\n- 少步转发单：10-14 ~ 10-16 的 Forcing / 少步 / DMD / 蒸馏 / 推理减步条目（待发给少步蒸馏同事）\n- 运行韧性：下周一 run 起按 scope.md 检查点规则执行（35 分钟内先发最小一期）"
+}
