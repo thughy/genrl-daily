@@ -1,0 +1,12 @@
+{
+ "date": "2026-10-19",
+ "version": "v0-初步",
+ "headline": "初步（召回未完成）：arXiv 本期还在陆续放出，截至 08:33 约 500 个编号里暂无必读；在范围内的候选只有 ProactGen（用 RL 训练给视频生成「先提问再生成」的 VLM），待精读。完整一期稍后补发。",
+ "notice": {
+  "file": "2026-10-19/notice.md"
+ },
+ "overview": {
+  "file": "2026-10-19/overview.md"
+ },
+ "papers": []
+}
