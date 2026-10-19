@@ -106,8 +106,8 @@
    "title": "AVC-Reward（2610.22321，事件级音画一致性 RM + 706 条人评 bench）",
    "link": "https://arxiv.org/abs/2610.22321",
    "originality": "finding",
-   "credibility": "doubtful",
-   "line": "§3–5、Tab.2–4、App.F 读完；**代码 / RM / LTX-2 LoRA / bench 已放**（github.com/Tsuki0512/AVC-Reward，HF Tsuki0512），我用官方 `benchmark_eval.py` + CSV 重算 Tab.2，逐项一致（实测）。**测量**：706 条、每条 3 人按 39 个标签打分；13 个现有指标与人 Spearman 全部 ≤ 0.23（DeSync 0.06、JavisScore 0.15、ImageBind 0.15、Gemini-3.1-Pro 0.12），AVC-Reward 0.244，三人互评上限 0.497；Δ>0.2 成对准确率 0.728 vs 最好的现有指标 AV-Align 0.674。RM 本身相对 AGAV-Rater 的 Spearman 只多 0.018；GRPO 校准主要提升 PLCC（0.295 → 0.493），Spearman 不变（0.244 = SFT only）。**RL 部分（③×D）**：OmniNFT（LTX-2）把 DeSync reward 换成它，相对 LTX-2 底座外部 AV 指标 +19–59%（OmniNFT 原版 +1–34%）；100 prompt × 3 人盲评对原版 OmniNFT 胜 57.7–73.1%（Jaccard 一致性 42–44%）。**reward 问题**：AVC-Score 既训又评；外部指标本身与人 ρ ≤ 0.23，不能当证据；文本对齐 IB-TV / CLIP 三个基准都降；没报运动幅度；单次运行；没和 VA-Judger、SyncReward 同集比较。评级：测量部分可信（我复算过），但与 VA-Judger 结论同向、可预测 → 了解即可；作为收敛 4 的第 4 个独立来源。"
+   "credibility": "solid",
+   "line": "§3–5、Tab.2–4、App.F 读完；**代码 / RM / LTX-2 LoRA / bench 已放**（github.com/Tsuki0512/AVC-Reward，HF Tsuki0512），我用官方 `benchmark_eval.py` + CSV 重算 Tab.2，逐项一致（实测）。**测量**：706 条、每条 3 人按 39 个标签打分；13 个现有指标与人 Spearman 全部 ≤ 0.23（DeSync 0.06、JavisScore 0.15、ImageBind 0.15、Gemini-3.1-Pro 0.12），AVC-Reward 0.244，三人互评上限 0.497；Δ>0.2 成对准确率 0.728 vs 最好的现有指标 AV-Align 0.674。RM 本身相对 AGAV-Rater 的 Spearman 只多 0.018；GRPO 校准主要提升 PLCC（0.295 → 0.493），Spearman 不变（0.244 = SFT only）。**RL 部分（③×D）**：OmniNFT（LTX-2）把 DeSync reward 换成它，相对 LTX-2 底座外部 AV 指标 +19–59%（OmniNFT 原版 +1–34%）；100 prompt × 3 人盲评对原版 OmniNFT 胜 57.7–73.1%（Jaccard 一致性 42–44%）。**reward 问题**：AVC-Score 既训又评；外部指标本身与人 ρ ≤ 0.23，不能当证据；文本对齐 IB-TV / CLIP 三个基准都降；没报运动幅度；单次运行；没和 VA-Judger、SyncReward 同集比较。评级：测量部分可信（我复算过），但与 VA-Judger 结论同向、可预测 → 了解即可；作为收敛 4 的第 4 个独立来源。 **（10-19 更正）** 按「发现类单独评级」，测量部分的可信度应为**站得住**，原标「存疑」是被 RL 部分拉低的，标错了；原创性仍是对 VA-Judger 同向结论的独立印证，所以维持「了解即可」。另记 DeSync 提醒：用 AVC-Score 当 reward 后，DeSync 在 3 个 bench 中有 2 个比直接优化 DeSync 的 OmniNFT 差（0.081 vs 0.073、0.089 vs 0.074）；DeSync 自己与人的 Spearman 只有 0.061，也不能单独当 reward。"
   },
   {
    "title": "NPO：Noise-Space Reward Alignment for Few-Step Generative Models（2610.21125）",
@@ -143,5 +143,6 @@
    "line": "LLM / VLM 的 on-policy 蒸馏与 RL（Waypoint-OPD、Rollout 截断 OPD、Condition-Contrastive OPD、Teacher Selection、OPRD、SCOPED、MMSearch-OPD、Training-Free OPD、Hy-Memory 等）、dLLM（On-Policy Residual、TIPS、SIRS）、机器人 / 规划（GRID-Planner、VeriVLA、Multi-Teacher OPD for VLA、Dexterity from Supervised Play）、表征对齐（Purify Before You Align、MIDI-REPA、Semantic Latent Alignment）、Rethinking CFG for TI2I（非 RL，与 GuidanceNFT 的 CFG 话题相邻，观察）。"
   }
  ],
- "trend_summary": "**本期认知变化**：①收敛 4 加第 4 个独立来源（AVC-Reward，AV 一致性，706 条人评，我复算）；②新观察「评判信号随训练衰减」（RAP-Walk 近平局上升 + Self-Verifier staleness），只有 2 个来源，观察；③L1/L2：RPO 把探索换成结构化扰动、NPO 把对齐搬到初始噪声，都属「改更新从哪来」的重做或证据不足，最强基线不变；④多 reward 聚合会偏向最容易拿分的通道（LLM，机制可迁移到我们的组合 reward）。"
+ "trend_summary": "**本期认知变化**：①收敛 4 加第 4 个独立来源（AVC-Reward，AV 一致性，706 条人评，我复算）；②新观察「评判信号随训练衰减」（RAP-Walk 近平局上升 + Self-Verifier staleness），只有 2 个来源，观察；③L1/L2：RPO 把探索换成结构化扰动、NPO 把对齐搬到初始噪声，都属「改更新从哪来」的重做或证据不足，最强基线不变；④多 reward 聚合会偏向最容易拿分的通道（LLM，机制可迁移到我们的组合 reward）。",
+ "revision_note": "**10-19 更正**：AVC-Reward（2610.22321）的可信度标签由「存疑」改为「站得住（测量部分）」。scope.md 规定发现 / 诊断类只看测量本身是否可靠，不因方法部分存疑被拉低；本期当时把 RL 部分的问题（AVC-Score 既训又评、文本对齐下降）算进了可信度。评级仍为「了解即可」：它和 VA-Judger、SyncReward 同向，属于独立印证，不满足「原创」。另补 DeSync 提醒，见该条。详见 [10-19 期](https://thughy.github.io/genrl-daily/daily/2026-10-19/)。"
 }

@@ -1,12 +1,164 @@
 {
  "date": "2026-10-19",
- "version": "v0-初步",
- "headline": "初步（召回未完成）：arXiv 本期还在陆续放出，截至 08:33 约 500 个编号里暂无必读；在范围内的候选只有 ProactGen（用 RL 训练给视频生成「先提问再生成」的 VLM），待精读。完整一期稍后补发。",
+ "version": "v1",
+ "headline": "本期无必读；值得看 DiffusionRVGE：用组内 ridge 回归从黑盒 reward 估出 reward 梯度方向，同硬件比 DiffusionNFT 快 2.1–6.7 倍。它的等预算消融还给出：reward 平滑用同轨迹小扰动对比，离散用独立种子组（P11 新证据）。召回 G9 未过，数字为初步。",
  "notice": {
   "file": "2026-10-19/notice.md"
  },
  "overview": {
   "file": "2026-10-19/overview.md"
  },
- "papers": []
+ "papers": [
+  {
+   "id": "diffusion-rvge",
+   "rating": "worth",
+   "originality": "mechanism",
+   "credibility": "solid",
+   "highlight": true,
+   "rating_reason": "原创性 partly：相对 FDFO / NFT 的改动是「联合 ridge + 干净坐标」，机制被消融支持；效率主张（同硬件比 NFT）站得住。不进必读：训练 reward = 评测 reward、无人评、无多样性 / 运动指标，质量侧未证。",
+   "directions": [
+    "online-rl",
+    "diff-reward"
+   ],
+   "title": "DiffusionRVGE: Reinforcement Learning via Regression-Based Value Gradient Estimation",
+   "institutions": [
+    "清华大学（求真书院、丘成桐数学科学中心）"
+   ],
+   "published": "arXiv 2026-10-16 (v1)，10-19 公告",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.22973",
+    "code": "https://github.com/jy-wang-tsinghua/DIFFUSIONRVGE"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "none",
+    "code": "partial",
+    "note": "§1–7、Tab.1–4、App.E.4 读完；代码（commit 2c54574）读了 ridge 求解与 GenEval 配方两处；无 GPU，没跑训练或评测；没看样例图。"
+   },
+   "tldr": "黑盒 reward 也能造出「沿 reward 梯度移动」的目标：组内把 reward 差对干净图像差做 ridge 回归当梯度估计，同硬件下达到同一自动指标阈值比 DiffusionNFT 快 2.1–6.7 倍。",
+   "delta": "相对 FDFO（成对有限差分）与 DiffusionNFT（正负对比）：改为多个对比联合 ridge、在干净图像坐标里拟合，并按 reward 连续性选对比方式。",
+   "lineage": {
+    "equivalent_form": "L = E[a_i · ω_t · ⟨v_θ − sg(v_old), sg(û_i)⟩]，û_i = argmin‖Q_i u − b_i‖² + 0.3‖u‖²（行 = 组内干净图像差 / 位移长度，标签 = reward 差 / 位移长度），τ = 0、ω_t = t。= DiffusionOPSD / ReFL 的 detached「沿梯度移动」目标，∇R 换成零阶回归估计（原文 Eq.11–14 核对）。",
+    "baseline": "黑盒线最强基线 DiffusionNFT：**正面比了**，同 8×A800、官方代码复现，比达到同一阈值的实测 GPU-h；联合五 reward 用 NFT 发表值。①线最强 DiffusionOPSD 没比（GenEval / OCR 不可微可以理解，PickScore 上可比而未比）。",
+    "rows": [
+     {
+      "work": "FDFO（McAllister 2026，2603.12893）",
+      "link": "https://arxiv.org/abs/2603.12893",
+      "how": "成对 reward 有限差分直接转成速度更新",
+      "change": "多个对比联合 ridge（考虑对比间相关）；PickScore 上 FDFO 113 GPU-h 不到 23.50，本文 14.3 GPU-h 到 23.20"
+     },
+     {
+      "work": "DiffusionNFT（2509.16117）",
+      "link": "https://arxiv.org/abs/2509.16117",
+      "how": "按 reward 划分正负样本，前向过程对比回归",
+      "change": "方向从「协方差」变成「ridge 预条件后的回归系数」，并在干净坐标里拟合"
+     },
+     {
+      "work": "DiffusionOPSD（2608.24646）",
+      "link": "https://arxiv.org/abs/2608.24646",
+      "how": "沿可微 reward 梯度构造 detached 目标再回归（一阶 = ReFL）",
+      "change": "不要 reward 导数，梯度用回归估计"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "Path-Space View 已说明 GRPO / NFT 都是 value-gradient 估计，「更好的估计器 → 更快」可预测；干净坐标让方向 cos 从 0.009 → 0.107 的量级，以及「平滑 reward 用局部扰动、离散 reward 用独立种子组」的等预算翻转，不容易事先预测。"
+    }
+   },
+   "insight": "在干净图像坐标里，有效维度 k 远小于噪声状态维度 d，同样 n 个对比下方向估计的 cos² ≈ n/k，而噪声坐标是 n/d（Eq.9，各向同性高斯模型下）。",
+   "method": "1. 当前策略生成：PickScore 用一条 SDE 轨迹上 η=0.03 的小扰动补全（24×24 轨迹库）；GenEval 每个 prompt 用 24 条独立 ODE 轨迹。\n2. 黑盒 reward 打分（GenEval / OCR / PickScore 等）。\n3. 每个 query 用其余样本的「干净图像差 → reward 差」做对偶 ridge（K×K 求解），得到方向 û_i。\n4. 只回传速度：⟨v_θ − sg(v_old), sg(û_i)⟩，按 t 加权；GenEval 只训每个 prompt reward 最低的 6 条。无 reward 导数、无 adjoint。",
+   "evidence": "- 效率（Tab.3，实测 GPU-h，同硬件官方代码复现 NFT）：PickScore 23.20 / 23.50 阈值 14.3 / 38.2 vs 29.7 / 98.5；OCR 0.80 / 0.95 2.2 / 4.1 vs 14.9 / 25.6；GenEval 0.80 / 0.90 11.5 / 22.8 vs 30.3 / 102.0。\n- 机制（§6.1）：干净 vs 噪声坐标回归，方向与 ODE 梯度的时间加权 cos 0.009 → 0.107，配对差 95% CI [0.092, 0.106]。\n- 方向直接用 vs 范数匹配的 adjoint 回传：81 GPU-h 时 23.65 vs 23.18，且 adjoint 每步贵 2.1×（§6.2）。\n- 对比方式（§6.3，等 batch、等优化器）：PickScore 局部扰动 23.41 / 23.63 / 23.78 vs 独立种子组 22.89 / 23.21 / 23.18（20 / 56 / 112 GPU-h）；GenEval 独立种子组 0.92 vs SDE 局部库 0.84–0.85，η=0.03 塌到约 0.30。\n- 联合五 reward（Tab.1）：0.94 / 0.92 / 23.82 vs NFT 发表值 0.94 / 0.91 / 23.80；held-out ClipScore 0.303 vs 0.293、HPSv2.1 0.339 vs 0.331，Aesthetic 5.95 vs 6.01。",
+   "solidity": "- 训练 reward 与评测 reward 重叠（沿用 NFT 协议）；无人评；无多样性 / 塌缩指标。\n- 方差：PickScore 配方 2 个种子（App.E.4，种子间差 ≤ 0.14），NFT 曲线和其他配方单次。\n- 「约 1/5 计算」里 NFT 的 ≥2,000 GPU-h 是按单步耗时外推，不是实测。\n- 作者自报 OCR 单训 hack（整图大字 + 平底），给了 quality-floor 修正（OCR 0.97、PickScore 22.17）。",
+   "reward_check": {
+    "train_reward": "GenEval / OCR / PickScore（单训）；联合：GenEval、OCR、PickScore、ClipScore、HPSv2.1",
+    "eval_reward": "同上 + Aesthetic、ImageReward、UnifiedReward",
+    "overlap": {
+     "value": "yes",
+     "note": "沿用 DiffusionNFT 协议，主指标即训练 reward"
+    },
+    "heldout": "Aesthetic / ImageReward / UnifiedReward 为 held-out 自动指标；无人评",
+    "hacking_signs": "OCR 单训出现整图大字（作者自报）；PickScore 过饱和未见报告，我没看样例"
+   },
+   "code_analysis": "rvge/endpoint_gradient.py:33、:114 为对偶 ridge 解，与 Eq.12 一致；scripts/train_geneval.sh 为 24 条 ODE 组、`--train-select low --train-per-group 6 --sibling-centre mean`，与 §5.1 一致（实测读行）。代码里还有核加权局部线性等多个变体，论文没写；没跑。",
+   "concerns": "- 质量侧只有自动指标，训练 = 评测；没比 DiffusionOPSD。\n- 视频 latent 有效维度大，按 Eq.9 方向会更弱（推断）；回归类在视频上压运动最多（HPSv3 下 Dynamic Degree：NFT 14.24、FlowAWR 4.86，base 48.61，跨篇记录）。\n- 方向在当前策略自己的 ODE 轨迹上拟合、参考 = v_old，按构造不违反 P10（推断）。",
+   "principle": "对比怎么构造要跟着 reward 的连续性走：reward 平滑时，同一轨迹上的小扰动差异给出最干净的梯度信号；reward 是平台或离散时，小扰动看不到 reward 变化，要靠独立样本才能跨过平台（P11 的等预算证据）。",
+   "takeaway": "**对我们训练的含义**：音画同步、VLM 打分不可微，这是一条把黑盒 reward 变成 ① 形状方向的路。先跑：同 GPU-h、同 reward（DeSync + AVC-Reward）下比 Astrolabe 式 AR-NFT 与 RVGE 式回归，同时记 reward、Dynamic Degree 和人评；DeSync 这类近似平滑的分数用同轨迹扰动，VLM 是否通过这类离散分数用独立种子组。"
+  }
+ ],
+ "brief": [
+  {
+   "title": "TempAct（2606.28016，6 月旧文，此前未见）",
+   "link": "https://arxiv.org/abs/2606.28016",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "全文 + 附录读完，代码 8309684 抽查。**等价形式** = AR-CoPO 式「共享前缀分叉、只更新切换后第一个 chunk」的 Flow-GRPO（Qwen3-VL 局部遵循 0.6 + PickScore 0.4）+ GSPO 训练的 LLM 规划器。代码里的「prompt smoothing」就是把下一步 prompt 直接拼在当前 prompt 后面（causal_pipeline.py:846–847）；执行器优势除的是全局 std，不是论文写的组内 std。Gemini（未参与训练）只涨 0.04–0.05，单次运行，未报 Dynamic Degree，也没比 AR-CoPO / Astrolabe / KVPO。Tab.2 的 0.342 与 Tab.5 的 0.340 是同一组数（0.414 / 0.269，均值 0.3415）舍入不一致，不是实验不一致。值得记的消融：硬切换 0.248 < 单 prompt 0.325；执行器用整段 reward 0.313 < 不训 0.340 < 局部 reward 0.390。"
+  },
+  {
+   "title": "MetaReach（OpenReview G8314PXr5q，ICLR 2027 投稿，只有摘要）",
+   "link": "https://openreview.net/forum?id=G8314PXr5q",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "RLVR-World 式 GRPO（解码帧对 GT 的 LPIPS/MSE），先在内循环把解码器适配到世界模型自己的输出分布，再按块的未来视界分配优势；RT-1 上 LPIPS 比 RLVR-World 低 7.7%。**预测（已登记）**：按块优势的贡献更大；打分用的解码器跟着被评者一起训，可能让 reward 变宽松，若评测也用适配后的解码器则评测被污染。另外，组内常数残差并不改变排序，「残差扭曲排序」要看全文证据。对我们世界模型 RL 最相关 → 观察，全文出来先读（OpenReview PDF 403）。"
+  },
+  {
+   "title": "ProactGen（2610.22608）",
+   "link": "https://arxiv.org/abs/2610.22608",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "全文读完。GRPO 训 Qwen3-VL-8B「看 8 步草稿后提问」，reward = 最终视频与参考的 DreamSim-DTW，生成器冻结。Direct 0.658 → 0.678，但未训练模型只用文本提问已到 0.672，RL 只多 0.006（文本）/ 0.010（草稿），草稿作用 +0.003，无种子 / CI；增益大头来自看过参考视频的模拟用户。训练 reward = 主评测。对我们训练：无直接含义。"
+  },
+  {
+   "title": "AVC-Reward 复评（2610.22321，10-16 已收）",
+   "link": "https://arxiv.org/abs/2610.22321",
+   "originality": "finding",
+   "credibility": "solid",
+   "line": "按「发现类单独评级」，测量部分（706 条 × 3 人，13 指标 ρ ≤ 0.23，人类上限 0.497，我复算一致）可信度改为**站得住**；原创性仍是对 VA-Judger、SyncReward 同向结论的独立印证（反事实 partly）→ 维持「了解即可」，不升必读。**DeSync 提醒**（Tab.3 核对）：用 AVC-Score 当 reward 后，DeSync 在 3 个 bench 中有 2 个比直接优化 DeSync 的 OmniNFT 差（0.081 vs 0.073、0.089 vs 0.074）；而 DeSync 自己与人的 Spearman 只有 0.061，OmniNFT（DeSync）在 AVGenBench 上 AV-Align 还降了 8.4%。两者要组合或交叉验证，不能单用。"
+  },
+  {
+   "title": "RPO（2610.22282）/ NPO（2610.21125）",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "沿用 10-16 评级：RPO 机制 × 不足、NPO 重做 × 存疑，均了解即可。10-19 复查两篇仍是 v1、无代码链接，没有新证据。"
+  },
+  {
+   "title": "Dual-Support OPO（OpenReview seJjZPgtaO，摘要）",
+   "link": "https://openreview.net/forum?id=seJjZPgtaO",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "少步 AR 视频上的前向过程（NFT 式）更新，只在蒸馏保留的时间步、只在自 rollout 的长上下文上做 = P10（训练状态 = 部署采样状态）的直接应用，属本追踪范围。了解即可；全文若有「蒸馏时间步 vs 连续时间步」消融，可计为 P10 来源。"
+  },
+  {
+   "title": "WoRL（OpenReview 9BRT7SVELI，摘要）",
+   "link": "https://openreview.net/forum?id=9BRT7SVELI",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "自回归 DiffusionNFT（消除 clip 内 train–test 错配）+ 以历史为条件的 Next-Video RM（31.2 万续作偏好对，与盲人评一致 74.4% / 82.4%）+ 回访轨迹；14B 世界模型上人偏好 +37.5pp。组件多为已知部件组合 → 了解即可，但对我们世界模型 RL 高相关，进观察名单。"
+  },
+  {
+   "title": "PhysDMD（OpenReview ZoFEPJyPpf，摘要）",
+   "link": "https://openreview.net/forum?id=ZoFEPJyPpf",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "DMD + 冻结 latent 世界模型的预测能量（最后一步直接回传，中间步当 GRPO reward），并用配对真实轨迹校准能量，防止奖励「好预测的静止视频」；Physics-IQ 25.31 → 28.10。校准这一点正对 surprise 类 reward 压运动的失效，值得记 → 观察，全文要看校准消融和 Dynamic Degree。"
+  },
+  {
+   "title": "FLARE（OpenReview 914o6I99j1，摘要）",
+   "link": "https://openreview.net/forum?id=914o6I99j1",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "DMD + 可微 latent RM（3 个 query 头，用多个像素评估器一致的比较做弱标注）逐 chunk 回传 = DMD + ReFL。可预测；RM 上限受那几个像素评估器限制。了解即可。"
+  },
+  {
+   "title": "PONDER（2610.23531）",
+   "link": "https://arxiv.org/abs/2610.23531",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "line": "关键章节读过。GRPO 训练掩码生成器的「填哪里 / 回改哪里」策略（生成器冻结），提出 FIDgrad（FID 的影响函数当逐图 reward）。MAR-B 上 FID 4.09 → 2.78（−32%），但不含 Inception 的 FDr-5 只 13.69 → 13.28（−3%）：增益大多留在 reward 自己的特征空间。了解即可。"
+  },
+  {
+   "title": "其他",
+   "line": "Scene-Designer（2610.23121，LLM 智能体 + critic GRPO 布局 3D 场景）、JUPE（2610.22631，MLLM 评委被「听起来合理的解释」带偏，判据向接受移动约 13pp）、Qwen3-TTS 评测（2610.23678，客观指标与听测排序不一致，收敛 4 旁证）、MIST（2610.23542，世界模型记忆评测混淆，归队友）、SCALE（2610.23263，免 CFG 训练，可与 DPO 叠加，非 RL）：均一行带过。"
+  }
+ ],
+ "trend_summary": "**本期认知变化**：①P11（受控对比）第一次有等预算的「共享程度」扫描，边界是 reward 的连续性（DiffusionRVGE §6.3）；②黑盒 reward 也能造 ① 形状的 detached 梯度目标，①/③ 之间出现桥接方法；③P10 被两篇世界模型 / 少步 RL 投稿当作设计原则（摘要级，不计）；④新观察「AR 视频 RL 的 reward 要落在被更新的那段」，只有 TempAct 一个有证据的来源。"
 }
