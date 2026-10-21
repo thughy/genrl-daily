@@ -1,8 +1,224 @@
 {
  "date": "2026-10-21",
- "version": "v0-初步",
- "headline": "初步（召回未完成）：截至 08:27 抓到本期 1,596 个编号，暂无必读或值得看；最相关的是图像编辑 reward model CheckDistill（2610.26740），待精读。完整一期稍后补发，10-20 完整版一并补上。",
- "notice": {"file": "2026-10-21/notice.md"},
- "overview": {"file": "2026-10-21/overview.md"},
- "papers": []
+ "version": "v1-初步",
+ "headline": "本期无必读；值得看 RoboJudge（2610.27782）：800 条人标具身生成视频上测了 30 个 judge，最强闭源模型「物理遵循」只有 r 0.611，专用具身模型 ≤ 0.26，物理轴是 VLM reward 最弱的一轴。CheckDistill 精读后为了解即可。召回 G9 未过，数字为初步。",
+ "notice": {
+  "file": "2026-10-21/notice.md"
+ },
+ "overview": {
+  "file": "2026-10-21/overview.md"
+ },
+ "papers": [
+  {
+   "id": "robojudge",
+   "rating": "worth",
+   "originality": "finding",
+   "credibility": "solid",
+   "highlight": true,
+   "rating_reason": "发现 × 站得住：800 条具身生成视频、一人标 + 二人复核 + 专家裁定，30 个 judge 同协议，配对 cluster bootstrap 给了置信区间。不进必读：「VLM 物理判断弱」已有 VideoPhy2 / PhyMetric 先例（部分可预测），自训 judge 单轴增益小、没当过 RL reward，也没和 WorldModelBench 比。",
+   "directions": [
+    "reward-model",
+    "video-rl"
+   ],
+   "title": "RoboJudge: Multimodal Language Models as Judges for Embodied Video Generation",
+   "published": "arXiv 2026-10-20 (v1)，10-21 公告",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.27782"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "none",
+    "code": "none",
+    "note": "§4–5、App.A.1–A.2、E、Tab.1–8 读完（原文核对）；Codex 盲审最接近工作；没下载数据 / 模型，没跑评测。"
+   },
+   "tldr": "同一个 VLM judge，「指令对齐」远比「物理遵循」可靠：最强闭源 IA r 0.733、PA r 0.611，专用具身 MLLM 的 PA ≤ 0.26，通用物理 judge（VideoPhy2 等）≤ 0.20。",
+   "delta": "相对 VideoPhy2 / Physion-Eval（通用场景物理判断）和 PhyMetric（VLM 物理裁判 ρ ≤ 0.293）：第一次在具身视频（夹爪 / 灵巧手 / 人手，10 个生成器）上按 PA / IA 两轴分开测 30 个 judge。",
+   "lineage": {
+    "equivalent_form": "测量论文：judge 分数 vs 人标 1–5 分的 Pearson r / 精确匹配 / MSE，按 PA、IA 两轴分别报。自训 RoboJudge-9B = Qwen3.5-9B SFT（12K 视频、25K 人工修正分数 + GPT-5.5 改写的推理）+ GRPO（reward = 与人标精确匹配）。",
+    "baseline": "同协议测了 30 个 judge，包括 Gemini-3.7-Flash、GPT-5.5、Claude-Opus-4.8、Cosmos-Reason2、VideoPhy2、PhyJudge。**没比 WorldModelBench**（含机器人域、67K 人标、训了 2B judge；Codex 盲审列出，原文未引用）。",
+    "rows": [
+     {
+      "work": "VideoPhy2（Bansal 2026）",
+      "how": "通用动作视频的物理常识 / 语义遵循，人标 + 训练评估器",
+      "change": "换成具身视频；VideoPhy2-7B 在这里 PA r 只有 0.152"
+     },
+     {
+      "work": "PhyMetric（2610.19823，10-16 已读）",
+      "how": "VLM 物理裁判与人的场景级 Spearman 最高 0.293",
+      "change": "在具身域按 PA / IA 两轴分开，显示 IA 可靠、PA 不可靠"
+     },
+     {
+      "work": "WorldModelBench（2502.20694）",
+      "how": "多领域（含机器人）指令遵循 + 物理，67K 人标，训 2B judge",
+      "change": "原文未引用、未比较（疑点）"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "「VLM 判物理不行」懂 PhyMetric / VideoPhy2 的人能预测到。预测不到的是：专用具身 MLLM（Cosmos-Reason2、RoboBrain2.5）反而远差于通用前沿模型（PA ≤ 0.26 对 0.61）；以及 IA 与 PA 之间的差距这么大。"
+    }
+   },
+   "insight": "把 judge 的可靠度按轴拆开看：指令对齐几乎可用，物理遵循是 VLM reward 最弱的一轴。用一个合并分数当 reward，最弱的物理轴最容易被 RL 放大成 hacking。",
+   "method": "1. 8 个源语料取 558 个源 clip，10 个生成器生成 800 条测试视频。\n2. 人标 PA / IA（1–5 分）：一人标、二人复核、专家裁定；练习轮标注者间精确一致 32.8% → 52.9%（±1 内 92.1%）。\n3. 30 个 judge 同 rubric、4 FPS 打分，报单轴 r、精确匹配、MSE。\n4. 自训：训练集 11,520 条生成视频 + 831 条真实示范，三家闭源 MLLM 预标、人工修正；源 clip 与测试集不相交。",
+   "evidence": "原文 Tab.2 / Tab.7：\n- 最强闭源：PA r 0.611（Gemini-3.7-Flash），IA r 0.733（GPT-5.5）。\n- 专用具身 MLLM：PA ≤ 0.261（Cosmos-Reason2-32B），RoboBrain2.5 0.042、RynnBrain 0.051。\n- 专用视频 judge：VideoPhy2 0.152、VideoScore2 0.195、VideoCon 0.095；PhyJudge 0.417。\n- RoboJudge-9B：PA 0.645 / IA 0.775 / 合并 0.719。对最强基线的配对 bootstrap：PA +0.034 [−0.011, 0.078]（不显著），IA +0.044 [0.010, 0.078]，合并 +0.089 [0.061, 0.119]。\n- 训练阶段（Tab.3）：SFT 已到合并 0.700，GRPO 只多 0.019。OOD（Tab.4）：VideoPhy2 PC r 0.179 → 0.346；Physion-Eval J 0.056 → SFT 0.105 → RL 0.093（RL 反而降）。",
+   "solidity": "测量部分站得住：人标经专家裁定，30 个 judge 同协议，按源 clip 聚类 bootstrap。弱点：① 测试集的 10 个生成器全部出现在训练集（Tab.6），按生成器算是域内；② 训练标签由三家闭源 MLLM 预标再人工修正，可能锚定在这几家的判断上；③ 合并 r 把两轴放在一起算，校准好的模型会额外得分，所以合并增益（+0.089）大于单轴增益（推断）；④ 没把 judge 当 RL reward 用，没测优化压力下能否被 hack。",
+   "reward_check": {
+    "train_reward": "（judge 训练）GRPO reward = 与人标精确匹配",
+    "eval_reward": "RoboJudge-Bench 800 条人标；OOD：VideoPhy2、Physion-Eval",
+    "overlap": {
+     "value": "partial",
+     "note": "源 clip 不相交，但测试生成器全在训练集"
+    },
+    "heldout": "OOD 两个外部基准；人标为专家裁定",
+    "hacking_signs": "未测（没用作 RL reward）"
+   },
+   "concerns": "① 没和 WorldModelBench 比；② 没有联合留出生成器 / 任务族；③ 只报合并与单轴 r，没有组内（同任务）成对准确率，合并 Pearson 可能被组间差异撑高；④ Codex 盲审预测的 RL 首个失效（用遮挡、快速过渡藏接触错误，只摆对终态）论文没测。",
+   "principle": "VLM judge 的可靠度因评分轴而异，而且差距很大：指令 / 语义类轴可用，物理 / 交互类轴不可靠。选 reward 必须按轴各自测与人评的一致性，不能看合并分数。",
+   "takeaway": "**对我们训练的含义**：世界模型 / 音视频 RL 选 judge 前，先在自家生成器的人标集上分轴测（物理 / 指令分开，看单轴 r）。物理轴先用规则或检测器兜底，VLM 只负责指令对齐。先跑的对照：同一批 rollout，Gemini / GPT / 自训小 judge 三者分轴与人评的 r，再决定 reward 组合。"
+  },
+  {
+   "id": "checkdistill",
+   "rating": "fyi",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "rating_reason": "机制（小）× 存疑：对同骨干、同数据训出的 GRPO 版 RM 只多 0.3–2.6 个点（无种子）；确实用来训了编辑模型，但没有「换别的 RM 当 reward」的对照，增益无法归因。",
+   "directions": [
+    "reward-model"
+   ],
+   "title": "CheckDistill: Adaptive Checklist Distillation for Efficient Distributional Reward Modeling in Image Editing",
+   "institutions": [
+    "阿里巴巴淘天集团"
+   ],
+   "published": "arXiv 2026-10-19 (v1)，10-21 公告",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.26740"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "none",
+    "code": "unavailable",
+    "note": "§3.3、§4、App.A.3–A.4、B、G 读完（原文核对）；代码未见；没跑评测。"
+   },
+   "tldr": "给 judge 看逐项核验证据，比给它答案更能教会无推理的打分器：teacher 多看 checklist 和逐项判断，在学生自己的打分 token 上做 OPSD，部署时约 10 个 token 出四维分数。",
+   "delta": "相对 OPSD（Zhao 2026，teacher 看 GT）：特权信息换成 checklist / 逐项判断 / rationale，并在分数 token 上按 teacher 与标签的一致度加权；相对 EditReward（BT 回归）和 EditScore（推理式生成 RM）：部署成本接近标量 RM。",
+   "lineage": {
+    "equivalent_form": "L = −E Σ_t Σ_{y∈TopK} sg[c_t · p_S(y) · log(p_T(y|x,z)/p_S(y|x))] · log p_S(y|x)，z = (checklist, 逐项判断, rationale)，c_t ∈ [0.8, 1.2] 只作用在 4 个分数 token（Eq.3–7 原文核对）。部署 reward = 四维期望分数加权聚合。",
+    "baseline": "最公平的对照是同骨干（Qwen3.5-9B）、同 SFT 起点、同数据训的 GRPO / Token-level GRPO RM：**正面比了**，差 +2.6 / +0.3 / +1.8（MMRB2 / MER / EditReward-Bench），无种子。EditReward / EditScore / SpatialReward 三行抄录自 SpatialReward 论文。",
+    "rows": [
+     {
+      "work": "OPSD（Zhao 2026）",
+      "how": "teacher 看 GT 答案，在学生自采回答上做 on-policy 自蒸馏",
+      "change": "teacher 改看 checklist 证据；给 GT 分数反而 −2.2（MMRB2，Tab.3a）"
+     },
+     {
+      "work": "EditReward（Wu 2026）",
+      "how": "BT 成对损失的标量编辑 RM",
+      "change": "pointwise 四维分布 + 特权蒸馏；65.70 → 72.30（MMRB2，抄录对照）"
+     },
+     {
+      "work": "EditScore（Luo 2026）",
+      "how": "推理式生成 RM，先写 rationale 再打分",
+      "change": "去掉推理（约 1/70 输出 token）"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "「teacher 多看证据 → 学生更准」可以预测。不完全能预测的是：给 teacher GT 分数反而比给 rationale 差（单次结果）。"
+    }
+   },
+   "evidence": "Tab.1：72.30 / 56.67 / 82.90；同协议 GRPO-RM 69.70 / 56.33 / 81.10。MER-Bench 输给自己的标注器 Gemini-3.0-Flash（56.67 对 57.17）。Fig.5：zero-shot 直接打分 55.76% → 给 checklist + 逐项判断 70.60%，蒸馏后 72.30%。Tab.2 / Tab.10–11：DiffusionNFT 训 Qwen-Image-Edit，ImgEdit 4.287 → 4.459、REDEdit 4.10 → 4.26、GEdit-EN 8.181 → 8.280（GPT-4.1 评分）；Action 4.71 → 4.51、RED Portrait 4.37 → 4.10、Motion 4.68 → 4.55 下降。",
+   "solidity": "作者声明三个基准与训练数据不重叠（App.A.4，未独立核实；训练集一半来自 EditReward-Data）。无新的人评；RL 部分无种子、无「换 RM」对照、无 hacking 检查。",
+   "reward_check": {
+    "train_reward": "（RL）CheckDistill 四维期望分数聚合",
+    "eval_reward": "ImgEdit / REDEdit（VLM 评分）、GEdit-EN（GPT-4.1）",
+    "overlap": {
+     "value": "unknown",
+     "note": "评测 judge 与 RM 不同，但同为 VLM 打分"
+    },
+    "heldout": "三个 RM 基准声称不重叠；无人评",
+    "hacking_signs": "人像 / 动作子类下降，平均分盖住"
+   },
+   "concerns": "① RL 增益无法归因到更好的 RM；② 子类退化（人像 / 动作）；③ 同协议 RM 对照差距小于种子噪声的可能性没排除。",
+   "takeaway": "**对我们训练的含义**：用 VLM 当音视频 reward 时，先测「给 judge 实例级核对清单」能把人评一致率提多少，再考虑蒸馏成快速打分器。RL 后按类别拆 reward。"
+  }
+ ],
+ "brief": [
+  {
+   "title": "GenOlympiad（2610.26850）",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "801 道可视觉核验的难 prompt，最强 Nano Banana Pro 严格分 23.9/100。难题上 VLM 评分先画辅助线，与人一致率从 68.4% 升到 91.5%（117 题；总共 365 题、41 名标注者、5 个生成器）。进 metrics.md。",
+   "link": "https://arxiv.org/abs/2610.26850"
+  },
+  {
+   "title": "LoCA（2610.28035）",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "line": "AR flow-matching TTS 的 GROW 式回归：句级 advantage 按 ASR 定位的出错帧做句内零和重分配，再加两侧阈值停止继续拟合 / 排斥。CV3 错误率 GROW 5.553 → 4.758，但单种子，单拿任一组件都约等于 GROW（5.508 / 5.488），checkpoint 疑似按评测集挑。了解即可；对 AR 音视频 RL 的 chunk 级 credit 有参考。",
+   "link": "https://arxiv.org/abs/2610.28035"
+  },
+  {
+   "title": "PhysCanvas（2610.28613，cs.RO，全文读 §3.3–4.5、App.E）",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "line": "视触觉机器人世界模型（多视角 RGB + 触觉 + 任务状态放进同一张「画布」视频）。后训练用 3 个冻结的 ResNet-18 RM，在解码后的单步 x̂0 上直接回传梯度（Align-A-Video 式，保留 flow-matching MSE）：场景、模态一致性做最大化，任务结果用 BCE 去匹配「同一 RM 在真实帧上的判断」，成功和失败都要复现。加这项后世界模型与真机成功率的 Pearson 均值 0.602 → 0.885（4 个任务，每个任务约 9 个点，Fig.8）；在世界模型里 GRPO 训 π0.5，真机成功率 59.1% → 67.5%（未后训的 WM）→ 70.8%（后训 WM），3 次运行，WM 与 WM+RM 之差多数在标准差内，Bottle 还降了。疑点：世界模型里的成功如何判定没写清，若也用 State RM 就有同源循环；没和其他 WM 后训练方法比。了解即可；「结果项用匹配目标而非最大化」对我们世界模型 RL 的 reward 设计有参考。",
+   "link": "https://arxiv.org/abs/2610.28613"
+  },
+  {
+   "title": "Attractive Faces Skew T2I Reward Models（2610.28195，摘要，PDF 未出）",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "隔离编辑 40 个面部属性：PickScore / MPS / HPSv2.1 / HPSv3 里有 4 个 RM 的分数最强相关的是吸引力；偏好对齐后的生成偏年轻、女性化，甚至盖过「不好看」的显式 prompt。P9 型 RM 偏差，全文出来后重评，可能升为值得看。",
+   "link": "https://arxiv.org/abs/2610.28195"
+  },
+  {
+   "title": "ABACUS（2610.28316，摘要）",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "编辑模型的计数编辑基准：VLM judge 本身数不准，评测改为对全景分割真值做实例级核验、不用 VLM 打分。和 GenOlympiad 同向：难约束要靠实例级证据。观察。",
+   "link": "https://arxiv.org/abs/2610.28316"
+  },
+  {
+   "title": "StreamEval（2610.28402，摘要）",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "交互式流式视频生成基准：5 类任务、300 个 15–300 秒脚本、37 个模型，含音画协同维度；画质和身份保持好不代表能执行请求、保持状态一致。和我们的流式音视频世界模型直接相关，作评测参考，观察。",
+   "link": "https://arxiv.org/abs/2610.28402"
+  },
+  {
+   "title": "NVV-aware GRPO（2610.25942，摘要）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "语音对话模型生成恰当的非言语发声（呼吸、笑等），多阶段 SFT + GRPO。摘要无 reward 细节与数字。了解即可。",
+   "link": "https://arxiv.org/abs/2610.25942"
+  },
+  {
+   "title": "HealBench（2610.27516，摘要）",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "T2I「心理舒适度」基准 + RM，称可支持 RL；语义对齐和美学高不代表舒适。了解即可。",
+   "link": "https://arxiv.org/abs/2610.27516"
+  },
+  {
+   "title": "Risk Decomposition（2610.26069，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "把视频物理幻觉分成「低密度采样」和「高密度漂移」两类风险；模型内部信号只能修前者，后者要外部引导。推理时方法。了解即可。",
+   "link": "https://arxiv.org/abs/2610.26069"
+  },
+  {
+   "title": "Intra-Rubric Reward Divergence（2610.26685，LLM）",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "rubric RL 里总分上升时部分子维度系统性下降（P9 型）；纯 LLM，末尾一行。",
+   "link": "https://arxiv.org/abs/2610.26685"
+  },
+  {
+   "title": "其余",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "Agima（2610.26845，omni 模型想象再行动的 agentic RL，非生成器 RL）、CAD 功能验证（2610.26861）、PVBench（2610.26711，视频物理评测基准，观察）、State World Models（2610.26811）、科学图示 VLM 评测（2610.27841）、SceneRig（2610.28585，单图到可仿真 3D 场景的 agent 系统，带物理校验）：范围外或观察。"
+  }
+ ],
+ "trend_summary": "**本期认知变化**：①收敛 4（笼统自动分数测不出具体属性）加第五个独立来源 RoboJudge，并细化为「物理轴最弱」；②新观察「VLM judge 的可靠度主要来自实例级证据，而不是推理长度」（CheckDistill、GenOlympiad，2 个来源，不立候选）；③跨篇收敛：本期无新候选。"
 }
