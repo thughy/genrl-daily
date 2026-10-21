@@ -1,8 +1,243 @@
 {
  "date": "2026-10-20",
- "version": "v0-初步",
- "headline": "初步（召回未完成）：arXiv 本期（周五到周一投稿）还在陆续放出，截至 08:25 抓到约 500 个编号，其中暂无必读或值得看；RL / reward 关键词命中 15 条，读过摘要的几条都不在范围内或不是 RL。完整一期稍后补发。",
- "notice": {"file": "2026-10-20/notice.md"},
- "overview": {"file": "2026-10-20/overview.md"},
- "papers": []
+ "version": "v1",
+ "headline": "本期无必读；值得看 DFR（2610.24897）：在 RAM 的 advantage 里加一项分布距离的一阶变分（latent MMD / FD / DreamSim），同一 GenEval / OCR reward 阈值下拿到 β 怎么扫都到不了的「多样性更高 + 漂移更小」的点（3 种子、同 GPU-h）。召回 G9a 过、G9b 未过（差 11%）。完整版因 10-20 执行中断推迟到 10-21 发布。",
+ "notice": {
+  "file": "2026-10-20/notice.md"
+ },
+ "overview": {
+  "file": "2026-10-20/overview.md"
+ },
+ "papers": [
+  {
+   "id": "dfr",
+   "rating": "worth",
+   "originality": "mechanism",
+   "credibility": "solid",
+   "highlight": true,
+   "rating_reason": "新机制（小）× 站得住：3 种子、同 GPU-h 预算、正面对照了「同等强度的朴素幅度调节」（β 扫描）；不进必读，因为最接近的 Flow Density Control / DRIFT 已是主贡献，delta 偏统一框架 + latent MMD 实例，且无人评、代码 404、只有 SD3.5-M。",
+   "directions": [
+    "online-rl",
+    "reward-model"
+   ],
+   "title": "Distribution-Based Regularization for Reward Fine-Tuning Diffusion and Flow Models（DFR）",
+   "institutions": [
+    "University of Oxford",
+    "AITHYRA",
+    "KAIST",
+    "Mila / Université de Montréal"
+   ],
+   "published": "arXiv 2026-10-17 (v1)，10-20 公告",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.24897",
+    "code": "https://github.com/jaylee2000/dfr"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "partial",
+    "code": "unavailable",
+    "note": "§1–6、App.D.1–D.9、Tab.1/2/7 读完（原文核对）；Fig.1 样例网格自己裁图看过；代码仓库 10-21 08:21 clone 返回 Repository not found（实测）；无 GPU，没跑训练。"
+   },
+   "tldr": "KL 系数 β 只是幅度旋钮：在 advantage 里加一项「离同组其他样本远 + 离 base 样本近」的分布项，能到达 β 扫描到不了的 reward–多样性–漂移点。",
+   "delta": "相对 RAM（β 扫描）和 Flow Density Control：分布泛函的一阶变分只当标量权重、不对它求导，所以黑盒 reward 下也能用；另给一个不需要编码器的 latent MMD 实例（DreamSim 实例 = DRIFT）。",
+   "lineage": {
+    "equivalent_form": "A_i = A_task,i + λ·center_group(r_R(x_i; p̂))，r_R = −δR/δp（分布泛函的一阶变分，当标量、不反传）。MMD 实例：r_MMD(x) = E_{x'~p}‖x−x'‖^b − E_{y~p_ref}‖x−y‖^b（VAE latent，b=1.75，每 prompt 8 个 base 参考样本）。其余照常走 RAM（ELBO 式在线 RWR + 速度锚 β）。原文 Alg.1 核对。",
+    "baseline": "本线最强对照是同协议的 RAM β 扫描：**正面比了**（3 种子、同 288 / 144 GPU-h 墙钟）。Flow-GRPO / AWM / DiffusionNFT 只有单 checkpoint 数字；GARDO、DiverseGRPO、ReNFT 等多样性方法没比。",
+    "rows": [
+     {
+      "work": "RAM（基座）",
+      "how": "ELBO 式在线 reward 加权回归 + 速度空间锚 β",
+      "change": "只在 advantage 里加分布项，其余不变"
+     },
+     {
+      "work": "Flow Density Control（De Santi 2025）",
+      "how": "凸分布泛函的一阶变分 → 逐样本 reward，对有效 reward 求梯度（主贡献）",
+      "change": "一阶变分当 PG 标量，不求导 → 黑盒 reward 可用；加「同 reward 阈值比漂移 / 多样性」协议"
+     },
+     {
+      "work": "DRIFT（Liu 2026）",
+      "how": "组内 DreamSim 距离当多样性 reward（主贡献）",
+      "change": "= DFR-DS 实例；DFR 另给 latent MMD（吸引 + 排斥两项）和 FD 实例"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "「加多样性项 → 同 reward 下多样性更高」懂 FDC / DRIFT 的人能预测到。预测不到的是两点：β 扫描有天花板（GenEval β=4 崩、OCR β 大则平台），以及 VAE latent 上的 MMD 就够（和三个编码器上的 FD 打平）。"
+    }
+   },
+   "insight": "速度空间 KL 锚只约束「动力学」，不约束「生成分布」。β 调大调小都在同一条 reward–多样性–漂移曲线上走；分布项改的是更新**方向**而不是幅度，所以能离开这条曲线（P3「方向 > 幅度」又一个站得住的正例）。",
+   "method": "1. 每个 prompt 采一组样本，GenEval / OCR 规则检测器打分 → 任务 advantage。\n2. 同组样本两两 latent 距离 + 与 8 个 base 参考样本的距离 → r_MMD，组内中心化后乘 λ 加进 advantage（不反传）。\n3. 照常做 RAM 的加权回归更新，速度锚 β 不变。\n归格：③ 黑盒正负对比回归 × 规则 / 检测器；另在 reward 维多出一类「分布项」。",
+   "evidence": "原文 Tab.1/2（3 种子、同墙钟预算，RAM / DFR 自跑）：\n- GenEval 0.96 只有 RAM β=2 能到：DreamSim(OpenCLIP) 0.174±0.006 → DFR-MMD 0.196±0.011 / FD 0.193±0.011 / DS 0.225±0.022；FID 119.87±2.03 → 110.75±3.04（MMD）。\n- OCR 0.96：RAM β=5 FID 136.78 / DreamSim 0.192 → DFR-FD 121.46 / 0.213，DFR-MMD 124.87 / 0.197。\n- GenEval 0.95：DFR-MMD 0.200±0.015 对 RAM β=3 0.184±0.006，差约 1 SD，边缘。\n- Fig.2：DFR 的点都落在 β 扫描路径之外（核心对照就是同等强度的朴素幅度调节）。\n- 数字来源：「比 Flow-GRPO 快 36–41×」= RAM 论文自报 52.3× 乘本文相对时间，**抄录 + 推算，不是实测**（App.D.7 Tab.7）；同 β 下 DFR 比 RAM 慢 1.27–1.47×（GenEval）。",
+   "solidity": "训练 reward = 评测 reward（GenEval / OCR），但主张是「同 reward 阈值下的多样性 / 漂移」，评测用 held-out 编码器，和实例编码器相关的格已划掉（App.D.1，原文核对），MMD 实例全部 held-out。ImageReward / PickScore 只报不用。无人评；只 SD3.5-M、两个规则 reward；漂移以 base 样本为参照，不是真实图。",
+   "reward_check": {
+    "train_reward": "GenEval / OCR（规则检测器）+ 分布项（latent MMD / FD / DreamSim）",
+    "eval_reward": "同任务 reward 阈值下：DreamSim(OpenCLIP)、FID（相对 base 样本）、ImageReward / PickScore",
+    "overlap": {
+     "value": "partial",
+     "note": "任务 reward 重叠；多样性评测编码器与 DS 实例相关的格已划掉"
+    },
+    "heldout": "多样性 / 漂移用 held-out 编码器；无人评",
+    "hacking_signs": "Fig.1 样例里 RAM 出现背景塌缩、构图趋同，DFR 背景恢复多样"
+   },
+   "samples": "实测（自己裁 Fig.1 下半，同 prompt「A zebra to the right of a fire hydrant」10 个种子）：RAM 10/10 灰色棚拍背景、构图几乎一样；DFR-MMD 背景恢复多样（街道 / 墙 / 草地），空间关系仍满足；base 多样但若干张不满足空间关系。⚠️ 图里比的是 RAM **β=1**（最弱 KL 档），不是同阈值最优 β，定性图挑了最弱对照，公平比较以表格为准。",
+   "media": [
+    {
+     "src": "assets/2026-10-20/dfr-dfr-fig1-grid.webp",
+     "caption": "原文 Fig.1 下半（自己裁图）：同 prompt 10 个种子，base / RAM β=1 / DFR-MMD"
+    }
+   ],
+   "code_analysis": "摘要给出 github.com/jaylee2000/dfr，10-21 08:21 clone 返回 Repository not found（实测，未公开或已设私有），无法核对实现。",
+   "concerns": "① 定性图用 RAM β=1 而非同阈值最优 β；② GenEval 0.95 处的优势约 1 SD，边缘；③ 没做 Codex 盲审要求的「分布项在样本间打乱 / 冻结统计量」对照，无法排除「只是多了一个随机扰动项」（β 扫描对照做了）；④ 只有规则 reward，没测在 VLM / 可微 reward 下是否仍成立；⑤ 平均分可能盖住 prompt 类别差异（未给分项）。Codex 盲审（只给摘要）的等价形式与我一致，但它没列出 FDC 和 DRIFT，我从原文相关工作补上。",
+   "principle": "把分布距离的一阶变分当作逐样本 advantage 加进去，是改方向而不是改幅度，能到达任何 KL 系数都到不了的 reward–多样性–漂移点；适用于任何 PG / 加权回归、任何模态，只需组内两两距离 + 少量 base 参考样本。",
+   "takeaway": "**对我们训练的含义**：视频 / 音视频 RL 里「多样性塌缩 + 运动被压」可以直接试 latent-MMD 项，不用编码器，开销约 +9%。先跑：同 GPU-h 下「β 扫描」对「β + latent-MMD」，记 reward、Dynamic Degree、同 prompt 多种子 DreamSim 三条曲线。按格预测它应失效的地方：组内样本少时 MMD 估计方差大、λ 敏感。"
+  }
+ ],
+ "brief": [
+  {
+   "title": "NR-SMC（2610.25479）",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "推理时 SMC 搬到确定性 flow：重采样时锚定终点估计再加噪。同 NFE=200 时和 BoN-4 打平（ImageReward 1.3720 对 1.3696，Tab.9），每 prompt 反而慢 4 秒；引导 reward = 评测 reward。了解即可。",
+   "link": "https://arxiv.org/abs/2610.25479"
+  },
+  {
+   "title": "Expert Supervision TTS 偏好优化实证（2610.25292）",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "同一批专家语音，DPO 的 β 从 0.1 改到 0.01，WER 4.59% → 29.78%；专家语音似然升降预测不了 WER。无训练种子、无听测。了解即可（L4 的音频印证）。",
+   "link": "https://arxiv.org/abs/2610.25292"
+  },
+  {
+   "title": "MARTINI（2610.25502）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "少量 oracle 标注学多个代理 reward 的组合再做推理时倾斜；学到的组合比均匀权重好（Tab.5），但图像实验单次、64 样本，引导强度仍靠 oracle 选。了解即可。",
+   "link": "https://arxiv.org/abs/2610.25502"
+  },
+  {
+   "title": "FluidGen（2610.25660，多模态文献追踪转来）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "Wan2.1-I2V-14B + 速度场双流 + velocity-aware DPO；DPO 的 reward 来自模型自己预测的速度场（评分器 = 被训模型自己的输出头），DPO 后 FVD 192.1 → 199.2 反而变差；无运动量、无人评、无种子。了解即可。",
+   "link": "https://arxiv.org/abs/2610.25660"
+  },
+  {
+   "title": "BSIT（2610.24185）",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "树搜索子节点改为 flow map 一步到端点再独立加噪；只按 NFE 比、搜索 reward = 评测 reward。了解即可。",
+   "link": "https://arxiv.org/abs/2610.24185"
+  },
+  {
+   "title": "RGDR（2610.25139）",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "line": "推理时用反思生成 Target / Reference 条件差速度；同范数下「对的方向」Overall Gain 4.34 对随机方向 1.31（P3 弱旁证），但反馈、选候选、评测都是同一个 Doubao 裁判。了解即可。",
+   "link": "https://arxiv.org/abs/2610.25139"
+  },
+  {
+   "title": "SGE-Goal（2610.24885）",
+   "originality": "finding",
+   "credibility": "doubtful",
+   "line": "编辑排行榜靠前的模型做机器人目标图反而更差；下游成功率与「操作遵循」ρ≈0.9、与美学 ρ≈0（少数生成器间）。进 metrics.md：通用编辑质量分不能代替下游任务 reward。",
+   "link": "https://arxiv.org/abs/2610.24885"
+  },
+  {
+   "title": "RISE-DMD（OpenReview qLvIIWHL23，少步同事转来，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "等价形式：DMD 的 real score 换成在学生 on-policy 样本 + 黑盒 reward 上在线拟合的「reward 倾斜 score」，目标随学生一起演化。和 10-19 的 FLARE（reward 加权 DMD）同一格；摘要称 6 项指标全胜、3 项不参与训练。对我们 DMD 阶段接黑盒 reward 最相关 → 观察，等全文查「目标自演化」是否漂移（P10 风险）。",
+   "link": "https://openreview.net/forum?id=qLvIIWHL23"
+  },
+  {
+   "title": "DualHeads（OpenReview drdT6PdTfc，少步同事转来，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "冻结骨干上挂两个二分类头（同 prompt 谁 reward 高 / 参考图 vs 生成图），生成器最大化两头 logit 加权和；头最优时 = KL 正则的 learned-reward 最大化，权重比 = β。本质是「reward 判别器 + GAN 式密度比」，属 ①（可微代理）。摘要只说「接近 40 步 RL」，无数字。观察。",
+   "link": "https://openreview.net/forum?id=drdT6PdTfc"
+  },
+  {
+   "title": "ReDiF（OpenReview 9NdLv66ygS，少步同事转来，摘要）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "把步数蒸馏写成终点 reward（与 teacher 输出的对齐度）上的策略梯度；4 GPU-h 对 DMD2 的 336 A100-h 是抄录数，不同预算。疑点：对齐 reward 本身可微，为什么不直接反传要靠消融说明。只在 ImageNet-64 / EDM。了解即可。",
+   "link": "https://openreview.net/forum?id=9NdLv66ygS"
+  },
+  {
+   "title": "STEP（OpenReview 8spVEv7vOf，少步同事转来，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "GM flow 每个区间解析估一个干净图当 probe，直通链把终点 reward 梯度传到每一步（①×可微）。FLUX 4 NFE：GenEval 0.396 → 0.530、held-out HPSv3 13.47 → 15.80，但只比官方蒸馏学生，没比同学生上的 ReFL / OPSD。了解即可。",
+   "link": "https://openreview.net/forum?id=8spVEv7vOf"
+  },
+  {
+   "title": "Geo-FSRL（OpenReview 8YY2YCROXo，少步同事转来，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "少步 flow 做 GRPO 时，在保系数的高斯转移族里选「对任意速度更新诱导的条件 KL 最小」的随机策略，给出闭式解。② 格的 SDE 构造问题，有理论味道，摘要无实验数字。了解即可。",
+   "link": "https://openreview.net/forum?id=8YY2YCROXo"
+  },
+  {
+   "title": "LeNO（OpenReview SAuycm49Dr，少步同事转来，摘要）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "生成器冻结，用 Local GRPO 学一个初始噪声残差映射，把 ReNO 式逐样本噪声优化摊销掉，并给噪声分布 KL 上界。图像 + 蛋白，摘要无数字。了解即可。",
+   "link": "https://openreview.net/forum?id=SAuycm49Dr"
+  },
+  {
+   "title": "SRA（OpenReview r4LVH0wwRB，少步同事转来，摘要）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "个性化少步模型：参考条件的 OPSD 自蒸馏 + 中间状态上归一化 reward 梯度的 detached 局部目标（= DiffusionOPSD 式 reward 梯度目标叠加 teacher 监督）。摘要称有匹配对照（均匀权重）。了解即可。",
+   "link": "https://openreview.net/forum?id=r4LVH0wwRB"
+  },
+  {
+   "title": "Integrated Regularizers（OpenReview x8nY8Bk0gr，少步同事转来，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "flow map 少步输出上直接反传 reward 梯度，同时沿模型诱导的连续概率流积分散度做正则，保留任意步采样。摘要无数字。了解即可。",
+   "link": "https://openreview.net/forum?id=x8nY8Bk0gr"
+  },
+  {
+   "title": "USIR（OpenReview d1W8ic466x，少步同事转来，摘要）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "单步图像复原：reward 引导正负目标改进一个看得到退化类型的特权策略，再自蒸馏给盲生成器。复原任务、在范围边缘。了解即可。",
+   "link": "https://openreview.net/forum?id=d1W8ic466x"
+  },
+  {
+   "title": "TempAct（OpenReview EEl17yDdA8 / 2606.28016）、MetaReach（OpenReview G8314PXr5q）",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "沿用 10-19 评级：TempAct 了解即可（重做 × 存疑）；MetaReach 观察（机制 × 证据不足，只有摘要，对世界模型 RL 最相关）。"
+  },
+  {
+   "title": "EVA（2603.17808 更新版，多模态文献追踪转来，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "冻结的逆动力学模型从生成视频解码动作，按动作平滑度和速度 / 加速度上限打分，再 RL 更新视频生成器（规则 / 检测器列）。这个 reward 天然偏好「动得少」的视频，要查 Dynamic Degree 是否下降。对机器人世界模型 RL 相关 → 观察。",
+   "link": "https://arxiv.org/abs/2603.17808"
+  },
+  {
+   "title": "AVTime（2610.26046，多模态文献追踪转来，摘要）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "BiTSA reward 训练的是音画密集**描述**模型（理解侧），需要 GT 时间戳描述，不能直接当音视频生成的 reward；顶多把 AVTime 模型当时序对齐评测器，前提是它和人评的一致性未知。范围外，了解即可。",
+   "link": "https://arxiv.org/abs/2610.26046"
+  },
+  {
+   "title": "MAPS（2610.25748，多模态文献追踪转来）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "RL 训的是广告脚本 LLM agent（多维 reward），视频生成器不训练；广告 / 推荐场景。范围外，落选。",
+   "link": "https://arxiv.org/abs/2610.25748"
+  },
+  {
+   "title": "其余一行",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "GeoART（相机控制视频 TTS，未比 BoN 墙钟）、ATLAS（VAR 注意力早剪枝搜索）、LEVI / LogicVal（评测基准，观察能否当 reward）、艺术家共创 RL（HCI）、Cross-Modal Forgetting（统一模型多次后训练毁掉已学能力）。"
+  }
+ ],
+ "trend_summary": "**本期认知变化**：①P3「方向 > 幅度」新增站得住的正例 DFR（分布项让 RL 离开 β 扫描曲线），RGDR 是弱旁证；②少步模型接黑盒 reward 的投稿集中出现（RISE-DMD、DualHeads、FLARE、STEP、Geo-FSRL，均只有摘要），等全文看谁在同学生上正面比了 ReFL / OPSD；③推理时搜索仍未在同墙钟下赢 BoN（NR-SMC）。跨篇收敛：本期无。"
 }
