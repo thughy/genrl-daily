@@ -1,7 +1,7 @@
 {
  "date": "2026-10-21",
- "version": "v1-初步",
- "headline": "本期无必读；值得看 RoboJudge（2610.27782）：800 条人标具身生成视频上测了 30 个 judge，最强闭源模型「物理遵循」只有 r 0.611，专用具身模型 ≤ 0.26，物理轴是 VLM reward 最弱的一轴。CheckDistill 精读后为了解即可。召回 G9 未过，数字为初步。",
+ "version": "v1",
+ "headline": "本期无必读；值得看 RoboJudge（2610.27782）：800 条人标具身生成视频上测了 30 个 judge，最强闭源模型「物理遵循」只有 r 0.611，专用具身模型 ≤ 0.26，物理轴是 VLM reward 最弱的一轴。CheckDistill 精读后为了解即可。",
  "notice": {
   "file": "2026-10-21/notice.md"
  },
