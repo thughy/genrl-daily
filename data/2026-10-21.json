@@ -31,7 +31,7 @@
     "code": "none",
     "note": "§4–5、App.A.1–A.2、E、Tab.1–8 读完（原文核对）；Codex 盲审最接近工作；没下载数据 / 模型，没跑评测。"
    },
-   "tldr": "同一个 VLM judge，「指令对齐」远比「物理遵循」可靠：最强闭源 IA r 0.733、PA r 0.611，专用具身 MLLM 的 PA ≤ 0.26，通用物理 judge（VideoPhy2 等）≤ 0.20。",
+   "tldr": "同一个 VLM judge 内比较，「指令对齐」都比「物理遵循」可靠：Gemini-3.7-Flash PA 0.611 / IA 0.709，GPT-5.5 PA 0.489 / IA 0.733（两个最强值来自不同模型），专用具身 MLLM 的 PA ≤ 0.26，通用物理 judge（VideoPhy2 等）≤ 0.20。",
    "delta": "相对 VideoPhy2 / Physion-Eval（通用场景物理判断）和 PhyMetric（VLM 物理裁判 ρ ≤ 0.293）：第一次在具身视频（夹爪 / 灵巧手 / 人手，10 个生成器）上按 PA / IA 两轴分开测 30 个 judge。",
    "lineage": {
     "equivalent_form": "测量论文：judge 分数 vs 人标 1–5 分的 Pearson r / 精确匹配 / MSE，按 PA、IA 两轴分别报。自训 RoboJudge-9B = Qwen3.5-9B SFT（12K 视频、25K 人工修正分数 + GPT-5.5 改写的推理）+ GRPO（reward = 与人标精确匹配）。",
@@ -60,7 +60,7 @@
    },
    "insight": "把 judge 的可靠度按轴拆开看：指令对齐几乎可用，物理遵循是 VLM reward 最弱的一轴。用一个合并分数当 reward，最弱的物理轴最容易被 RL 放大成 hacking。",
    "method": "1. 8 个源语料取 558 个源 clip，10 个生成器生成 800 条测试视频。\n2. 人标 PA / IA（1–5 分）：一人标、二人复核、专家裁定；练习轮标注者间精确一致 32.8% → 52.9%（±1 内 92.1%）。\n3. 30 个 judge 同 rubric、4 FPS 打分，报单轴 r、精确匹配、MSE。\n4. 自训：训练集 11,520 条生成视频 + 831 条真实示范，三家闭源 MLLM 预标、人工修正；源 clip 与测试集不相交。",
-   "evidence": "原文 Tab.2 / Tab.7：\n- 最强闭源：PA r 0.611（Gemini-3.7-Flash），IA r 0.733（GPT-5.5）。\n- 专用具身 MLLM：PA ≤ 0.261（Cosmos-Reason2-32B），RoboBrain2.5 0.042、RynnBrain 0.051。\n- 专用视频 judge：VideoPhy2 0.152、VideoScore2 0.195、VideoCon 0.095；PhyJudge 0.417。\n- RoboJudge-9B：PA 0.645 / IA 0.775 / 合并 0.719。对最强基线的配对 bootstrap：PA +0.034 [−0.011, 0.078]（不显著），IA +0.044 [0.010, 0.078]，合并 +0.089 [0.061, 0.119]。\n- 训练阶段（Tab.3）：SFT 已到合并 0.700，GRPO 只多 0.019。OOD（Tab.4）：VideoPhy2 PC r 0.179 → 0.346；Physion-Eval J 0.056 → SFT 0.105 → RL 0.093（RL 反而降）。",
+   "evidence": "原文 Tab.2 / Tab.7：\n- 各轴最强值来自不同模型：PA 最高 0.611（Gemini-3.7-Flash，其 IA 0.709），IA 最高 0.733（GPT-5.5，其 PA 0.489）；Claude-Opus-4.8 PA 0.505 / IA 0.655。同一模型内物理轴都更差。\n- 专用具身 MLLM：PA ≤ 0.261（Cosmos-Reason2-32B），RoboBrain2.5 0.042、RynnBrain 0.051。\n- 专用视频 judge：VideoPhy2 0.152、VideoScore2 0.195、VideoCon 0.095；PhyJudge 0.417。\n- RoboJudge-9B：PA 0.645 / IA 0.775 / 合并 0.719。对最强基线的配对 bootstrap：PA +0.034 [−0.011, 0.078]（不显著），IA +0.044 [0.010, 0.078]，合并 +0.089 [0.061, 0.119]。\n- 训练阶段（Tab.3）：SFT 已到合并 0.700，GRPO 只多 0.019。OOD（Tab.4）：VideoPhy2 PC r 0.179 → 0.346；Physion-Eval J 0.056 → SFT 0.105 → RL 0.093（RL 反而降）。",
    "solidity": "测量部分站得住：人标经专家裁定，30 个 judge 同协议，按源 clip 聚类 bootstrap。弱点：① 测试集的 10 个生成器全部出现在训练集（Tab.6），按生成器算是域内；② 训练标签由三家闭源 MLLM 预标再人工修正，可能锚定在这几家的判断上；③ 合并 r 把两轴放在一起算，校准好的模型会额外得分，所以合并增益（+0.089）大于单轴增益（推断）；④ 没把 judge 当 RL reward 用，没测优化压力下能否被 hack。",
    "reward_check": {
     "train_reward": "（judge 训练）GRPO reward = 与人标精确匹配",

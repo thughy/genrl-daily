@@ -67,7 +67,7 @@
    },
    "insight": "在干净图像坐标里，有效维度 k 远小于噪声状态维度 d，同样 n 个对比下方向估计的 cos² ≈ n/k，而噪声坐标是 n/d（Eq.9，各向同性高斯模型下）。",
    "method": "1. 当前策略生成：PickScore 用一条 SDE 轨迹上 η=0.03 的小扰动补全（24×24 轨迹库）；GenEval 每个 prompt 用 24 条独立 ODE 轨迹。\n2. 黑盒 reward 打分（GenEval / OCR / PickScore 等）。\n3. 每个 query 用其余样本的「干净图像差 → reward 差」做对偶 ridge（K×K 求解），得到方向 û_i。\n4. 只回传速度：⟨v_θ − sg(v_old), sg(û_i)⟩，按 t 加权；GenEval 只训每个 prompt reward 最低的 6 条。无 reward 导数、无 adjoint。",
-   "evidence": "- 效率（Tab.3，实测 GPU-h，同硬件官方代码复现 NFT）：PickScore 23.20 / 23.50 阈值 14.3 / 38.2 vs 29.7 / 98.5；OCR 0.80 / 0.95 2.2 / 4.1 vs 14.9 / 25.6；GenEval 0.80 / 0.90 11.5 / 22.8 vs 30.3 / 102.0。\n- 机制（§6.1）：干净 vs 噪声坐标回归，方向与 ODE 梯度的时间加权 cos 0.009 → 0.107，配对差 95% CI [0.092, 0.106]。\n- 方向直接用 vs 范数匹配的 adjoint 回传：81 GPU-h 时 23.65 vs 23.18，且 adjoint 每步贵 2.1×（§6.2）。\n- 对比方式（§6.3，等 batch、等优化器）：PickScore 局部扰动 23.41 / 23.63 / 23.78 vs 独立种子组 22.89 / 23.21 / 23.18（20 / 56 / 112 GPU-h）；GenEval 独立种子组 0.92 vs SDE 局部库 0.84–0.85，η=0.03 塌到约 0.30。\n- 联合五 reward（Tab.1）：0.94 / 0.92 / 23.82 vs NFT 发表值 0.94 / 0.91 / 23.80；held-out ClipScore 0.303 vs 0.293、HPSv2.1 0.339 vs 0.331，Aesthetic 5.95 vs 6.01。",
+   "evidence": "- 效率（Tab.3，实测 GPU-h，同硬件官方代码复现 NFT）：PickScore 23.20 / 23.50 阈值 14.3 / 38.2 vs 29.7 / 98.5；OCR 0.80 / 0.95 2.2 / 4.1 vs 14.9 / 25.6；GenEval 0.80 / 0.90 11.5 / 22.8 vs 30.3 / 102.0。\n- 机制（§6.1）：干净 vs 噪声坐标回归，方向与 ODE 梯度的时间加权 cos 0.009 → 0.107，配对差 95% CI [0.092, 0.106]。\n- 方向直接用 vs 范数匹配的 adjoint 回传：81 GPU-h 时 23.65 vs 23.18，且 adjoint 每步贵 2.1×（§6.2）。\n- 对比方式（§6.3，等 batch、等优化器）：PickScore 局部扰动 23.41 / 23.63 / 23.78 vs 独立种子组 22.89 / 23.21 / 23.18（20 / 56 / 112 GPU-h）；GenEval 独立种子组 0.92 vs SDE 局部库 0.84–0.85，η=0.03 塌到约 0.30。\n- 联合五 reward（Tab.1）：0.94 / 0.92 / 23.82 vs NFT 发表值 0.94 / 0.91 / 23.80；ClipScore 0.303 vs 0.293、HPSv2.1 0.339 vs 0.331 是联合训练 reward（Tab.1 灰色标记），不是留出评测；真正留出的 Aesthetic **RVGE 5.95 < NFT 6.01**，ImageReward 1.55 vs 1.49、UnifiedReward 3.50 vs 3.49。",
    "solidity": "- 训练 reward 与评测 reward 重叠（沿用 NFT 协议）；无人评；无多样性 / 塌缩指标。\n- 方差：PickScore 配方 2 个种子（App.E.4，种子间差 ≤ 0.14），NFT 曲线和其他配方单次。\n- 「约 1/5 计算」里 NFT 的 ≥2,000 GPU-h 是按单步耗时外推，不是实测。\n- 作者自报 OCR 单训 hack（整图大字 + 平底），给了 quality-floor 修正（OCR 0.97、PickScore 22.17）。",
    "reward_check": {
     "train_reward": "GenEval / OCR / PickScore（单训）；联合：GenEval、OCR、PickScore、ClipScore、HPSv2.1",
@@ -76,11 +76,11 @@
      "value": "yes",
      "note": "沿用 DiffusionNFT 协议，主指标即训练 reward"
     },
-    "heldout": "Aesthetic / ImageReward / UnifiedReward 为 held-out 自动指标；无人评",
+    "heldout": "只有 Aesthetic / ImageReward / UnifiedReward 为 held-out 自动指标（Aesthetic RVGE 5.95 低于 NFT 6.01；ClipScore、HPSv2.1 在联合训练 reward 内）；无人评",
     "hacking_signs": "OCR 单训出现整图大字（作者自报）；PickScore 过饱和未见报告，我没看样例"
    },
    "code_analysis": "rvge/endpoint_gradient.py:33、:114 为对偶 ridge 解，与 Eq.12 一致；scripts/train_geneval.sh 为 24 条 ODE 组、`--train-select low --train-per-group 6 --sibling-centre mean`，与 §5.1 一致（实测读行）。代码里还有核加权局部线性等多个变体，论文没写；没跑。",
-   "concerns": "- 质量侧只有自动指标，训练 = 评测；没比 DiffusionOPSD。\n- 视频 latent 有效维度大，按 Eq.9 方向会更弱（推断）；回归类在视频上压运动最多（HPSv3 下 Dynamic Degree：NFT 14.24、FlowAWR 4.86，base 48.61，跨篇记录）。\n- 方向在当前策略自己的 ODE 轨迹上拟合、参考 = v_old，按构造不违反 P10（推断）。",
+   "concerns": "- 质量侧只有自动指标，训练 = 评测；没比 DiffusionOPSD。\n- 视频 latent 有效维度大，按 Eq.9 方向会更弱（推断）；回归类在视频上压运动最多（HPSv3 下 Dynamic Degree：NFT 14.24、FlowAWR 4.86，base 48.61，跨篇记录）。\n- 小扰动（trajectory bank）设置下 OCR 版式趋同：各 prompt 8×8 亮度缩略图的跨 prompt 相关在第 40 次更新达 0.93（ODE 独立种子组 0.52，base 0.05），出现扁平的整图大字版式（App.H.1）。\n- 方向在当前策略自己的 ODE 轨迹上拟合、参考 = v_old，按构造不违反 P10（推断）。",
    "principle": "对比怎么构造要跟着 reward 的连续性走：reward 平滑时，同一轨迹上的小扰动差异给出最干净的梯度信号；reward 是平台或离散时，小扰动看不到 reward 变化，要靠独立样本才能跨过平台（P11 的等预算证据）。",
    "takeaway": "**对我们训练的含义**：音画同步、VLM 打分不可微，这是一条把黑盒 reward 变成 ① 形状方向的路。先跑：同 GPU-h、同 reward（DeSync + AVC-Reward）下比 Astrolabe 式 AR-NFT 与 RVGE 式回归，同时记 reward、Dynamic Degree 和人评；DeSync 这类近似平滑的分数用同轨迹扰动，VLM 是否通过这类离散分数用独立种子组。"
   }
