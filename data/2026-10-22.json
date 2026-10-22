@@ -1,8 +1,269 @@
 {
  "date": "2026-10-22",
- "version": "v0-初步",
- "headline": "初步（召回未完成）：截至 08:21 抓到本期 344 个编号，暂无必读或值得看；最相关的是 DualHeads（2610.28858，两个分类头给少步扩散做 reward 倾斜，10-20 的观察项今天全文放出），待精读。完整一期稍后补发。",
- "notice": {"file": "2026-10-22/notice.md"},
- "overview": {"file": "2026-10-22/overview.md"},
- "papers": []
+ "version": "v1",
+ "headline": "本期无必读、无值得看。两篇最相关的都在做同一件事：给少步生成器同时接一个 reward 和一个「参考判别器」——DualHeads（2610.28858）和 AdvFidelity（2610.29380），两篇都是了解即可：判别器那一侧的参考图本身已经被 reward 筛过或由 RL 老师生成，增益有相当一部分是在蒸馏参考池。另：查出 10-15 至 10-20 有 138 篇延迟公告的论文没进筛选，已全部补筛，0 篇在范围内。",
+ "notice": {
+  "file": "2026-10-22/notice.md"
+ },
+ "overview": {
+  "file": "2026-10-22/overview.md"
+ },
+ "papers": [
+  {
+   "id": "dualheads",
+   "rating": "fyi",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "rating_reason": "机制 × 存疑：「两个分类头 = 带 KL 的 reward 倾斜」推导干净，头消融也说明两头各管一件事；但没在 L2/L3 协议下和 DiffusionOPSD 或 reward 倾斜 DMD（RISE-DMD、FLARE）比，同 4 NFE 输给 TDM-R1（OCR 0.92 对 0.95、GenEval 0.90 对 0.92，均为抄录），单次运行、无种子、无代码。",
+   "directions": [
+    "distill-rl",
+    "online-rl",
+    "reward-model"
+   ],
+   "title": "DualHeads: Reward-tilted few-step diffusion made simple",
+   "published": "arXiv 2026-10-21 (v1)，10-22 公告；即 OpenReview drdT6PdTfc（10-20 期观察项）",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.28858"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "partial",
+    "code": "unavailable",
+    "note": "HTML 全文 + PDF（Fig.16 只在 PDF，HTML 渲染失败）；Tab.1–2、§4.3、App.A–C.5 原文核对；Fig.7/8 看了图，Fig.8 做了整行饱和度粗测；代码写明「发表后公开」。"
+   },
+   "tldr": "少步生成器做 reward 优化，可以不要轨迹似然、不要 teacher score：一个「参考 vs 生成」判别头（管 reward 没说的一切）加一个 reward 头（管 reward 说的），两头 logit 加权和就是 KL 正则的 reward 倾斜，β ∝ λ_D/λ_R。",
+   "delta": "相对 DiffusionNFT：同样的组内 optimality 软标签，但拿去训一个分类头再反传 logit；相对 DMD2 / LADD：在判别头之外再加一个 reward 头；相对 TDM-R1：不做 teacher 轨迹匹配，代价是同 NFE 分数更低。",
+   "lineage": {
+    "equivalent_form": "生成器一步预测 x̂₁ = f_θ(x_t)，最大化 λ_R·R_ψ(N_t(x̂₁)) + λ_D·D_φ(N_t(x̂₁))。头最优时 D = log p_ref/p_θ，R = 组内归一 reward 的软标签 logit，合起来是反向 KL 拟合 p_ref·exp(r/β)，β_eq = C·λ_D/λ_R（C = 2.5）（§3.2–3.3，原文核对）。归格：① 可微回传（对学到的 reward 头）× 黑盒 reward 蒸进头。",
+    "baseline": "L2/L3 应比的是 DiffusionOPSD（Protocol O，SD3.5-M + Z-Image-Turbo）和少步 reward 倾斜线（RISE-DMD、FLARE、TDM-R1）。论文只比了 TDM-R1 / REST / RTDMD / DMSampler，**全部抄录**原论文数字（协议、分辨率、NFE 不同；Z-Image 的 TDM-R1 在 1024²，DualHeads 在 512² 训练）；没比 OPSD、RISE-DMD、FLARE。",
+    "rows": [
+     {
+      "work": "DiffusionNFT（L3）",
+      "how": "组内 reward 归一成 optimality 概率，正 / 负隐式速度场回归",
+      "change": "同样的软标签改为训练 reward 头，生成器反传头的 logit"
+     },
+     {
+      "work": "DMD2 / LADD（判别头蒸馏）",
+      "how": "冻结骨干特征上的 GAN 判别头，把学生拉向 teacher / 真实分布",
+      "change": "参考池换成「基座 best-of-8 且 r≥阈值」的样本，并加 reward 头"
+     },
+     {
+      "work": "TDM-R1（少步 RL）",
+      "how": "teacher 轨迹分布匹配 + reward",
+      "change": "去掉 teacher / fake score，只剩两个二分类头"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "GAN 式 KL + 学到的 reward 头 = 已知组件拼接，懂 DMD2 和 NFT 的人能预测「能 work、但不如带 teacher 的 TDM-R1」。预测不到的是参考池的作用之大：换成 Nano Banana 参考后 OCR 不变（0.92），GenEval 从 0.90 掉到 0.73。"
+    }
+   },
+   "insight": "两头分工：reward 头决定 reward 测到的东西，参考头决定 reward 没测到的一切（风格、构图、组合正确性）。参考池选错，会把 reward 之外的维度一起带偏。",
+   "method": "1. 每个 prompt 组 K = 24（消融 K = 8），生成器无梯度跑 4 步 LCM 采样，解码后用外部 reward 打分，按组内归一得软标签（C = 2.5）。\n2. reward 头：在重加噪（σ ∈ [0.25, 0.98]）的生成样本上做软标签 BCE；参考头：参考池 vs 生成样本的 GAN 判别。两头都挂在冻结扩散骨干的多层特征上。\n3. 生成器（LoRA r = 32）一步预测 x̂₁，重加噪后过两头，最大化加权 logit。reward 头先在参考池上 warm-up 1000 步。\n4. 参考池：OCR 为基座 20 步、每 prompt 8 张取最高且 r ≥ 0.6；GenEval 另建；其余用 Pick-a-Pic 原图；可换 Nano Banana 生成。",
+   "evidence": "原文 Tab.1（SD3.5-M，512²）：\n- OCR：4 步 0.92（2 步 0.91）；起点按表应为 4 步 TDM 学生 0.51（原文只写「初始化为少步蒸馏模型」，推断）；同 4 NFE TDM-R1 0.95、REST（8 NFE，联合 PickScore）0.96，均抄录。\n- GenEval：4 步 0.90（2 步 0.89）；TDM-R1 0.92、RTDMD 0.94，抄录。\n- 换 Nano Banana 参考池：OCR 0.92 不变，Aes 5.46 → 5.62，CLIP 28.75 → 26.86，GenEval 0.90 → 0.73（§4.3）。\n原文 Tab.2（Z-Image-Turbo，HPSv3 reward，单次 run EMA，120 步）：HPSv3 11.23 → 13.93（TDM-R1 12.67，二者在 1024² 评测）；held-out PickScore 22.86 → 23.03、HPSv2.1 0.296 → 0.314；OCR 0.78 → 0.75、CLIP 27.42 → 27.12 下降。\n消融：β_eq 0.1 / 0.25 / 1 → OCR 0.907 / 0.888 / 0.862（±0.029，Fig.4a）。Fig.16（PDF 第 22 页，读图估计）：去掉参考头（λ_D = 0）训练 reward 先升到约 0.83，约 900 步后掉到 0；只留参考头（λ_R = 0）先跌到约 0.42，再慢慢升到约 0.65–0.72；完整方法稳定在约 0.88–0.90。生成器损失换 minimax（JS）约 500 步崩溃，换线性损失有几次深跌（最低约 0.31）但能恢复。",
+   "solidity": "训练 reward = 评测 reward（OCR、GenEval 都用 Flow-GRPO 测试集）；held-out 只有 PickScore / HPS / ImageReward 这类模型分；无人评、无种子（Z-Image 单 run）、无多样性指标、无代码。Fig.8 看图：DualHeads 样本比 Turbo 更「满」（冰箱塞满食物、消防栓场景加了消防员），对比度略高；整行 HSV 饱和度粗测（含边距与字幕，实测）Turbo 48.3、DualHeads 60.3、TDM-R1 73.1——比 TDM-R1 克制，但比起点高。**HPSv3 本身对少步伪影不敏感**：AdvFidelity App.B 测得干净参考在 HPSv3 上只赢 1–2 步重建图 38.3%，所以 13.93 的 HPSv3 不能当画质证据。",
+   "media": [
+    {
+     "src": "assets/2026-10-22/dualheads-fig16.webp",
+     "caption": "原文 Fig.16（PDF p.22）：(a) 去掉参考头 reward 约 900 步后崩到 0，只留参考头 reward 只到约 0.7；(b) 生成器损失类型。"
+    },
+    {
+     "src": "assets/2026-10-22/dualheads-fig8.webp",
+     "caption": "原文 Fig.8：Z-Image base（100 NFE）/ Turbo（4）/ TDM-R1（4）/ DualHeads（4）。DualHeads 倾向往画面里加细节和物体。"
+    }
+   ],
+   "reward_check": {
+    "train_reward": "OCR / GenEval（各自单独训）；PickScore+CLIP+HPSv2.1；HPSv3（Z-Image）",
+    "eval_reward": "同名测试集 + PickScore / HPS / ImageReward / Aes / CLIP",
+    "overlap": {
+     "value": "yes",
+     "note": "主指标即训练 reward"
+    },
+    "heldout": "只有模型分，无人评",
+    "hacking_signs": "Z-Image 上 OCR、CLIP 降；样本加细节；HPSv3 对伪影不敏感（AdvFidelity Tab.6）"
+   },
+   "concerns": "① 参考池 = 基座 best-of-8 且 r ≥ 阈值，本身已被 reward 倾斜，参考头有一部分等于拒绝采样蒸馏；Fig.16 的「只留参考头」只到约 0.7，说明 reward 头确实贡献了约 0.2 的 OCR，但参考池的贡献没有单独量化。② 所有少步基线都是抄录，分辨率、NFE 不同。③ App.A 作者自己承认：头只是近似最优，reward 头随生成器重拟合，交替更新无收敛保证；生成器优化的是 reward 头而不是真 reward，继承头和 reward 的误差，参考头也分辨不出 reward hacking。④ 多 reward 设置（Tab.4）多数指标落后 MeanFlowNFT、RTDMD。",
+   "principle": "少步生成器的 reward 优化可以拆成「reward 分类器 + 分布判别器」两项，判别器的参考集决定 reward 之外所有维度的去向——选参考集等于选正则的方向。",
+   "takeaway": "**对我们训练的含义**：DMD 学生（世界模型 / 音视频少步）想接黑盒 reward 时，这是最便宜的形式：不用 teacher score、不用似然，只加两个头。但先跑两个对照再信：λ_R = 0（只用参考头）和「参考池换成未按 reward 筛的样本」，看增益里多少是在蒸馏参考池；HPSv3 / ImageReward 类分数不能当画质证据。暂不改变我们对 OPSD / NFT 的选择。"
+  },
+  {
+   "id": "advfidelity",
+   "rating": "fyi",
+   "originality": "mechanism",
+   "credibility": "doubtful",
+   "rating_reason": "机制（负样本构造）× 存疑：Tab.4 逐步消融支持「配对负样本」有用（HPSv2 0.3920 → 0.4125），但 HPDv2 的参考图来自 HPSv2 对齐过的全步 LeapAlign，「换成目标锚参考」这一步（0.3558 → 0.3920）就是在蒸馏 RL 老师；没有只用 task reward 的同步数对照，没比 DiffusionOPSD / DualHeads / TDM-R1，单次运行。",
+   "directions": [
+    "diff-reward",
+    "distill-rl",
+    "reward-model"
+   ],
+   "title": "AdvFidelity: Unifying Preference Alignment and Few-Step Image Generation within Reinforcement Learning",
+   "published": "arXiv 2026-10-21 (v1)，10-22 公告（10:00 后放出）",
+   "links": {
+    "paper": "https://arxiv.org/abs/2610.29380"
+   },
+   "coverage": {
+    "paper": "full",
+    "samples": "none",
+    "code": "unavailable",
+    "note": "HTML 全文；Codex 只读抽取表格与消融，我抽查 8 个数字均与原文一致；未看样例图；未声明代码。预测未在读结果前登记（抽取先于精读），不计命中率。"
+   },
+   "tldr": "判别器 reward 的关键在负样本：把参考图加噪到 t ∈ {0.3, 0.5}，再让当前少步生成器 1–2 步还原，正负样本内容和构图一样，判别器只能看伪影；在线更新让它追着生成器当前的失败模式走。",
+   "delta": "相对 Adv-GRPO（在线对抗 reward）：负样本改为内容配对的重建；相对 LeapAlign（ReFL 族）：加判别器 reward，并直接在推断用的 4 / 8 步轨迹上训；相对 DualHeads：判别器只看伪影，不承担「拉回参考分布」。",
+   "lineage": {
+    "equivalent_form": "min_θ E[(m − r_task(G_θ^(τ)) − λ·D_φ(G_θ^(τ)))₊]，两项都按 LeapAlign 沿 4 / 8 步轨迹回传（梯度折扣 0.3），D 在生成器步固定；无 KL / DMD / 感知正则（§3.1–3.5，Codex 抽取、我核对）。实质 = 带 margin 截断的 ReFL，reward = HPSv2 + 0.05 × 伪影判别器。归格：① 可微 reward 直接回传 × 可微模型打分。",
+    "baseline": "① 线最强基线是 ReFL / DiffusionOPSD（Protocol O）。本文比了 ReFL、DRaFT-LV、LeapAlign（50 NFE，全部抄录 LeapAlign 论文）和 RTDMD（官方 checkpoint 评测 + 同协议重训）；没比 OPSD、DualHeads、TDM-R1、REST、RISE-DMD。",
+    "rows": [
+     {
+      "work": "LeapAlign（ReFL 族）",
+      "how": "leap 轨迹把可微 reward 的梯度传到任意步，全步 FLUX",
+      "change": "在 4 / 8 步推断预算上训，reward 加伪影判别器"
+     },
+     {
+      "work": "Adv-GRPO",
+      "how": "GRPO 中加在线对抗 reward",
+      "change": "负样本 = 当前生成器对加噪参考的重建（内容配对）"
+     },
+     {
+      "work": "RTDMD（少步联合 RL + DMD）",
+      "how": "DMD warm-up 后多 reward RL",
+      "change": "不用 DMD / 蒸馏目标，同协议重训 RTDMD 作对照"
+     }
+    ],
+    "counterfactual": {
+     "value": "partly",
+     "text": "「判别器 reward 补 reward 盲区的伪影」可预测；「配对负样本让判别器只看伪影」是合理的小机制。预测不到的是参考来源的分量：参考换成 LeapAlign 样本一步就占了从 Vanilla 到完整方法总增益的一半以上（0.0362 / 0.0709）。"
+    }
+   },
+   "insight": "对抗 / 判别器 reward 要想只惩罚伪影，正负样本必须内容配对；否则判别器会去学内容和风格差异，变成「拉向参考分布」。",
+   "method": "1. 参考池：HPDv2 用 HPSv2 对齐过的 LeapAlign 50 步样本 5 万张（未按 reward 过滤）；GenEval 用原版 FLUX 50 步 5 千张；虚拟试衣用训练集真值。\n2. 负样本：参考加噪到 t ∈ {0.3, 0.5}，当前生成器 1–2 步还原。\n3. 判别器：冻结 DINOv2-L CLS + MLP，Bradley–Terry 排序参考 > 重建；整图 + 256 / 384 随机裁剪；每次生成器更新前更新 4 次。\n4. 生成器：FLUX.1-dev LoRA r = 256，4 / 8 步、无 CFG，按 LeapAlign 回传 HPSv2 + 0.05·D，margin m = 0.55。",
+   "evidence": "原文 Tab.1（HPDv2，HPSv2 / PickScore / ImageReward）：AdvFidelity 4 步 0.4055 / 23.6211 / 1.5164，8 步 0.4125 / 23.7685 / 1.5255；全步 LeapAlign（50 NFE，抄录）0.4096 / 23.7239 / 1.5105；同协议重训 RTDMD 4 / 8 步 HPSv2 0.3724 / 0.3923。\nTab.2（GenEval，held-out，训练 reward 是 HPSv2）：AdvFidelity 4 / 8 步 0.7535 / 0.7759；LeapAlign 0.7420；RTDMD 重训 0.6794 / 0.7236；8 步 Position 26.75 低于 LeapAlign 30.25。\nTab.4 消融（8 步）：Vanilla（base 锚、非配对、冻结 D）0.3416 → +在线 D 0.3558 → +目标锚参考 0.3920 → +配对负样本 0.4125；顺序做 LeapAlign + DMD 只有 0.3978 / 22.9654。\nApp.B Tab.6（1000 对，干净参考 vs 1–2 步重建，参考胜率）：Aesthetic 95.6%、PickScore 83.3%、HPSv2 79.9%、ImageReward 48.2%、CLIPScore 40.3%、HPSv3 38.3%。",
+   "solidity": "HPDv2 主指标 HPSv2 = 训练 reward；GenEval 是 held-out（这点比 DualHeads 好）；虚拟试衣 DINO 相似度 = 训练 reward，Gemini 评分的 ± 是同一批图评 3 次的标准差，不是训练种子。无人评、无种子、无多样性指标、无 GPU-h、未声明代码。",
+   "reward_check": {
+    "train_reward": "HPSv2（+ 伪影判别器）；试衣：DINO 相似度",
+    "eval_reward": "HPDv2：HPSv2 / PickScore / ImageReward / UnifiedReward；GenEval；试衣：Gemini 3.5 Flash 四项",
+    "overlap": {
+     "value": "partial",
+     "note": "HPDv2 主指标 = 训练 reward；GenEval 为 held-out"
+    },
+    "heldout": "GenEval、PickScore、ImageReward、UnifiedReward；无人评",
+    "hacking_signs": "论文主动测了指标对伪影的敏感度（Tab.6）；最终模型的 hacking 未定量"
+   },
+   "concerns": "① 缺 λ = 0（只用 HPSv2、同 4 / 8 步）对照，判别器 reward 对 task 分数的净贡献未知；② HPDv2 的参考是 RL 老师的输出，「单阶段、无蒸馏」的说法打折扣；③ 缺等强度 KL / DMD / 感知正则对照（「调参包装」检验未过，只证明了负样本构造优于更朴素的判别器）；④ 单次运行。",
+   "principle": "判别器 / 对抗 reward 的作用由负样本决定：负样本与正样本内容配对时，它只惩罚 reward 盲区的低层伪影；不配对时，它变成「拉向参考分布」的正则。",
+   "takeaway": "**对我们训练的含义**：给 DMD / 少步世界模型加对抗项时，负样本可以用「真实片段加噪 + 学生少步还原」，比学生从纯噪声生成更对准伪影（少步同事对 Radian 也得出同样的便宜实验，推断，未实测）。HPSv3 / ImageReward / CLIPScore 不能当伪影指标，评测时要加 Aesthetic / PickScore 这类在 Tab.6 上敏感的分数或人评。"
+  },
+  {
+   "id": "review",
+   "rating": "fyi",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "rating_reason": "机制（小）× 证据不足（只有摘要）：reward 是 VIGOR 式跨视角重投影，长度课程接近 WorldCompass 的 clip 级 rollout；摘要没给 RL 算法、没说训练与评测 reward 是否同源、没说和谁在等算力下比。OpenReview PDF 403（challenge），arXiv 标题与关键词检索都找不到孪生版本。",
+   "directions": [
+    "video-rl",
+    "reward-model"
+   ],
+   "title": "ReView: Novel-View Video Generation with Spatiotemporal Consistency",
+   "published": "ICLR 2027 投稿（OpenReview sko7pDWv3n），多模态文献追踪 10-22 转来",
+   "links": {
+    "paper": "https://openreview.net/forum?id=sko7pDWv3n"
+   },
+   "coverage": {
+    "paper": "none",
+    "samples": "none",
+    "code": "none",
+    "note": "只读摘要（队友 raw/or_iclr27_new.json）；OpenReview PDF 与 API 均 403；最接近工作 VIGOR、WorldCompass、LoGo 只读了摘要。"
+   },
+   "tldr": "新视角视频生成：先 SFT，再用跨视角重投影 reward 做 RL；rollout 从单帧 → 混合 → 全视频逐步拉长，摘要称不到 1/3 算力就追平全视频 RL 的几何一致性。",
+   "delta": "相对 VIGOR（2603.16271，重投影误差当几何 reward，SFT / DPO / 推理时搜索）：用在新视角视频 + 在线 RL；相对 WorldCompass（clip 级 rollout 省算力）：改成单帧到全视频的长度课程。",
+   "lineage": {
+    "equivalent_form": "摘要未给（RL 算法未写）。可确认的只有：reward = 3D 重投影 + 视觉匹配的跨视角一致性；更新单元按阶段从单帧扩到整段视频。",
+    "rows": [
+     {
+      "work": "VIGOR（2603.16271）",
+      "link": "https://arxiv.org/abs/2603.16271",
+      "how": "VGGT 重建后按点计算跨帧重投影误差作几何 reward（主贡献）",
+      "change": "跨视角（源视频 ↔ 目标视角）重投影 + 视觉匹配"
+     },
+     {
+      "work": "WorldCompass（2602.09022）",
+      "link": "https://arxiv.org/abs/2602.09022",
+      "how": "AR 世界模型在单个目标 clip 上多次采样打分，省 rollout（主贡献）",
+      "change": "单帧 → 混合 → 全视频的三段长度课程"
+     },
+     {
+      "work": "LoGo（2610.03636）",
+      "link": "https://arxiv.org/abs/2610.03636",
+      "how": "局部 + 全局 reward 做 3D 一致性的 credit 分配",
+      "change": "未比较（摘要未提）"
+     }
+    ],
+    "counterfactual": {
+     "value": "predictable",
+     "text": "几何 reward 提升几何一致性、短 rollout 省算力，懂 VIGOR / WorldCompass 的人都能预测。预测不到、也最值得看的是：单帧更新学到的东西能否迁移到整段视频的时序一致性，以及运动幅度会不会被压——摘要没有回答。"
+    }
+   },
+   "concerns": "要查（全文出来后）：① 训练与评测的几何指标是否同源（重投影 reward 训、重投影类指标评 = 重叠）；② 有没有和 Flow-GRPO / DiffusionNFT 在同等算力下比；③ 长度课程本身的消融（只用单帧 / 只用全视频 / 课程）；④ 动态程度是否下降（scope 门槛 6）；⑤ 有无人评。",
+   "principle": "（待验证）视频 RL 的 rollout 长度可以做课程：先在单帧上用便宜 rollout 学空间约束，再扩到整段学时序——前提是空间约束与时序约束可分。",
+   "takeaway": "**对我们训练的含义**：长时域世界模型 RL 的算力大头在 rollout；如果「单帧 → 全段」课程真能用 1/3 算力追平，这是我们 AR 世界模型 RL 最先该试的省算力手段。先跑的对照：同算力下「只训短段」与「课程」在长段上的几何 / 运动指标。留观察，全文出来再定级。"
+  }
+ ],
+ "brief": [
+  {
+   "title": "HorizonComposer（2610.28829，驾驶视频编辑）",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "把 CFGRL 的 advantage 条件化（离线 RL）搬到驾驶视频编辑：用编辑指标 + SAM 场景变化掩码 + 交通语义检查构造逐像素 reward 图，在真实 + 合成混合数据上训。等价形式 = 带逐像素权重的 advantage 条件 flow matching。有用户研究和 reward 分项消融；代码与数据「因公司限制」不发布。重做 × 存疑，了解即可。",
+   "link": "https://arxiv.org/abs/2610.28829"
+  },
+  {
+   "title": "Correction Training for Diffusion Models（2610.14136，10-09 投稿、10-15 公告，本期回补）",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "**漏筛事故条目**：当时没进筛选（见更新说明）。内容不在本追踪范围：监督式校正器——输入基模型的预测、回归同一真值，采样时每步反复校正；最后把校正结果蒸馏回基模型以消掉推理开销；称无引导 FID 明显改进、与 CFG 相当，和 CFG 叠加可减轻过饱和（摘要）。已转少步同事。对我们的含义：AR 世界模型的 exposure bias 有一个非 RL 的修法可对照，暂不精读。",
+   "link": "https://arxiv.org/abs/2610.14136"
+  },
+  {
+   "title": "CineEvolve（2610.29590，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "多镜头电影视频：同一个 VLM 里的 Director / Critic 交替 RL（E-GRPO：历史锚定 + 修订保护，缓解优势膨胀），生成器本身不更新；附 40K 轨迹数据集 CineTraj。属「RL 驱动生成器的 agent」，观察。",
+   "link": "https://arxiv.org/abs/2610.29590"
+  },
+  {
+   "title": "Internal Guidance（2610.29086，stat.ML，摘要）",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "采样 reward 指数倾斜分布时，不改去噪器输出，而是改它的评估点：对嵌入超立方体的离散分布，线性倾斜密度的去噪器恰好等于基去噪器在平移缩放后输入上的值。推理时 guidance，格⑤ / test-time 的理论旁注。",
+   "link": "https://arxiv.org/abs/2610.29086"
+  },
+  {
+   "title": "T-DIG（2610.29003，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "文本条件的多样性：用户用自然语言指定「在哪个轴上变化」，用 GRPO 训提示策略驱动冻结生成器（多样性 reward）。生成器不更新，L6 多样性旁注。",
+   "link": "https://arxiv.org/abs/2610.29003"
+  },
+  {
+   "title": "DoobPO（2610.28990，机器人策略，摘要）",
+   "originality": "mechanism",
+   "credibility": "insufficient",
+   "line": "用 Doob h-变换做扩散 / flow 策略的无似然 RL：先学一个轻量比值模型表示策略改进，再把比值倾斜后的目标策略用条件漂移蒸馏进生成策略。和 DiffusionNFT / RISE-DMD「先学改进方向、再蒸馏」同构，机器人任务，非媒体生成。",
+   "link": "https://arxiv.org/abs/2610.28990"
+  },
+  {
+   "title": "Events, Not Pixels（2610.29435，摘要）",
+   "originality": "finding",
+   "credibility": "insufficient",
+   "line": "世界模型规划的回报误差主要出在得分 / 终止那几步「事件转移」：像素误差并不更大（中位比 0.85），换成真实转移能消掉中位 70% 的回报误差；按 MSE / SSIM / LPIPS 挑最大误差步替换反而不如随机（Atari-100k，44 组）。对「用画质评世界模型 / 当 reward」是反例，已转文献追踪同事。",
+   "link": "https://arxiv.org/abs/2610.29435"
+  },
+  {
+   "title": "其余",
+   "originality": "redo",
+   "credibility": "insufficient",
+   "line": "MixAgent（2610.29093，混音 critic 的 SFT + 偏好优化，非生成器 RL）、RLMuscle（2610.30033，RL 肌肉控制动画）、Better Policies, Worse Verifier Audits（2610.29029，在线 verifier 审计塌缩理论，LLM）、Spatially Gated Steering（2610.29651，多人场景去偏）、Dreaming Learning（2610.30009，自生成数据塌缩的谱分析）、Gaussian Priors Fail（2610.28849，VAE 高斯先验把多峰压进重叠 latent、RL 微调放大成坍缩，只有分子数据）：范围外或观察。回补 138 篇中 6 条 EDGE（安全概念抑制 ×2、实验室教学视频基准、PLDiv 多样性指标、TTS 感知掩蔽、MRI 评估审计）复核后均不收。"
+  }
+ ],
+ "trend_summary": "**本期认知变化**：①新观察「少步 RL 里的判别器 / 参考项，其参考池常已被 reward 倾斜」（DualHeads：基座 best-of-8；AdvFidelity：RL 老师样本），这类方法必须报「只用参考项」和「只用 reward 项」两个对照，2 个来源，不立候选；②metrics：HPSv3 / ImageReward / CLIPScore 对少步伪影不敏感（AdvFidelity Tab.6）；③跨篇收敛：「少步模型上的 reward 优化需要显式分布锚」有 2 个带证据来源（OPSD 重跑 NFT 在 Z-Image-Turbo 上跌破 base；DualHeads Fig.16 去掉参考头约 900 步崩溃），加 AdvFidelity 动机图与 FLARE / RISE-DMD 摘要，暂不立候选。"
 }

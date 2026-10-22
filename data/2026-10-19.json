@@ -1,7 +1,7 @@
 {
  "date": "2026-10-19",
  "version": "v1",
- "headline": "本期无必读；值得看 DiffusionRVGE：用组内 ridge 回归从黑盒 reward 估出 reward 梯度方向，同硬件比 DiffusionNFT 快 2.1–6.7 倍。它的等预算消融还给出：reward 平滑用同轨迹小扰动对比，离散用独立种子组（P11 新证据）。召回 G9 未过，数字为初步。",
+ "headline": "本期无必读；值得看 DiffusionRVGE：用组内 ridge 回归从黑盒 reward 估出 reward 梯度方向，同硬件比 DiffusionNFT 快 2.1–6.7 倍。它的等预算消融还给出：reward 平滑用同轨迹小扰动对比，离散用独立种子组（P11 新证据）。召回已补核完成（10-22 逐 ID 对账：10-19 公告的 570 篇全部筛过，补筛 4 篇均不在范围内），结论不变。",
  "notice": {
   "file": "2026-10-19/notice.md"
  },
