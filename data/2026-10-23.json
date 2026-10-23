@@ -1,7 +1,7 @@
 {
  "date": "2026-10-23",
- "version": "v0-初步",
- "headline": "召回进行中（初步）：API 周五窗口仍为 0，列表/RSS 仍是周四；已从 2610.30137 起抓到约 396 个 abs（9 类约 112 篇）。本期暂无必读/值得看结论，完整版稍后替换。周五周报随完整版发。",
+ "version": "v1",
+ "headline": "本期无必读、无值得看。范围内最近的是 HeyGen Voice（场景感知语音克隆技术报告，含 GRPO+DPO，了解即可）；周五发 W43「本周认知变化」（含 D2G 更正、首次正式召回抽检、影子本质清单）。",
  "notice": {
   "file": "2026-10-23/notice.md"
  },
@@ -9,6 +9,22 @@
   "file": "2026-10-23/overview.md"
  },
  "papers": [],
- "brief": [],
- "trend_summary": "初步版占位。召回 G9 未过；初筛与精读进行中。"
+ "brief": [
+  {
+   "title": "HeyGen Voice（2610.30470）",
+   "link": "https://arxiv.org/abs/2610.30470",
+   "originality": "redo",
+   "credibility": "doubtful",
+   "line": "PDF §3.5–3.6 + §5 读完。场景感知语音克隆技术报告：五阶段课程（多语 TTS → 模拟/真实跨场景 → **GRPO**（ASR 可懂度 + 说话人验证）→ **DPO LoRA** 表达力 adapter）。跨场景 331 例：voice-clone 目标说话人 SIM 0.590 / ImageBind 0.282；产品盲测对 ElevenLabs 62.2±1.1%（8332 votes）。**reward 问题**：训练 reward 含 CER/WER 与说话人 SIM，与自动评测同源风险；**无去掉 GRPO / 只 SFT 消融**，RL 增量不可归因。重做 × 存疑，了解即可。"
+  },
+  {
+   "title": "MetaReach（OR G8314PXr5q，文献追踪再转交）",
+   "line": "沿用 10-19：观察（机制 × 证据不足）。视频世界模型内外循环 GRPO；PDF/API 仍 403，无 arXiv 孪生。预测不变（ACA>RCM；适配解码器或让 reward 变宽松）。全文出再升评。"
+  },
+  {
+   "title": "摘要级 / 落选（今日其余）",
+   "line": "PhysibleMDM（2610.30500）：推理时 Sep-CMA-ES 优化动作扩散噪声，**不训练**生成器 → OUT·推理时。Edit Don't Imitate（2610.30231）：VLM 视觉数学纠错蒸馏 → OUT。FrameGRPO 类视频理解 GRPO / LLM 自评道德 RL / Arena-Hard judge 指令敏感性 → OUT·LLM（召回抽检软漏 2，见周报）。FEWSTEP：2610.30320 未来视频表征自蒸馏 → 少步/世界模型；2610.30450 BELT、2610.30478 → OUT。少步同事 FYI：Reward-Aligned Distillation（OR Mqex8gpRNi）OUT·LLM，不转少步主评。new_since_r1 7 篇全 OUT。"
+  }
+ ],
+ "trend_summary": "**本期**：无新原理 / 无升格。周五 W43 周报见站内 weekly；流程改动（本质标准影子两周）已上线 scope，本周影子本质清单在周报 §影子。"
 }

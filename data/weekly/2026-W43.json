@@ -1,0 +1,39 @@
+{
+ "week": "2026-W43",
+ "title": "本周：RoboJudge（PA≪IA）+ DiffusionRVGE（组内 ridge）；D2G 单次运行更正；本质标准影子两周；召回抽检硬漏 0",
+ "summary": {
+  "file": "weekly/2026-W43-summary.md"
+ },
+ "range": [
+  "2026-10-19",
+  "2026-10-23"
+ ],
+ "highlights": [
+  {
+   "date": "2026-10-21",
+   "paper_id": "robojudge",
+   "title": "RoboJudge",
+   "note": "值得看。具身视频裁判 PA≪IA；上 RL 前分测过程/结果轴"
+  },
+  {
+   "date": "2026-10-19",
+   "paper_id": "diffusionrvge",
+   "title": "DiffusionRVGE",
+   "note": "值得看。组内 ridge 估黑盒梯度；平滑/离散 reward 要不同分组"
+  },
+  {
+   "date": "2026-10-20",
+   "paper_id": "dfr",
+   "title": "DFR",
+   "note": "值得看（小）。多样性泛函扎实，但可预测性高，不升本质"
+  },
+  {
+   "date": "2026-10-23",
+   "paper_id": "",
+   "title": "D2G 更正 + 流程",
+   "note": "「单次运行」→3 种子；本质标准影子两周上线；召回抽检硬漏 0 软漏 2"
+  }
+ ],
+ "threads": "**W43 各线**\n\n- **L7**：RoboJudge 补「过程 vs 结果」；IsoVRBench / AVC / SyncReward 维持。\n- **L2**：RVGE 作为黑盒→一阶形式的效率候选。\n- **L3 少步+reward**：DualHeads / AdvFidelity 均为了解即可——参考池/老师已被 reward 倾斜。\n- **流程**：影子本质不改两轴；周五召回抽检+Codex 分歧 tally 首次正式跑通。\n- **召回**：周五 G9 未过（API 0）；abs 尾部召回；G11 补筛遗留待确认。",
+ "watchlist": "- MetaReach PDF 一出即精读\n- CriticHack 类别交 Henry\n- WorldAlign 回测假阳性：回原文 Table 2 / Fig.4\n- G10/G11 待确认\n- 影子两周结束（约 11-06）决定是否切正式\n- 11 月 routine ~09:13\n- GuidanceNFT 对照臂补跑（遗留）"
+}
