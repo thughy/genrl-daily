@@ -261,7 +261,7 @@
    "link": "https://arxiv.org/abs/2610.17882",
    "originality": "redo",
    "credibility": "doubtful",
-   "line": "全文读完。patch 级 Flow-GRPO（类 CAST 的空间 credit）+ TPSS 共享早期 ODE 前缀（类 MixGRPO）。结构保真 62.16 → 85.60，人评胜率 82.5%；去掉 TPSS 70.25；匹配 patch 位移 1.8 px vs >15 px。单次运行、增幅偏大。发布 Achilles-600K 数据（已列给开源数据同事，没看到换数据消融）。重做，但「共享前缀」消融是跨篇收敛 1 的数据点。"
+   "line": "全文读完。patch 级 Flow-GRPO（类 CAST 的空间 credit）+ TPSS 共享早期 ODE 前缀（类 MixGRPO）。结构保真 62.16 → 85.60，人评胜率 82.5%；去掉 TPSS 70.25；§5.4 / App.D.2 匹配 patch 位移 **1.8±0.6 px** vs 全局 SDE 采样 **>15 px**（结构保真 85.60 vs 去 TPSS 70.25）。**更正（2026-10-23）**：原写「单次运行」有误——§5.1 原文为 Stage II **重复 3 个随机种子**（未报方差）；评级不变（仍了解即可 / 重做类数据点）。发布 Achilles-600K 数据（已列给开源数据同事，没看到换数据消融）。重做，但「共享前缀」消融是跨篇收敛 1 的数据点。"
   },
   {
    "title": "One-shot AR TTS 说话人个性化（2610.17838）",
