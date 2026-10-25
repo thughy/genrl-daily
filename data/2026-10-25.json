@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-25",
+  "version": "minimal",
+  "headline": "周末补扫进行中：Fri 窗口 API 已补全至 541；队友 Place-it-R1 / UniVOE 强制入池；列表仍停周五（G9 FAIL，不阻塞）。完整评级随后发。",
+  "notice": {"file": "2026-10-25/notice.md"},
+  "papers": [],
+  "brief": [
+    {
+      "title": "召回状态（周末）",
+      "line": "列表/RSS=Fri 23 Oct；Sat/Sun submittedDate 窗口 API=0；Fri 窗口 541（已相对周五 abs 差集再筛）；pastweek Fri unseen 需对账（多数为尾号未进 abs.json）；G9a/G9b FAIL（预期）。"
+    },
+    {
+      "title": "强制候选（待定级）",
+      "line": "Place-it-R1（2603.06140，spatial DPO 视频物体插入）；UniVOE（2610.31641，视频物体编辑 + reward 后训练）；Self-Distilling（2610.30320）维持少步判外围·转世界模型，不进本站必读。"
+    }
+  ],
+  "trend_summary": "周末补扫最小版；无评级结论。完整版将覆盖差集初筛 + 两篇队友定级。"
+}
