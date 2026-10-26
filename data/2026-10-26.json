@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-26",
+  "version": "minimal",
+  "headline": "初步（召回未完成）：周一 API/RSS/列表仍停周五；abs 尾 31673–32070 已筛 155 篇——无必读、无值得看。了解即可：StackGen3D（3D BoN）、DRAMA-Eval（语音生成裁判基准）。",
+  "notice": {
+    "file": "2026-10-26/notice.md"
+  },
+  "overview": {
+    "file": "2026-10-26/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "召回状态（周一·初步）",
+      "line": "列表=Fri 23 Oct；API Mon 窗口=0；RSS Mon pubDate=0 → G9 FAIL。abs 尾 fetched=398（max≈32070），9 类 155 + Codex triage：IN 定级后 1（StackGen3D）、EDGE 保留 2（DRAMA-Eval / FLORA 观察）、FEWSTEP 3。强关键词无 Flow-GRPO/DPO/OPSD 类生成 RL。"
+    },
+    {
+      "title": "StackGen3D（2610.31803）",
+      "link": "https://arxiv.org/abs/2610.31803",
+      "originality": "redo",
+      "credibility": "insufficient",
+      "line": "条件 flow-matching 生成 3D 积木堆叠 + **Best-of-10** 物理稳定性选择（PI-GNN 作稳定性预测）。属 test-time 拒绝采样，**不训练**生成器 RL。重做 × 证据不足，了解即可。"
+    },
+    {
+      "title": "DRAMA-Eval（2610.31796）",
+      "link": "https://arxiv.org/abs/2610.31796",
+      "originality": "finding",
+      "credibility": "insufficient",
+      "line": "多轮多说话人语音生成统一评测基准，含 LLM-as-judge。进 metrics 观察名单；未训生成器。了解即可。"
+    },
+    {
+      "title": "落选 / 观察（摘要级）",
+      "line": "X-Dubbing（2610.32042）：合成语音反馈 refine 配音翻译 → OUT·非 RL。FLORA（2610.31779）：机器人过程/结果 RM → 观察（非生成 RL）。PrefO2O 机器人 PbRL / TEM 图像 EBM / D2C 物理 MBO → OUT。LLM judge 可靠性多篇 EDGE 未进本追踪主线。"
+    },
+    {
+      "title": "无结果四字段",
+      "line": "**扫了多少**：abs 398 / 9 类 155 初筛；精读 D2=0、D1=0（摘要定级）。**没过线**：无生成模型 online/offline RL；StackGen3D 仅 BoN；X-Dubbing 非偏好优化。**观察名单**：FLORA（机器人 RM）、DRAMA-Eval（语音 judge）、周一 G9 补筛。**没覆盖**：API/RSS Mon 窗口、9 类 /list/new（仍 Fri）、共引/作者列表深度、X/GitHub（IN 少）、G11 pastweek 待补跑。"
+    }
+  ],
+  "trend_summary": "周一初步版；G9 未过。无新原理。FEWSTEP 三篇待转发少步同事。午后 poll 过 G9 后补筛。"
+}

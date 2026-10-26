@@ -1,0 +1,1 @@
+**更新说明（最小版·初步，北京时间约 08:30）**：周一公告尚未落盘——`/list/*/new` 仍为 **Friday, 23 October 2026**（age≈0），API submittedDate 窗口 `202610241800–202610261800` = **0**，RSS Mon pubDate = **0** → **G9a/G9b FAIL（预期，R3 不阻塞）**。已用 abs 尾滚动召回 **2610.31673–32070**（398 篇 HTML；9+RO 类 155）+ Codex triage_v2，并人工复核全部 IN/EDGE/FEWSTEP。本期**无必读 / 无值得看 / 无 D2**。午后 poll 若过 G9 再补筛补发。
