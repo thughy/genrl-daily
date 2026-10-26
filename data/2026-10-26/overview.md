@@ -1,12 +1,13 @@
-**一句话结论**：**初步（召回未完成）**——周一邮件仍在滚动，API/RSS/列表均未切到 Mon 26 Oct。abs 尾 155 篇初筛后范围内无必读/值得看；最近相关是 StackGen3D（3D BoN）与 DRAMA-Eval（语音生成裁判基准），均了解即可。
+**一句话结论**：**初步（召回未完成）**。本期无必读/值得看。范围内最相关是 **ImageRSI**（冻结 T2I + 局部 verify/repair + 经验库 + 对 judge 做 SFT→GRPO）——受控同预算下局部修复远超 Bo2，经验库有 +10pp 曲线，但 GRPO 仅 +3.4pp 且缺等数据续 SFT，生成器未训，标了解即可。
 
 **对我们训练的含义**：
-- 今天不改变「选哪类 reward / 哪种更新」的决策。
-- 等 G9 过后再决定是否补精读；当前无新机制进 lineage。
+- 不改变「对生成器做哪类 RL」的选择；若做 **agentic 修图**，优先投局部缺陷锁定的 repair，而不是再采样 BoN；经验库要有配对 A/B 准入才有量级收益。
+- Judge 上 GRPO 的边际小于 repair/经验；上 GRPO 前先做等数据续 SFT 对照。
 
 ### 一屏框架（本期）
 
 | 论文 | 归格 | 按这一格应在哪出问题 | 实际 |
 |---|---|---|---|
-| StackGen3D | ⑤×规则（物理稳定性 BoN） | 选优偏差 / 物理预测器可 hack | 仅 Best-of-10，无训练 RL；未做人评 |
-| DRAMA-Eval | 不入格（评测） | LLM-as-judge 可靠性 | 基准发布，方法未训生成器 |
+| ImageRSI | ⑤ test-time verifier × VLM judge；judge 侧 ② GRPO | 评测与经验 verdict 同源；GRPO 与数据量混杂；生成器无更新 | 命中：Gemini 兼经验与 CSA；+3.4pp 无续 SFT 对照；生成器冻结 |
+| StackGen3D | ⑤×规则 BoN | 选优偏差 | 仅 BoN，了解即可 |
+| DRAMA-Eval | 评测（不入格） | LLM-judge 可靠性 | metrics 观察 |

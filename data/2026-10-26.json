@@ -1,41 +1,107 @@
 {
   "date": "2026-10-26",
-  "version": "minimal",
-  "headline": "初步（召回未完成）：周一 API/RSS/列表仍停周五；abs 尾 31673–32070 已筛 155 篇——无必读、无值得看。了解即可：StackGen3D（3D BoN）、DRAMA-Eval（语音生成裁判基准）。",
+  "version": "v1",
+  "headline": "初步（G9 未过）：无必读、无值得看。了解即可 ImageRSI（2610.32120）——冻结 T2I + 局部 repair + 经验库 + judge 的 SFT→GRPO；同预算 repair≫Bo2，经验库+10pp，GRPO 仅+3.4pp 且缺等数据续 SFT。",
   "notice": {
     "file": "2026-10-26/notice.md"
   },
   "overview": {
     "file": "2026-10-26/overview.md"
   },
-  "papers": [],
-  "brief": [
+  "papers": [
     {
-      "title": "召回状态（周一·初步）",
-      "line": "列表=Fri 23 Oct；API Mon 窗口=0；RSS Mon pubDate=0 → G9 FAIL。abs 尾 fetched=398（max≈32070），9 类 155 + Codex triage：IN 定级后 1（StackGen3D）、EDGE 保留 2（DRAMA-Eval / FLORA 观察）、FEWSTEP 3。强关键词无 Flow-GRPO/DPO/OPSD 类生成 RL。"
-    },
+      "id": "imagersi",
+      "rating": "fyi",
+      "originality": "finding",
+      "credibility": "doubtful",
+      "directions": [
+        "test-time",
+        "reward-model"
+      ],
+      "title": "ImageRSI: Verification-Driven Recursive Self-Improvement for Agentic Image Generation",
+      "published": "arXiv 2610.32120 (2026-10-23)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.32120"
+      },
+      "tldr": "冻结图像生成器，用五维 judge 做任务内局部 verify/repair，跨任务经验库（配对 A/B 准入），并对 judge 离线 SFT→GRPO；清单严格准确率 CSA 主要来自 repair 与经验，而非 GRPO。",
+      "delta": "相对 Bo2/通用反馈修复与「只训 judge」：同预算局部缺陷锁定 +10.7pp；经验 0→527 +10.0pp；GRPO 相对 SFT100 仅 +3.4pp。",
+      "rating_reason": "有受控消融，但系统集成已知模块；GRPO 归因不净、评测与经验同用 Gemini、RSI 多代未验证 → 了解即可。",
+      "coverage": {
+        "paper": "partial",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "全文§3–4 + Table 1/2/3/5/6 抽查；未跑代码；无样例网格深看"
+      },
+      "lineage": {
+        "equivalent_form": "实际更新 = **冻结 generator** 上的 test-time prompt repair + 检索经验；参数更新只发生在 **judge**（SFT→GRPO 拟合五维分与理由）。",
+        "baseline": "同预算 test-time：Best-of-2 / generic-feedback repair（本文 Table 5）；agent 基线 GEMS / MemoGen / Qwen-Image-Agent。未与 Flash-BoN 墙钟协议比。",
+        "rows": [
+          {
+            "work": "Idea2Img 类 iterative refine",
+            "how": "生成→批评→改写 prompt→再生成",
+            "change": "加需求锁定的局部负向约束；跨任务经验 A/B 准入；judge 离线 SFT+GRPO"
+          },
+          {
+            "work": "Qwen-Image-Agent / GEMS",
+            "how": "图像 agent + 记忆/工具",
+            "change": "经验须配对验证才入库；报告同预算 Bo2 对照"
+          },
+          {
+            "work": "V-STaR / judge GRPO",
+            "how": "训 verifier 改善生成闭环",
+            "change": "生成器不更新；GRPO reward 为点式分+理由正确性"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂 verify-repair + 记忆 agent 的人能预测 repair≫Bo2 与经验有增益；GRPO 只 +3.4pp 亦符合「judge 微调边际小于循环设计」。难事先定量的是经验库 +10pp 的斜率与 locking 的 7.9pp。"
+        }
+      },
+      "insight": "在固定生成预算下，把失败说成**可锁定的局部缺陷**（并写进 negative prompt）远比再采一张或只说「再改进」有效；跨请求经验要先过配对 A/B，库变大才单调涨分。",
+      "method": "每轮：检索经验 → 改写 prompt → 冻结 T2I 出图 → 五维 judge（Alignment/Faithfulness/Quality/Aesthetic/Physics）→ 不达标则局部 repair（通常 ≤2 次）。轨迹沉淀经验；候选经验配对有/无 经验 A/B 后入库。Judge：SFT 再 GRPO（奖励=与 teacher 分一致+理由有据）。",
+      "evidence": "ImageReq 同预算（Wan2.7）：首轮 53.4 → Bo2 55.0 → 通用反馈 56.6 → 无 locking 局部 57.8 → 全局部 repair **65.7**（+12.3 / 相对 Bo2 +10.7）。经验库 0/131/266/527：**55.7 / 56.8 / 61.3 / 65.7**（满库 +10.0）。MindBench 固定库：Base 38.6 → SFT100 **44.8** → GRPO **48.2**（+3.4）。Nano Banana Pro 作生成器时 MindBench CSA **52.6**。数字来源：原文 Table 3/5/6 抽查。",
+      "solidity": "外部 CSA 用 Gemini 3.1 Pro；经验集 verdict 也用 Gemini → 偏好迁移风险。GRPO 用独立请求集，但**无「同增数据继续 SFT」对照**，+3.4 不能纯归因算法。「递归自改进」多代闭环正文称未验证。无多人评、无多种子 CI。",
+      "reward_check": {
+        "train_reward": "Judge GRPO：五维与 teacher 一致 + 理由证据；低 Alignment/Faithfulness 有独立低 reward band",
+        "eval_reward": "Gemini 3.1 Pro checklist CSA（全项通过）",
+        "overlap": {
+          "value": "partial",
+          "note": "经验准入用 Gemini verdict，测试 CSA 同家族；judge teacher 身份未写清"
+        },
+        "heldout": "声称 experience/test、SFT/GRPO 请求不重叠；无换 evaluator 复现",
+        "hacking_signs": "未报告；agent 修图可能偏向 checklist 模板"
+      },
+      "concerns": "① GRPO vs 等数据续 SFT 缺失；② teacher / reward reviewer / Gemini 关系 UNCLEAR；③ 经验准入成功率与成本未报；④ 跨生成器经验迁移未测；⑤ 主表未统一墙钟/调用成本。",
+      "principle": "同一图像预算下，**带需求锁定的局部修复** > 再采样；跨任务记忆若无配对验证，规模扩大的收益不可信。",
+      "takeaway": "做 agentic T2I 时先把「缺陷定位 + negative 锁定 + 经验 A/B」做扎实，再考虑是否对 judge 上 GRPO；不要把系统涨分写成生成器 RL 进展。"
+    }
+  ],
+  "brief": [
     {
       "title": "StackGen3D（2610.31803）",
       "link": "https://arxiv.org/abs/2610.31803",
       "originality": "redo",
       "credibility": "insufficient",
-      "line": "条件 flow-matching 生成 3D 积木堆叠 + **Best-of-10** 物理稳定性选择（PI-GNN 作稳定性预测）。属 test-time 拒绝采样，**不训练**生成器 RL。重做 × 证据不足，了解即可。"
+      "line": "条件 flow-matching + Best-of-10 物理稳定性；无训练 RL。了解即可。"
     },
     {
       "title": "DRAMA-Eval（2610.31796）",
       "link": "https://arxiv.org/abs/2610.31796",
-      "originality": "finding",
-      "credibility": "insufficient",
-      "line": "多轮多说话人语音生成统一评测基准，含 LLM-as-judge。进 metrics 观察名单；未训生成器。了解即可。"
+      "line": "多轮多说话人语音生成 LLM-judge 基准 → metrics 观察。"
     },
     {
-      "title": "落选 / 观察（摘要级）",
-      "line": "X-Dubbing（2610.32042）：合成语音反馈 refine 配音翻译 → OUT·非 RL。FLORA（2610.31779）：机器人过程/结果 RM → 观察（非生成 RL）。PrefO2O 机器人 PbRL / TEM 图像 EBM / D2C 物理 MBO → OUT。LLM judge 可靠性多篇 EDGE 未进本追踪主线。"
+      "title": "FLORA（2610.31779）",
+      "link": "https://arxiv.org/abs/2610.31779",
+      "line": "机器人过程/结果 RM；非生成 RL → watchlist 观察。"
     },
     {
-      "title": "无结果四字段",
-      "line": "**扫了多少**：abs 398 / 9 类 155 初筛；精读 D2=0、D1=0（摘要定级）。**没过线**：无生成模型 online/offline RL；StackGen3D 仅 BoN；X-Dubbing 非偏好优化。**观察名单**：FLORA（机器人 RM）、DRAMA-Eval（语音 judge）、周一 G9 补筛。**没覆盖**：API/RSS Mon 窗口、9 类 /list/new（仍 Fri）、共引/作者列表深度、X/GitHub（IN 少）、G11 pastweek 待补跑。"
+      "title": "落选摘要",
+      "line": "X-Dubbing 反馈配音→OUT；DELA DLM 编辑控制器→FEWSTEP；PrefO2O 机器人 PbRL / TEM EBM / D2C 物理 MBO→OUT。"
+    },
+    {
+      "title": "召回四字段（初步）",
+      "line": "**扫了**：abs 尾≥538（max≈32211）/ 已 triage≈189+34；精读 D1×1（ImageRSI）、D2=0。**没过线**：无生成器 online/offline RL；ImageRSI 生成器冻结且 GRPO 归因不净。**观察**：FLORA、DRAMA-Eval、G9 补筛、pending_growth≈33。**未覆盖**：API/RSS/list Mon、共引深度、X/GitHub、G11 pastweek（待补）。"
     }
   ],
-  "trend_summary": "周一初步版；G9 未过。无新原理。FEWSTEP 三篇待转发少步同事。午后 poll 过 G9 后补筛。"
+  "trend_summary": "周一初步：无新生成器 RL 原理。ImageRSI 强化「agentic 修图里循环设计 > judge GRPO」的既有判断。FEWSTEP 汇总见 forward。"
 }
