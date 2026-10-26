@@ -1,7 +1,7 @@
 {
   "date": "2026-10-26",
-  "version": "v1",
-  "headline": "初步（G9 未过）：无必读、无值得看。了解即可 ImageRSI（2610.32120）——冻结 T2I + 局部 repair + 经验库 + judge 的 SFT→GRPO；同预算 repair≫Bo2，经验库+10pp，GRPO 仅+3.4pp 且缺等数据续 SFT。",
+  "version": "v1.1",
+  "headline": "初步（G9 未过）：无必读、无值得看。补评 ACWM-RM（2610.32222）了解即可——真视频 IDM 在生成侧 AF 不可靠，作 Flow-GRPO reward 反降 nDTW（14.84→13.21）并伤 VQ；互补 mismatch RM 无 GT 联合抬到 16.41。另有 ImageRSI（局部 repair≫Bo2，GRPO 边际小）。",
   "notice": {
     "file": "2026-10-26/notice.md"
   },
@@ -9,6 +9,73 @@
     "file": "2026-10-26/overview.md"
   },
   "papers": [
+    {
+      "id": "acwm-rm",
+      "rating": "fyi",
+      "originality": "finding",
+      "credibility": "doubtful",
+      "directions": [
+        "reward-model",
+        "video-rl",
+        "online-rl"
+      ],
+      "title": "ACWM-RM: A Reference-Free Reward Model from Complementary Mismatch Preferences",
+      "published": "arXiv 2610.32222 (2026-10-26)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.32222"
+      },
+      "tldr": "无参考 RM：动作 mismatch 管 AF、视频 mismatch 管 VQ + 暴露生成分布；动力学预训练后再 BT。真视频 IDM 在生成侧 AF 不可靠，作 Flow-GRPO reward 会同时拉低 AF 与 VQ。",
+      "delta": "相对 IDM-as-reward / 参考 VQ 度量 / VLM-as-judge：先测生成侧可靠性；互补 mismatch + V-JEPA 预测特征打分，无 GT 时联合抬 VQ+AF。",
+      "rating_reason": "诊断与 RL 对照扎实（5 次生成、JEPA-IDM 同骨干），但 Pref VQ=PSNR/LPIPS 与评测重叠、AF 标签为 nDTW 非人评、仅 DreamDojo-2B → 了解即可。",
+      "coverage": {
+        "paper": "partial",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "§4 方法 + Tab.2/4/5/6 原文抽查；Fig.3 未做样例网格深看；代码未核到"
+      },
+      "lineage": {
+        "equivalent_form": "RM = **④ BT** 拟合 patch 加权分（动作条件预测特征 vs 编码帧的比较向量）；预训练正向动力学后再偏好微调。下游 = **② Flow-GRPO** 黑盒 reward。另半边 **⑥ 诊断**：AVM-Eval 上 IDM 真视频 vs 生成视频成对准确率。",
+        "baseline": "AVM-Eval：四架构 IDM（EVA/GR00T/TAP/J）。Flow-GRPO：IDM / Metric(RLVR-World 融合) / Qwen3-VL judge。未与 RoboJudge 分轴协议交叉。",
+        "rows": [
+          {
+            "work": "IDM-as-reward（EVA 等）",
+            "how": "真视频训 IDM，用动作预测误差作 AF reward",
+            "change": "测生成侧不可靠；改用预测特征+互补 mismatch 偏好，联合 VQ"
+          },
+          {
+            "work": "RoboJudge（2610.27782）",
+            "how": "测 VLM judge 物理轴 ≪ 指令轴",
+            "change": "测 IDM AF 轴在生成视频上失效，并在 Flow-GRPO 上验证「不可靠 reward 会伤双轴」"
+          },
+          {
+            "work": "V-JEPA 2-AC",
+            "how": "冻结编码器 + 动作条件预测器学正向动力学",
+            "change": "双臂；加 patch 加权 BT 头；真视频预训练后在生成偏好上适配"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂分布偏移的人能预测 IDM 在生成侧掉分；难事先定量的是 Flow-GRPO 下 IDM **反降** nDTW（14.84→13.21）以及互补偏好把生成侧准确率抬到 88.6。"
+        }
+      },
+      "insight": "在真分布上可靠的 AF 打分器，换到带伪影的生成分布上可以失效；若仍拿它做 RL reward，可能**同时**伤 AF 与画质。",
+      "method": "AVM-Pref：动作扰动对（真视频）监督 AF；同动作下四模型生成视频按 PSNR/LPIPS 排序监督 VQ。ACWM-RM：冻 V-JEPA 2.1 → 预训练双臂动作条件预测器 → 与 patch 加权打分头联合 BT。奖励时无 GT 视频。下游对 DreamDojo-2B 做 Flow-GRPO。",
+      "evidence": "Tab.2：EVA 真视频 overall 86.1 → 生成 70.0；其余 IDM 生成侧 52–58；Ours 91.6 / 88.6。Tab.4：nDTW Origin 14.84±0.24，IDM 13.21，Metric/VLM≈14.0，**仅 Ours 16.41±0.22**（5 次）。Tab.5：Ours 五项 VQ 最优；IDM 全面变差。Tab.6：去 video-pair 生成侧 71.8；JEPA-IDM 同数据同骨干 73.7 vs 88.6。来源：原文表核对。",
+      "solidity": "RL 5 次均值±std；有 JEPA-IDM 与互补偏好消融。**VQ Pref 与评测同族（PSNR/LPIPS）**；AF 评测用 nDTW 代理、无人偏好；物理一致性未升（4.00→3.93）；仅一个 ACWM×AgiBot。",
+      "reward_check": {
+        "train_reward": "ACWM-RM（BT on AVM-Pref：action-mismatch AF + video-mismatch PSNR/LPIPS VQ）",
+        "eval_reward": "VQ: PSNR/LPIPS/SSIM/MSE/FVD；AF: nDTW；PC: GPT-5.6 sol（与训练 VLM judge 不同模型）",
+        "overlap": {
+          "value": "partial",
+          "note": "Pref VQ 用 PSNR/LPIPS，评测 VQ 含同指标；AF 的 nDTW 未作 Pref 视频标签（相对更 held-out）"
+        },
+        "heldout": "任务 AgiB→AgiC；PC 换评测 VLM；无人评 AF/VQ",
+        "hacking_signs": "IDM reward 伤 VQ+AF（反例）；ACWM-RM 未抬 PC；未见多样性/塌缩报告"
+      },
+      "concerns": "① VQ 训练/评测部分同源；② nDTW/人造扰动非人标；③ Pref 与 Eval 共用 ACWM 家族；④ 跨本体 Tab.3 仅 66.5；⑤ 无代码；⑥ 物理一致性未作为优化目标。",
+      "principle": "换分布前先测打分器在**目标分布（生成视频）**上的排序可靠性；不可靠的 AF reward 优化可以双轴同时变差。",
+      "takeaway": "上世界模型 / ACWM 的 GRPO 前，用生成 rollout 做 IDM pairwise；不要默认 IDM。ACWM-RM 配方可作对照，但先解决 VQ 标签与人评再考虑进主训。"
+    },
     {
       "id": "imagersi",
       "rating": "fyi",
@@ -100,8 +167,9 @@
     },
     {
       "title": "召回四字段（初步）",
-      "line": "**扫了**：abs 尾≥538（max≈32211）/ 已 triage≈189+34；精读 D1×1（ImageRSI）、D2=0。**没过线**：无生成器 online/offline RL；ImageRSI 生成器冻结且 GRPO 归因不净。**观察**：FLORA、DRAMA-Eval、G9 补筛、pending_growth≈33。**未覆盖**：API/RSS/list Mon、共引深度、X/GitHub、G11 pastweek（待补）。"
+      "line": "**扫了**：abs 尾≥538（含 32222 队友转发）；精读 D1×2（ImageRSI、ACWM-RM）、D2=0。**没过线**：无生成器 online RL 新机制；ACWM-RM VQ Pref/评测重叠+无人评；ImageRSI 生成器冻结。**观察**：ACWM-RM/IDM 生成侧可靠性、FLORA、DRAMA-Eval、G9 补筛。**未覆盖**：API/RSS/list Mon、G11 pastweek（待补）。"
     }
   ],
-  "trend_summary": "周一初步：无新生成器 RL 原理。ImageRSI 强化「agentic 修图里循环设计 > judge GRPO」的既有判断。FEWSTEP 汇总见 forward。"
+  "trend_summary": "周一初步+队友 catch-up：无新生成器 RL 原理。ACWM-RM 强化「真分布 AF 打分器不可直接当生成 RL reward」（与 RoboJudge 物理轴弱互补）；ImageRSI 强化 agentic 修图里循环>judge GRPO。",
+  "fyi_open": true
 }
