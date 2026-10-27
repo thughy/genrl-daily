@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-27",
+  "version": "minimal-v0",
+  "headline": "初步（G9 未过）：周一公告收口，无新的必读/值得看。IN 四篇均已在 [10-26](https://thughy.github.io/genrl-daily/daily/2026-10-26/)（ACWM-RM / ImageRSI / StackGen3D / X-Dubbing）。观察名单：OVC、DATC 等 credit 机制（LLM/VLA，待迁移检验）。",
+  "notice": {
+    "file": "2026-10-27/notice.md"
+  },
+  "overview": {
+    "file": "2026-10-27/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "周一 mailing new≈386（9 类）+ cross≈235；已初筛 ≥211；精读 0（无新 IN 需 D2）。API 窗口仍 0 → G9 FAIL。"
+    },
+    {
+      "title": "没过线（重做 / 域外）",
+      "line": "ViT-H（2610.32966）视频→人形扩散+DPO：机器人跟踪，非媒体生成 RL。3D bin-packing 扩散 RL、纯 LLM GRPO/PPO、MusicTwins 人格 ALM：域外或了解级。"
+    },
+    {
+      "title": "没过线（reward / 评测向）",
+      "line": "TIE（2610.32407）训练无关 CLIP 引导非 RL。TEM-XL 能量模型推理扩展：无 RL 训练协议。DRAMA-Eval 等裁判基准：评测向。"
+    },
+    {
+      "title": "观察名单",
+      "line": "OVC（2610.32324）多模态 RLVR 视觉 credit；DATC（2610.32772）RM 梯度方向感知 token credit；MART-GRPO（2610.32431）VLA 失败反馈截断；Pseudo-label GRPO ASR（2610.32572）错标透传对照。均未在生成器协议下验证。"
+    },
+    {
+      "title": "昨已发（不重复评级）",
+      "line": "[ACWM-RM](https://thughy.github.io/genrl-daily/daily/2026-10-26/#p-acwm-rm) 了解即可；[ImageRSI](https://thughy.github.io/genrl-daily/daily/2026-10-26/#p-imagersi) 了解即可；StackGen3D / X-Dubbing 了解即可。"
+    },
+    {
+      "title": "没覆盖的来源",
+      "line": "API 索引未跟上（G9）；HF Daily / X 一手 / GitHub 30 日活跃度本最小版未跑，完整版补。Codex 剩余 ~215 new 并行中。"
+    }
+  ],
+  "trend_summary": "周一公告完整落盘日；生成模型 RL 主线无新机制。Credit assignment（视觉/token/截断）在相邻模态继续出论文，值得记入观察，但不升主评级。"
+}
