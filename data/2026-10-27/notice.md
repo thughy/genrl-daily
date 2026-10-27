@@ -1,1 +1,1 @@
-**初步（G9 未过）**：北京时间周二早 = 美东周一 20:00 公告；列表/RSS 标注 Monday 26 Oct。API submittedDate 窗口计数仍为 0（索引滞后）→ G9a/b FAIL，按 R3 照发。午后 poll 若通过再补筛更正。
+**午后补扫**：文献追踪转交周二 listing 的 RL 三篇已主读上卡——**AV-GRPO 值得看**，LC-GRPO 了解即可；agent 剪辑过程奖励判外围。晨间「初步·周一 mailing」仍保留作召回备注（当时 API 窗口 0）。

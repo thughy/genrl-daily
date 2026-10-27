@@ -1,18 +1,163 @@
 {
   "date": "2026-10-27",
-  "version": "minimal-v0",
-  "headline": "初步（G9 未过）：周一公告收口，无新的必读/值得看。IN 四篇均已在 [10-26](https://thughy.github.io/genrl-daily/daily/2026-10-26/)（ACWM-RM / ImageRSI / StackGen3D / X-Dubbing）。观察名单：OVC、DATC 等 credit 机制（LLM/VLA，待迁移检验）。",
+  "version": "catchup-rl-v1",
+  "headline": "补扫：AV-GRPO（联合 AV 模态锚定 GRPO）值得看；LC-GRPO 正式发卡了解即可；agent 剪辑过程奖励判外围。",
   "notice": {
     "file": "2026-10-27/notice.md"
   },
   "overview": {
     "file": "2026-10-27/overview.md"
   },
-  "papers": [],
+  "papers": [
+    {
+      "id": "av-grpo",
+      "rating": "worth",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "online-rl",
+        "video-rl",
+        "other"
+      ],
+      "title": "AV-GRPO: Modality-Anchored Decoupling Diffusion Reinforcement Learning for Joint Audio-Video Generation",
+      "published": "arXiv 2609.29816 (v4, 2026-10-24)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2609.29816",
+        "code": "https://github.com/zhiyuxu03/AV-GRPO"
+      },
+      "tldr": "联合 AV 双塔上直接 GRPO 会让同步 reward 的 credit 纠缠；固定一条完整锚轨迹只更新目标塔（交替冻塔），把问题收成条件 Flow-GRPO。",
+      "delta": "相对 Flow-GRPO / GDPO（双塔同更+多 reward 独立归一）：改组内采样结构与更新范围，不改高斯 PG。",
+      "rating_reason": "联合 AV 的可操作锚定配方 + 交替消融，填 L10 缺口；但 CLIP/CLAP/DeSync 训评重叠、无人评 → 值得看而非必读。",
+      "coverage": {
+        "paper": "partial",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "§2 方法+Tab.1/2+§3.2.1/3.4 核对；Fig.2 定性未测信号；代码仓未跑"
+      },
+      "lineage": {
+        "equivalent_form": "格**②**：`J_m̄(θ)=E_{τ_anc}[GRPO(π_θ(·|τ_anc))]`，`Â=std(R_m̄+R_sync)`；θ_m 冻结，每 n 步换 m̄。",
+        "baseline": "同基座对照 = LTX-2.3 + **GDPO**。未与 DanceGRPO/Flow-GRPO 裸联合同协议比。L10 记为联合 AV RL 当前参照配方（存疑可信度）。",
+        "rows": [
+          {
+            "work": "Flow-GRPO（Liu 2026）",
+            "how": "单流 SDE+GRPO",
+            "change": "条件于锚模态完整轨迹的双塔交替 GRPO"
+          },
+          {
+            "work": "GDPO（Liu 2026e）",
+            "how": "多 reward 独立归一后联合更新双塔",
+            "change": "组内共享锚轨迹 + 冻塔，同步比较可控"
+          },
+          {
+            "work": "DanceGRPO / 联合 AV 直接多 reward",
+            "how": "两模态同采同更",
+            "change": "显式拆成两个条件子问题（本文未直接同表复现 DanceGRPO）"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂组内方差污染的人能预测锚定有帮助；难事先定量的是对 GDPO 的同步项幅度，以及条件训练能否迁移到自由联合采样（Codex 盲审同此失效模式）。"
+        }
+      },
+      "insight": "同步类 reward 的组内可比性取决于「另一模态是否在组内乱动」；乱动时 advantage 里掺了锚模态噪声。",
+      "method": "音频锚定：固定音频轨迹，采 G 条视频；R=视频质量对齐+DeSync。对称做视频锚定。轨迹锁定+冻锚塔；ANC 截断大噪声；视频塔用 LongCat 式 λ_policy/λ_KL。5DAV 五维解耦数据。",
+      "evidence": "Tab.1 LTX-2.3→AV-GRPO(full)：AQ **5.097→5.798**，JavisScore **0.183→0.222**，DeSync **0.757→0.607**；全面优于 GDPO（DeSync 0.708→0.607 等）。Tab.2 Lip Sync 1.351→1.646。Fig.3：交替优于无交替，4-step 较优。来源：原文核对✓（AV1–3）。",
+      "solidity": "有 GDPO 与交替消融。**CLIP/CLAP/DeSync 训∩评**；JavisScore/AV-IB/Lip Sync/部分 VABench MLLM 相对 held-out。无人评；单配置；缺锚轨迹打乱对照。",
+      "reward_check": {
+        "train_reward": "V: VideoAlign+CLIP+(−DeSync)；A: Aesthetics+CLAP+(−DeSync)；组内再 std；CLAP guardrail",
+        "eval_reward": "JavisBench（含 CLIP/CLAP/DeSync/JavisScore/AV-IB…）；VABench（Lip Sync/DeSync/MLLM…）",
+        "overlap": {
+          "value": "partial",
+          "note": "CLIP/CLAP/DeSync 重叠；JavisScore/Lip Sync/MLLM 更独立"
+        },
+        "heldout": "JavisScore、AV-IB、Lip Sync、VABench MLLM；无人评",
+        "hacking_signs": "LoRA VQ 略低于 base；未见多样性报告"
+      },
+      "concerns": "① 同源同步/对齐指标；② 无 DanceGRPO 同表；③ 条件→联合采样迁移未测；④ 单次运行；⑤ 5DAV 自建数据泛化。",
+      "principle": "多塔联合 RL 时，先固定完整条件轨迹再优化另一塔，比同时扰动两塔更容易做对同步 credit。",
+      "takeaway": "上联合 AV GRPO：默认锚定+冻塔交替；同步评测另留非训练指标；DeSync 涨分先当「训到了」而不是「同步真好了」。"
+    },
+    {
+      "id": "lc-grpo",
+      "rating": "fyi",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "online-rl",
+        "video-rl"
+      ],
+      "title": "LC-GRPO: Bridging Train-Inference Gap for Flow-Based GRPO with Langevin Correction",
+      "published": "arXiv 2608.05600 (v2, 2026-10-25)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2608.05600"
+      },
+      "tldr": "Flow-GRPO 的 SDE rollout 在有限步发糊；每步改成「推理同款 ODE Euler + velocity-score Langevin」，转移仍是高斯，可直接进 GRPO，缩 train–ODE-eval 差距。",
+      "delta": "相对 Flow-GRPO（EM-SDE）与 CPS（DDIM）：只换采样核；advantage/clip 不变。",
+      "rating_reason": "机制清楚且 OCR/视频表站得住，但 L4 已记主结论、训评 reward 同源、无 held-out 协议 → 了解即可正式发卡。",
+      "coverage": {
+        "paper": "partial",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "v2 全文+Tab.1/2/§5.1 原文核对；Fig.3 样例未做网格深看；无代码核"
+      },
+      "lineage": {
+        "equivalent_form": "格**②**：`x' = ODE-Euler(x) + ε s_θ(x') + √(2ε) ξ`，`s=-(x+(1-t)v)/t`；`Â` 同 Flow-GRPO 组内标准化。",
+        "baseline": "L4 事实对照 = Flow-GRPO / CPS / DanceGRPO（视频）。未与 ExploreNet 同 held-out 协议比。最强基线不更换。",
+        "rows": [
+          {
+            "work": "Flow-GRPO（Liu 2026）",
+            "how": "ODE→EM-SDE 作高斯策略 + GRPO",
+            "change": "ODE 步对齐推理，再 Langevin 校正；同噪声级证明 W₂ 误差更小（Thm 非正式）"
+          },
+          {
+            "work": "CPS（Wang & Yu 2025）",
+            "how": "DDIM 采样改善 rollout 质量",
+            "change": "保留随机探索+边缘校正；声称训测 gap 更小（Fig.1）"
+          },
+          {
+            "work": "Song et al. 2020 SDE score corrector",
+            "how": "predictor–corrector 采样",
+            "change": "把 corrector 变成 GRPO 可算似然的策略核（非仅推理）"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂 SDE–ODE 有限步错配与 Langevin corrector 的人能预测「更清晰、训测更齐」；OCR +0.046 与视频 DD 保 45.8（vs DanceGRPO 12.5）量级需测。"
+        }
+      },
+      "insight": "连续时间边缘等价推不出有限步 rollout 质量；探索噪声应加在「校正后的目标边缘」上，而不是让 EM 漂移和布朗误差一起糊掉信号。",
+      "method": "Alg.1：Euler 到 t−Δt → Tweedie score → 一步 Langevin；√(2ε)=η(t−Δt)。推理仍纯 ODE。消融：需对 Langevin 反传；Langevin 不加 CFG。",
+      "evidence": "Tab.1 SD3.5-M OCR：**0.960** / Flow-GRPO 0.914 / CPS 0.935；HPS 0.393 vs 0.381。Tab.2 HunyuanVideo VideoAlign VQ：**0.063** vs DanceGRPO −0.205；Dynamic Degree **45.8** vs DanceGRPO **12.5**（base 52.8）。来源：原文表核对✓（claim LC1–3）。",
+      "solidity": "有 CPS/DanceGRPO 对照与 2×步数预算口径（§5.1✓）。OCR/HPS 训=评；视频训 VideoAlign VQ、评含同族分量+VBench。主表多种子未报。",
+      "reward_check": {
+        "train_reward": "OCR；HPS-v2.1；HPS+CLIP；VideoAlign Visual Quality",
+        "eval_reward": "同任务指标 + DrawBench 质量套件；视频 VideoAlign 分量 + VBench",
+        "overlap": {
+          "value": "partial",
+          "note": "OCR/HPS/VideoAlign-VQ 训评同源；辅助质量指标部分独立"
+        },
+        "heldout": "无 GenEval2/人评；VBench DD/语义作旁证",
+        "hacking_signs": "DanceGRPO DD 崩到 12.5；LC 相对保运动。未见多样性两两距离。"
+      },
+      "concerns": "① 训评重叠；② η/β 各法不同；③ 2 NFE 预算争议；④ 与 ExploreNet/CAST 无同协议；⑤ v2 相对 lineage 无新协议。",
+      "principle": "策略噪声应绕「与推理同分布的边缘」注入；否则有限步离散把探索预算耗在发糊上。",
+      "takeaway": "自训 Flow-GRPO 发糊时先换 ODE+Langevin（或 CPS）作对照；不必等新 SOTA 协议。lineage L4 已证实条维持。"
+    }
+  ],
   "brief": [
     {
-      "title": "扫了多少 / 进精读",
-      "line": "周一 mailing new≈386（9 类）+ cross≈235；已初筛 ≥211；精读 0（无新 IN 需 D2）。API 窗口仍 0 → G9 FAIL。"
+      "title": "补扫来源",
+      "line": "文献追踪 13:45 周二 listing 转交 3 篇 RL；本站主读后上卡 AV-GRPO（值得看）+ LC-GRPO（了解即可）。"
+    },
+    {
+      "title": "外围·agent 剪辑过程奖励",
+      "line": "[2610.35497](https://arxiv.org/abs/2610.35497) Fine-Grained Credit：视频剪辑 **agent** 上 decaying PRM 在长程 Fine Cut +45.4%；非生成器 RL → 外围。",
+      "originality": "finding",
+      "credibility": "doubtful"
+    },
+    {
+      "title": "晨间扫了多少",
+      "line": "周一 mailing 收口：new≈386 + cross≈235；初筛 ≥211；晨间无新 D2。午后补扫改写头条。"
     },
     {
       "title": "没过线（重做 / 域外）",
@@ -35,5 +180,6 @@
       "line": "API 索引未跟上（G9）；HF Daily / X 一手 / GitHub 30 日活跃度本最小版未跑，完整版补。Codex 剩余 ~215 new 并行中。"
     }
   ],
-  "trend_summary": "周一公告完整落盘日；生成模型 RL 主线无新机制。Credit assignment（视觉/token/截断）在相邻模态继续出论文，值得记入观察，但不升主评级。"
+  "trend_summary": "周二 listing 补扫：联合 AV 的模态锚定 GRPO（AV-GRPO）值得看；LC-GRPO 正式发卡了解即可。晨间「无新机制」结论被补扫改写。",
+  "fyi_open": true
 }
