@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-28",
+  "version": "minimal-v0",
+  "headline": "初步（G9 未过）：周二公告已落盘，生成模型 RL 有 5 篇新 IN（MixGRPO 情感图 / VaLoP 奖励引导 / DTCA·dLLM / 双工语音窗似然 / Audio-R1），本最小版均未深读、不评级。",
+  "notice": {
+    "file": "2026-10-28/notice.md"
+  },
+  "overview": {
+    "file": "2026-10-28/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "周二 mailing new=844 + cross=520（union=1067，与 RSS 1067 对齐）；焦点人工初筛 56 + 复用昨 211 → 已审 267；新 IN 5 篇待 D2，精读卡 0。API 仍 0 → G9 FAIL。"
+    },
+    {
+      "title": "今日新 IN（观察，未评级）",
+      "line": "[2610.33460](https://arxiv.org/abs/2610.33460) Semantic-First MixGRPO：情感 T2I：SDE 窗口位置作属性控制量；semantic-first 降语义漂移； [2610.35607](https://arxiv.org/abs/2610.35607) VaLoP：奖励引导扩散：高噪声处 value-grad lookahead+pullback； [2610.35201](https://arxiv.org/abs/2610.35201) DTCA：扩散语言模型 RL 的去噪 token credit assignment； [2610.35581](https://arxiv.org/abs/2610.35581) Window Likelihood：全双工语音 GRPO 零梯度陷阱 → 窗似然积分； [2610.34609](https://arxiv.org/abs/2610.34609) Audio-R1：LALM 在自监督音频任务上做 RL 推理"
+    },
+    {
+      "title": "没过线 / EDGE 观察",
+      "line": "Chains&Gains IQA（2610.33203）RLVR 提升是否超采样；CoT 依赖下降；MOS 捷径； VideoEdit CA（2610.35497）过程奖励只在超长 FineCut 显著；短程 outcome-only 够用； Audit Hacks（2610.35716）强校验预算下如何审计 GRPO hacking（LLM，可迁移）； Qwen-Image-PE（2610.33472）T2I prompt enhancer + groupwise design reward； Priority AdvAgg（2610.34862）多奖励优先级不被辅助优势压过。另：S²-RL 分割数据蒸馏用 GRPO+T2I（域偏）；纯 LLM GRPO/credit 多篇 EDGE。"
+    },
+    {
+      "title": "少步 / 蒸馏（转发给少步同事）",
+      "line": "Beyond DMD→SF² few-step video（2610.35594）；CMM one-step（2610.34575）；另有 ~20 条 fewstep 关键词命中见 draft/fewstep_candidates.txt。"
+    },
+    {
+      "title": "昨已发（不重复）",
+      "line": "[ACWM-RM](https://thughy.github.io/genrl-daily/daily/2026-10-26/#p-acwm-rm) / [ImageRSI](https://thughy.github.io/genrl-daily/daily/2026-10-26/#p-imagersi) 等周一 IN 已在 10-26/27 页。"
+    },
+    {
+      "title": "没覆盖的来源",
+      "line": "API 索引滞后（G9）；HF Daily 轻查见下；X 一手 / GitHub 30 日活跃度本最小版未跑。Codex 对其余 ~104 kw 命中并行中。"
+    }
+  ],
+  "trend_summary": "周二主线：图像侧 MixGRPO 把随机窗当控制量；采样时奖励引导出现 VaLoP（高噪声误差=后验协方差）；扩散 LM / 语音全双工各自补 credit。均未对照 lineage 最强基线深读，不升主评级。"
+}
