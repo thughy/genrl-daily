@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-29",
+  "version": "minimal-v0",
+  "headline": "初步（G9 未过）：周三公告已落盘，生成/多模态 RL 有 6 篇新 IN（StruPO·T2I 提示策略 / VOG·扩散控制 / Video-RLVR 捷径 / CoFire / AudioRSI / MVRCap），本最小版均未深读、不评级。",
+  "notice": {
+    "file": "2026-10-29/notice.md"
+  },
+  "overview": {
+    "file": "2026-10-29/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "周三 mailing new=457 + cross=288（union=588，与 RSS 588 对齐）；kw 命中 147（gen 焦点 25 已人工审）；新 IN 6 篇待 D2，精读卡 0。API 仍 0 → G9 FAIL。Codex 对其余 ~108 kw 并行中。"
+    },
+    {
+      "title": "今日新 IN（观察，未评级）",
+      "line": "[2610.36146](https://arxiv.org/abs/2610.36146) StruPO：结构图条件的 T2I 提示编辑策略 + 多图 group-relative； [2610.37146](https://arxiv.org/abs/2610.37146) VOG/DVOC：Jacobian pullback 统一采样引导与 reward 适配； [2610.37211](https://arxiv.org/abs/2610.37211) Video RLVR：感知不确定度塌缩 → 文本先验捷径放大，BSPO； [2610.36467](https://arxiv.org/abs/2610.36467) CoFire：视频理解 RL 的初始答案置信侵蚀； [2610.36578](https://arxiv.org/abs/2610.36578) AudioRSI：Audio-LLM 递归自评判作过程奖励； [2610.36838](https://arxiv.org/abs/2610.36838) MVRCap：视频字幕分层可验证奖励 RL。"
+    },
+    {
+      "title": "没过线 / EDGE 观察",
+      "line": "SetGRPO（2610.36807）评分噪声如何改写整组 GRPO 系数；Delta-learning DPO 单对生成器偏差（2610.37058）；MPOPD 把 OPD rollout 策略当优化目标（2610.36477）；VGIQA 视觉 grounding 奖励做细粒度 IQA（2610.37186）；AdaRoll/Guided-RLVR 等 LLM GRPO 可迁移机制。少步：Haste/DICE 安全（2610.36665）、ReSeed 首步多样性（2610.37110）等见 fewstep 列表。"
+    },
+    {
+      "title": "少步 / 蒸馏（转发给少步同事）",
+      "line": "Haste Makes Waste 少步 T2I 更不安全（2610.36665）；ReSeed 首高噪声步丢多样性（2610.37110）；ALADDIN 一步换脸蒸馏（2610.37503）；NLD-Uni 统一 DLLM+OPD（2610.36466）。共 ~27 条见 draft/fewstep_candidates.txt。"
+    },
+    {
+      "title": "昨已发（不重复）",
+      "line": "10-28 观察中的 MixGRPO / VaLoP / DTCA / 窗似然 / Audio-R1 等仍在 [10-28 页](https://thughy.github.io/genrl-daily/daily/2026-10-28/)；深读由 parent 续。"
+    },
+    {
+      "title": "没覆盖的来源",
+      "line": "API 索引滞后（G9）；HF Daily 10-28 轻查有世界模型/RL 条目（多数跨日或非本方向）；X 一手 / GitHub 30 日活跃度本最小版未跑；G11 pastweek 延后；非 kw 的 ~440 new 未全量 Codex。"
+    }
+  ],
+  "trend_summary": "周三主线：①扩散侧把引导与 reward 适配收成同一 pullback（VOG）；②视频 RLVR 被诊断为文本先验捷径（感知不确定度塌缩）；③T2I 提示编辑变成可学习策略（StruPO）。均未对照 lineage 最强基线深读，不升主评级。"
+}
