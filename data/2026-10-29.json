@@ -1,7 +1,7 @@
 {
   "date": "2026-10-29",
-  "version": "minimal-v0",
-  "headline": "初步（G9 未过）：周三公告已落盘，生成/多模态 RL 有 6 篇新 IN（StruPO·T2I 提示策略 / VOG·扩散控制 / Video-RLVR 捷径 / CoFire / AudioRSI / MVRCap），本最小版均未深读、不评级。",
+  "version": "full-v1-empty",
+  "headline": "无达标精读卡（D2 收口）：Video-RLVR 范围 OUT；VOG/DVOC 邻近 OPSD 不过线",
   "notice": {
     "file": "2026-10-29/notice.md"
   },
@@ -10,6 +10,10 @@
   },
   "papers": [],
   "brief": [
+    {
+      "title": "2026-10-30 续跑",
+      "line": "D2 完成：37211 OUT；37146 不过值得看；papers=[]。延误补发。"
+    },
     {
       "title": "扫了多少 / 进精读",
       "line": "周三 mailing new=457 + cross=288（union=588，与 RSS 588 对齐）；kw 命中 147（gen 焦点 25 已人工审）；新 IN 6 篇待 D2，精读卡 0。API 仍 0 → G9 FAIL。Codex 对其余 ~108 kw 并行中。"

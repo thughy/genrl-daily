@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-30",
+  "version": "minimal-v0",
+  "headline": "召回异常：周四（含补发周三）arXiv mailing 尚未落盘；10-29 精读补发无达标卡",
+  "notice": {
+    "file": "2026-10-30/notice.md"
+  },
+  "overview": {
+    "file": "2026-10-30/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。"
+    },
+    {
+      "title": "召回",
+      "line": "RSS item=0 / API=0 / list 旧或 429（约 08:20 CST）。周三公告已取消，周四晚双倍批次延误中。"
+    },
+    {
+      "title": "10-29 补发结论",
+      "line": "D2：Video-RLVR OUT（理解）；VOG/DVOC 邻近 OPSD（HPS 13.79 vs 13.56@20upd）但不过值得看 → papers=[]。"
+    },
+    {
+      "title": "观察",
+      "line": "[VOG/DVOC 2610.37146](https://arxiv.org/abs/2610.37146) 进 watchlist；其余 10-29 IN 仍观察。"
+    },
+    {
+      "title": "没覆盖",
+      "line": "本日全量召回；X/GitHub；G11；周五抽检/周认知页待批次落地后补。"
+    }
+  ],
+  "trend_summary": "跨篇：引导/拉回族（VaLoP→VOG）观察累计；不立新原理候选。"
+}

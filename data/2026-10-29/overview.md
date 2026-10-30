@@ -1,3 +1,3 @@
-# 2026-10-29 速览
+# 2026-10-29 速览（完整收口）
 
-周三 mailing 完整落盘（union=588=RSS）。生成模型 / 多模态 RL 新 IN 六篇（T2I 提示策略 StruPO、VOG/DVOC 扩散控制、Video RLVR 捷径诊断、视频理解 CoFire、AudioRSI、视频字幕 MVRCap），最小版不评级。详见 brief。
+周三 mailing（union=588）已筛。D2 两篇均未过线：Video-RLVR 为视频理解 RLVR（非生成）→ OUT；VOG/DVOC 在 Z-Image-Turbo 上对照 DiffusionOPSD 略胜但属 OPSD 邻近、单种子、无多样性 → 不过「值得看」。本期 papers=[]。

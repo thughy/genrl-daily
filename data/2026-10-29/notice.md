@@ -5,3 +5,5 @@
 - **评级**：无深读卡片；新 IN 仅列观察，两轴评级待 D2。
 - **解析异常**：arXiv `/list/*/new` 的 New submissions 不再包在 `<dl>` 内，已改 walker；age≈0。
 - Essence v2.3 影子期：不因 T0–T3 升降级。
+
+- **2026-10-30 续跑收口**：D2 完成；Video-RLVR OUT；VOG/DVOC 不过值得看；papers=[] 不变，未因评级变化重推。
