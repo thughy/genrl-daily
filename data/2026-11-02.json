@@ -1,14 +1,83 @@
 {
   "date": "2026-11-02",
-  "version": "minimal-v0",
-  "headline": "补扫 Fri 30 Oct mailing（含 Thu 顺延）；初步无达标卡；Codex triage 进行中",
+  "version": "v1-geo-fsrl",
+  "headline": "补扫：Geo-FSRL（少步 flow 随机策略几何优化）了解即可；Fri mailing 其余暂无必读/值得看。",
   "notice": {
     "file": "2026-11-02/notice.md"
   },
   "overview": {
     "file": "2026-11-02/overview.md"
   },
-  "papers": [],
+  "papers": [
+    {
+      "id": "geo-fsrl",
+      "directions": [
+        "distill-rl",
+        "online-rl",
+        "video-rl"
+      ],
+      "title": "Optimizing Stochastic Policy Geometry for Few-Step Flow Reinforcement Learning (Geo-FSRL)",
+      "published": "arXiv 2610.41949 (v1, 2026-10-30)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.41949",
+        "code": "https://github.com/ModelTC/LightX2V/tree/main/lightx2v_rl"
+      },
+      "tldr": "少步 flow 上 GRPO 需随机转移；在保系数各向同性高斯族里，闭式选最小化「给定速度更新诱导条件 KL」的噪声分配，再配几何因子的梯度尺度匹配；训原少步 schedule、推仍确定性。",
+      "delta": "相对 Flow-CPS（全局 ϕ 经验选）/ Flow-GRPO（EM 离散化）：族内选策从经验 ϕ 换成源–目标噪声决定的闭式 β⋆，并写出配套 w_policy∝1/G⋆、w_KL∝1/(G⋆)²。",
+      "coverage": {
+        "paper": "partial",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "§3 方法+Tab.1–4+附录 B/C 核对；Fig.1/2 曲线坐标未抽；代码仓未跑"
+      },
+      "lineage": {
+        "equivalent_form": "格**②**：在 α²+β²=s² 族上 min_β K_β(Δv)=½G²∥Δv∥²；β⋆=s²(1−t)/(t(1−s))（≡一步 SDE-DPM-Solver++）；L=E[w_pol ℓ̄clip+λ_KL w_KL DKL]。",
+        "baseline": "同协议对照 = 4-step 蒸馏基座 + Flow-GRPO / Flow-CPS（图：Qwen-Image-Lightning；视频：Wan2.1-1.3B+DMD2）。未与 DanceGRPO 同表。",
+        "rows": [
+          {
+            "work": "Flow-GRPO（Liu 2025）",
+            "how": "连续 SDE→EM；α²+β²−s² 一般>0",
+            "change": "改用系数保持族 + 闭式几何最优分配 + 匹配权重"
+          },
+          {
+            "work": "Flow-CPS（Wang & Yu 2025）",
+            "how": "系数保持；全局 ϕ 经验选",
+            "change": "ϕ 换成逐 (t,s) 闭式 β⋆；权重按各自 G 匹配"
+          },
+          {
+            "work": "DanceGRPO / 同类少步 RL",
+            "how": "随机化 flow 轨迹 + 组相对更新",
+            "change": "增量在随机转移**内部系数选择**；无 DanceGRPO 同表"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂条件 KL/似然比方差的人能预期「更钝的策略几何」有助于裁剪窗内更新；难事先定量的是相对调好的全局 ϕ、以及系数与权重各自贡献。"
+        }
+      },
+      "insight": "少步大跨度下，同一速度更新在不同噪声分配下诱导的条件 KL / log-ratio 方差差很多；可先选使该几何因子最小的可许策略，再单独做尺度匹配。",
+      "method": "系数保持转移 xs=(1−s)x̂0+βϵ̂+αξ；β⋆=s²(1−t)/(t(1−s))。每 rollout 只在一个非终端步随机化，其余 Euler；推理确定性。奖励：图 HPSv3±CLIP；视频 HPSv3-G/P + VideoAlign-MQ。",
+      "evidence": "Tab.1 单奖励 HPSv3：基座 12.17→GRPO 13.62→CPS 13.90→Geo **14.05**；多奖励 Geo HPSv3 **13.80**/CLIP **1.008** 领先。Tab.2 人评 20 对×5 评：VQ 54% vs 46%，Overall 58% vs 42%（描述性）。Tab.3 策略权重：无权重 Geo 13.61<CPS 13.69；有权重 Geo 14.05>CPS 13.90。Tab.4 视频：Geo 9.24/12.90/2.07 vs CPS 8.15/11.94/1.26。来源：原文核对✓。",
+      "solidity": "有 Flow-CPS ϕ 扫描（图）与策略权重消融。**全部自动指标=训练奖励**；人评仅小样本。单种子 42；无多样性；视频 CPS 用 ϕ=0.3（为拉开几何差），未报近邻 ϕ=0.7 奖励；系数与权重未交叉拆分。",
+      "reward_check": {
+        "train_reward": "图：HPSv3（±CLIPScore）；视频：HPSv3-General+Percentile+VideoAlign-MQ；组内去均值/最大组 std，多奖励等权后 clip[-5,5]",
+        "eval_reward": "同固定 256 held-out 提示上的同一自动指标；图另有小规模人评",
+        "overlap": {
+          "value": "yes",
+          "note": "附录 B：所有报告的自动指标都参与训练"
+        },
+        "heldout": "提示 held-out（256）；指标非 held-out。人评相对独立但 n=20×5",
+        "hacking_signs": "训评奖励完全重合；无多样性/旁证质量指标；视频基线 ϕ 未充分扫"
+      },
+      "concerns": "① 自动评测=训练奖励；② 单种子/无多样性；③ Tab.3 无权重时 Geo 落后，增益靠「系数+匹配权重」组合；④ 视频 CPS ϕ=0.3 非近优对照；⑤ 无 DanceGRPO 同表；⑥ 最优转移≡已有 SDE-DPM-Solver++。",
+      "principle": "少步 flow RL 的随机策略不要只调一个全局噪声强度；在可许族里先最小化「速度更新→条件 KL」的几何因子，再单独归一显式梯度尺度。",
+      "takeaway": "上 4-step Flow-GRPO：优先试系数保持 + β⋆(t,s) + 1/G⋆ 权重；报分另留非训练指标与多样性；别把 Tab.4 写成「已压过充分调参的 Flow-CPS」。",
+      "rating": "fyi",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "rating_reason": "闭式几何选策有可预测性，但自动指标=训练奖励、单种子、无多样性；无匹配权重时反低于 Flow-CPS → 了解即可。"
+    }
+  ],
   "brief": [
     {
       "title": "要不要出手",
@@ -39,5 +108,7 @@
       "line": "Codex 出结果后合并 triage → 精读 EmpDPO+TACE（若仍 IN）→ 补发；少步转发独立发出。"
     }
   ],
-  "trend_summary": "跨篇：本期暂无（≥3 独立同机制）。旁注：GRPO 信用分配与推理时多样性继续观察。"
+  "trend_summary": "跨篇：本期暂无（≥3 独立同机制）。旁注：GRPO 信用分配与推理时多样性继续观察。",
+  "fyi_open": true,
+  "revision_note": "v1：文献追踪转交 2610.41949 Geo-FSRL 定级了解即可并发卡。"
 }
