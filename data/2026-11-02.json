@@ -1,7 +1,7 @@
 {
   "date": "2026-11-02",
-  "version": "v1-geo-fsrl",
-  "headline": "补扫：Geo-FSRL（少步 flow 随机策略几何优化）了解即可；Fri mailing 其余暂无必读/值得看。",
+  "version": "v1.1-triage-complete",
+  "headline": "补扫收口：Geo-FSRL 了解即可；其余 IN（EmpDPO/TACE/FitzRoy/DeCoRL）D1 后观察，无必读/值得看。",
   "notice": {
     "file": "2026-11-02/notice.md"
   },
@@ -85,30 +85,30 @@
     },
     {
       "title": "一句主线",
-      "line": "周五 936 篇落盘（10-30 晨空窗已过）；人工种子未见必读，观察 EmpDPO / TACE / TokenRepel。"
+      "line": "周五补扫收口：仅 Geo-FSRL 成卡（了解即可）；EmpDPO/TACE/FitzRoy/DeCoRL 经 D1 全部观察，无必读/值得看。"
     },
     {
       "title": "召回",
-      "line": "list union=936（Fri 30 Oct，age=0）；API/RSS 失效 → G9 初步 + list 替代。kw_hits=229。"
+      "line": "list union=936（Fri 30 Oct）；triage 合并 IN=8 EDGE=49 FEWSTEP=15 OUT=157（含 Geo）。"
     },
     {
-      "title": "观察",
-      "line": "[EmpDPO 2610.39427](https://arxiv.org/abs/2610.39427) TTS 强调 DPO；[TACE 2610.40250](https://arxiv.org/abs/2610.40250) GRPO 优势两段分解；[TokenRepel 2610.39913](https://arxiv.org/abs/2610.39913) 推理时多样性；[GFKC 2610.40383](https://arxiv.org/abs/2610.40383) Feynman-Kac 组合引导。"
+      "title": "成卡",
+      "line": "[Geo-FSRL 2610.41949](https://arxiv.org/abs/2610.41949) 少步 flow 闭式策略几何；训评重叠+单种子+无多样性 → 了解即可。"
     },
     {
-      "title": "没过线（种子）",
-      "line": "FitzRoy 降水 reinforced diffusion=领域外；MedCBR/CoCA=理解/LLM rubric；世界模型数篇转队友。"
+      "title": "观察（D1 后不跟）",
+      "line": "EmpDPO TTS-DPO 配方；TACE=RLVR 优势分解非生成器；FitzRoy 降水；DeCoRL 多图一致性缺可迁移消融；TokenRepel/GFKC 仍边缘。"
     },
     {
       "title": "没覆盖",
-      "line": "Codex 全量 triage 未完；X/GitHub；G11 pastweek；周一新 mailing（明日 09:00）。"
+      "line": "X/GitHub 热度；G11 pastweek；周一新 mailing 另期。"
     },
     {
       "title": "闭环下一步",
-      "line": "Codex 出结果后合并 triage → 精读 EmpDPO+TACE（若仍 IN）→ 补发；少步转发独立发出。"
+      "line": "少步 5 条 + WM FYI 待 parent 转发；无需 Henry 出手。下期照常扫周一 mailing。"
     }
   ],
-  "trend_summary": "跨篇：本期暂无（≥3 独立同机制）。旁注：GRPO 信用分配与推理时多样性继续观察。",
+  "trend_summary": "跨篇：本期暂无（≥3 独立同机制）。旁注：少步 flow RL 几何选策（Geo-FSRL）与 GRPO 优势校准（TACE，推理域）继续观察。",
   "fyi_open": true,
-  "revision_note": "v1：文献追踪转交 2610.41949 Geo-FSRL 定级了解即可并发卡。"
+  "revision_note": "v1.1：2026-11-03 晨收口 triage+D1；更新 brief/overview；无新 must/worth。"
 }
