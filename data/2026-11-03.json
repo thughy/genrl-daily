@@ -1,43 +1,180 @@
 {
   "date": "2026-11-03",
-  "version": "minimal-v0",
-  "headline": "初步（G9 API=0）：Mon mailing union=468；人工种子暂无必读/值得看成卡，观察 LARC（UMM+RL）与 Fair Cast（bf16 丢更新）。",
+  "version": "v1.1-deep",
+  "headline": "Fair Cast 值得看（bf16 导出死区）；LARC 了解即可。无必读。",
   "notice": {
     "file": "2026-11-03/notice.md"
   },
   "overview": {
     "file": "2026-11-03/overview.md"
   },
-  "papers": [],
+  "fyi_open": true,
+  "papers": [
+    {
+      "id": "fair-cast",
+      "directions": [
+        "online-rl",
+        "other"
+      ],
+      "title": "bf16 Rounding Silently Discards Most RL Policy Updates: A Hidden Training-Inference Mismatch and an Unbiased One-Line Fix (Fair Cast)",
+      "published": "arXiv 2610.41073 (v1, 2026-10-29)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.41073",
+        "code": "https://github.com/andrewgcodes/faircast"
+      },
+      "tldr": "LLM RL 里 fp32 master→bf16 serve 若用 round-to-nearest，常用 LR 下每步仅 ~0.4% 权重变化，采样策略隐性落后 master 数十到百余步；现有 trainer–sampler 校正看不见。Fair Cast=无偏导出（stochastic rounding / error feedback）+ 在 served 副本上算 loss，一行改导出。",
+      "delta": "相对 Dirhoussi「近静止模型」/ TIS·IcePop（visible ratio）：区分 hidden master–served 与 visible trainer–sampler；在导出点修，并证明两半缺一不可。",
+      "coverage": {
+        "paper": "partial",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "§3–5+Tab.1–3+§7.5/7.7 核对；代码声明将随论文发布（链接已给）；无 gen-RL 实验"
+      },
+      "lineage": {
+        "equivalent_form": "格**② 的数值实现修正**（兼⑥诊断）：q=R_unbiased(θ)；y∼πq；loss/梯度在 q 上（STE 回 θ）。不改 reward/advantage 公式。",
+        "baseline": "同协议 = 同一 GRPO 环 + round-to-nearest 导出；对照含 fp32-sampler oracle、TIS、IcePop、提 LR、EMA lag。全是 LLM 文本任务。",
+        "rows": [
+          {
+            "work": "Dirhoussi / Gallouédec 等（TRL bf16 mismatch）",
+            "how": "观测小更新难跨 bf16 边界、served 近静止；多让 trainer 对齐 stale sampler",
+            "change": "测 hidden ratio；无偏导出让 sampler 跟上 master，并 train-on-served"
+          },
+          {
+            "work": "TIS / IcePop",
+            "how": "对 visible trainer–sampler 概率比做 IS/mask",
+            "change": "指出同舍入后 visible≈1 仍可有大 hidden lag；导出层修复可叠加"
+          },
+          {
+            "work": "Stochastic rounding / Error feedback（低精度训练经典）",
+            "how": "训练或通信压缩里的无偏量化",
+            "change": "用到 RL 的 trainer→sampler 权重导出，并配 served 上算 loss；给学习曲线证据"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂 SR/EF/QAT 的人能预期「细更新被确定性导出挡住」；难事先定量的是它在 LLM RL 是否成主瓶颈、以及去掉隐式 lag 何时伤正则（list functions 反例）。"
+        }
+      },
+      "insight": "round-to-nearest 导出把亚网格更新相干地扣住几十到上百步，使采样策略成为 master 的低通版本；现有 mismatch 框架只比 trainer 与 sampler——二者同在舍入下游时 ratio≈1，诊不出病。修导出并在 served 副本上算 loss，才让真正服务的策略学习。",
+      "method": "死区：|Δ|<u/2≈|w|/256 时 RN 导出不变。Fair Cast：R∈{stochastic rounding, error feedback} 使 E[q]=θ（或时间上无偏）；trainer forward 用 q（STE）。两半缺一：无偏导出但不在 q 上训会崩；只在 served 上训但 RN 导出≈默认。可选 EMA(α) 显式加回 lag 当正则。",
+      "evidence": "- 测量：Qwen3-1.7B η=1e-6 每步 served 变化 **0.4–0.5%**（§3）。\n- Fig.4：单步 fp32 sampler 0.17→0.84，RN bf16 连三步停在 ~0.19。\n- Tab.1：无偏×master-forward → EF 4/4 崩到 0.00；RN×served ≈ 默认。\n- Tab.2：25 matched seed-pairs 中 18 领先 >1pt、6 平、1 落后；均差 **+6.1pt**；zebra 0.57±0.16 vs 0.33±0.10。\n- Tab.3：RN 下 fp32 master 导出 fp16 可比 bf16 低数十点；Fair Cast 各格式一致。\n- §7.5 list functions：Fair Cast 无 lag **0.523** < RN **0.668**；EMA α=0.05 → **0.707/0.709**。\n- 成本：1.7B H100 导出 22–38ms vs step 31–130s（§7.7）。",
+      "reward_check": {
+        "train_reward": "任务规则/可验证准确率（GRPO）；与导出修复正交",
+        "eval_reward": "held-out 题准确率（同族 verifier）",
+        "overlap": {
+          "value": "yes",
+          "note": "诊断文：训评都是任务准确率；关注点是导出数值而非 reward 设计"
+        },
+        "heldout": "多数任务有 held-out 题；另有 AIME24/AMC23 迁移",
+        "hacking_signs": "不适用常规 RM hacking；list functions 显示去 lag 可诱发 answer-only 捷径"
+      },
+      "solidity": "机制测量 + Tab.1 双因素 + 跨模型/优化器/任务；多配置多 seed，但「25 pairs」聚合异质且部分单 seed。代码声明将发。**无图像/视频/flow gen-RL 实验**。",
+      "concerns": "① 域=纯 LLM，迁到 Flow-GRPO/DanceGRPO 需自证 cast 路径；② 去 lag 非单调更好（list functions）；③ 部分终点差可能小于题数噪声；④ 主实现 STE 在 activation ckpt 下未必全程见 served；⑤ 「50–150 步落后」是有效滞后叙述，非严格 checkpoint 对齐测量。",
+      "principle": "当优化器步长经常小于服务精度的半网格时，确定性导出造成的相干延迟是一种对采样策略的隐式低通；只对齐「同一舍入副本上的 trainer/sampler」不够，还要看 master 是否真的进了 serve。",
+      "takeaway": "**值得先在我们的 RL 栈核对**：导出是不是 RN bf16、每步 served 权重变化率、master–served 的 |logπ|。若死区成立，试 SR/EF + train-on-served（一行级改动）；长 rollout 优先。不要默认「去掉 lag 一定更好」——必要时显式 EMA。**未在 gen-RL 实证前不当通用补丁。**",
+      "rating": "worth",
+      "originality": "finding",
+      "credibility": "solid",
+      "rating_reason": "量化并修复「bf16 RN 导出隐式丢更新、现有 mismatch 校正看不见」；25 seed-pairs + 双因素消融站得住。域是 LLM，迁 gen-RL 需先核对 cast 路径。"
+    },
+    {
+      "id": "larc",
+      "directions": [
+        "ar-unified-rl",
+        "online-rl",
+        "test-time"
+      ],
+      "title": "Latent Reasoning in Continuous Space for Unified Multimodal Models (LARC)",
+      "published": "arXiv 2610.42149 (v1, 2026-10-30)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2610.42149",
+        "project": "https://rootyjeon.github.io/larc-umm"
+      },
+      "tldr": "UMM 上把离散 token CoT 换成连续 hidden-state 交错推理：curriculum SFT 逐步激活 latent，再用冻结 πref 的 flow-matching 损失差作 Information-Gain reward + latent 步间 diversity，GRPO 自进化；GenEval 0.88（BAGEL 0.81 / Uni-CoT 0.83）。",
+      "delta": "相对 Uni-CoT/BAGEL（离散 CoT）与 Coconut（LLM latent CoT）：接到连续图像生成；reward = 有/无轨迹的配对 FM loss 差（需目标图 x）+ λdiv cos 去相关。",
+      "coverage": {
+        "paper": "partial",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "§2 方法+Tab.1–3/6–8/12+附录 C/D 核对；Fig.1 TTS 曲线未抽坐标；项目页有、训练码未见"
+      },
+      "lineage": {
+        "equivalent_form": "格**②**：语言 token（含模式切换）上 GRPO；R = [Lflow_ref(x,c)−Lflow_ref(x,c,h(τ))] + λdiv·(1−cos)均值。连续 latent 无 logπ，只作条件。需目标图 x。",
+        "baseline": "同 backbone 对照 = BAGEL / Uni-CoT（Tab.1–3）；未与 UMM-Reflection / T2I-R1 同表。",
+        "rows": [
+          {
+            "work": "BAGEL（Deng et al. 2025）",
+            "how": "连续 UMM 理解+生成，无 latent 推理链",
+            "change": "加 hidden-state 回灌轨迹 + curriculum SFT + info-gain GRPO"
+          },
+          {
+            "work": "Uni-CoT（2025）",
+            "how": "UMM 上离散 token CoT",
+            "change": "推理空间改 continuous interleaved；加自奖励 RL"
+          },
+          {
+            "work": "Coconut / Quiet-STaR（LLM latent / think）",
+            "how": "hidden 回灌或「思考提升下一 token 概率」PG",
+            "change": "对象换成图像 FM loss；UMM 双专家交错"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂 Coconut+Quiet-STaR+连续 UMM 的人能预期方向；难事先定量的是相对同预算 token CoT 的增益，以及 info-gain 形式相对朴素 −Lflow 是否多出东西（GRPO 组均值下 baseline 项可能消掉）。"
+        }
+      },
+      "insight": "离散 CoT 与连续图像生成不在同一表示空间；用 hidden-state 回灌做交错 latent，并用冻结生成专家的配对 FM loss 差给轨迹打分，可在 UMM 上做自奖励 GRPO——但实验里连续相对离散的 SFT 增益很小，大头在 Stage-2 RL。",
+      "method": "轨迹 = 文本段（可采样）与 latent 段（last hidden→下一 embedding）交错。Stage1 curriculum：逐步把 token 推理位换成 latent。Stage2：πref=SFT 冻结；rIG≈Lflow_ref(x,c)−Lflow_ref(x,c,h(τ))（共享噪声）；rdiv=步间 (1−cos) 均值；R=rIG+λdiv rdiv；GRPO 组大小 8。推理加长 L 主要多跑 understanding expert（Tab.11）。",
+      "evidence": "- Tab.1 GenEval：LARC **0.88** vs Uni-CoT 0.83 / BAGEL 0.81。\n- Tab.2 DPG overall **90.04** vs Uni-CoT 85.56 / BAGEL 85.07。\n- Tab.3 OneIG **0.866** vs Uni-CoT 0.790 / BAGEL 0.764。\n- Tab.6（仅 SFT）：latent 0.83 vs token 0.82 vs baseline 0.81——连续空间增量 **+0.01**。\n- Tab.7：Interleaved vs Naive GenEval 持平 0.83；OneIG +0.02。\n- Tab.8：Stage1 0.83 → Stage1+2 **0.88**（RL 贡献主增益）。\n- Tab.12：λdiv=0 时 cos.sim=0.97、GenEval 0.83（坍塌）；λdiv=0.1 → 0.79 / 0.88。\n- Tab.11：L=10 仅 +1.2s vs BoN N=10 的 10× 墙钟。",
+      "reward_check": {
+        "train_reward": "Information-Gain：冻结 πref 上有/无 h(τ) 的条件 flow-matching 损失差 + λdiv latent 步间 diversity（需目标图像 x）",
+        "eval_reward": "GenEval / DPG-Bench / OneIG-Bench / CompBench / MIRA 等",
+        "overlap": {
+          "value": "no",
+          "note": "训练用内部 FM loss 差，评测用外部规则/基准；但训练需要 GT 图 x，不是纯黑盒偏好"
+        },
+        "heldout": "未见 held-out RM 或人评；提示是否 held-out 未强调",
+        "hacking_signs": "可能 hack πref 的 FM 偏好而非真实组合属性；无多样本视觉多样性；Tab.12 过强 diversity 伤分"
+      },
+      "solidity": "有 token/latent、naive/interleaved、Stage、λdiv 消融。**未报训练种子**；无输出多样性；无「info-gain vs 朴素 −Lflow」对照（GRPO 组均值下 baseline 项可能消掉）；Tab.6/7 显示连续空间本身增益极小。",
+      "concerns": "① 连续 vs 离散 SFT 只 +0.01 GenEval，核心叙事证据弱；② 主增益来自 RL 整包，info-gain 形式未隔离；③ 单次运行/无种子；④ 无样例网格/人评；⑤ 训练依赖目标图 x，难直接迁到无 GT 的偏好 RL；⑥ 未比 UMM-Reflection。",
+      "principle": "需要连续中间表示又要用策略梯度时，可用离散 token 提供 logπ/探索、连续状态承载表示；轨迹效用可用冻结生成器的配对预测损失差代理——但必须用「去掉 baseline 项 / 换朴素 −L」对照，才能声称是信息增益而非拟合。",
+      "takeaway": "UMM 上先别为「模态失配」故事重训；若已有 BAGEL 类基座，优先复现 Tab.8 的 Stage2，并加「R=−Lflow」对照。TTS 墙钟故事（Tab.11）可作 cheap test-time 思路。**不升值得看**：机制增量事先部分可期，关键消融缺位+无种子。",
+      "rating": "fyi",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "rating_reason": "连续 latent + info-gain GRPO 有系统增益，但 Tab.6/7 显示「连续空间」本身几乎无增量，主增益来自未隔离的 RL 整包；无种子、无输出多样性、训练需 GT 图。"
+    }
+  ],
   "brief": [
     {
       "title": "要不要出手",
-      "line": "无。"
+      "line": "建议花 15 分钟核对训推权重导出是否 round-to-nearest bf16；其余无强制动作。"
     },
     {
       "title": "一句主线",
-      "line": "周一 mailing 落盘（list=RSS=468，API 仍空→初步）；人工种子未见必读，观察 LARC / Fair Cast / PACE；少步侧 DMD critic 与 Any Forcing 转同事。"
+      "line": "周一 468 篇收口：Fair Cast 揭示 RN 导出隐式丢更新（值得看）；LARC 连续 latent UMM-RL 成卡但证据偏软（了解即可）。"
     },
     {
       "title": "扫了多少 / 进精读",
-      "line": "list union=468（Mon 2 Nov，age=0）；kw_hits=128，gen_hint=28；人工种子 40 篇；精读卡 0（Codex triage 并行中）。"
+      "line": "union=468；triage IN=2 EDGE=25 FEWSTEP=8 OUT=93；D2 成卡 2（Fair Cast / LARC）。"
     },
     {
-      "title": "没过线原因",
-      "line": "Geo-FSRL 2610.41949=周五已成卡不重复；SRC 自精炼无 reward；Dreamer 想象门控=控制 RL；TACO/编辑评测/肿瘤合成=非本追踪训练线；多数 LLM GRPO 仅 EDGE。"
+      "title": "没过线",
+      "line": "Geo-FSRL 已在 11-02 成卡；PACE/RW-DPO/StrictPRMBench/Subliminal 等 EDGE 未进 D2；多数 LLM GRPO 仅观察。"
     },
     {
       "title": "观察名单",
-      "line": "[LARC 2610.42149](https://arxiv.org/abs/2610.42149) UMM 连续潜推理+info-gain RL；[Fair Cast 2610.41073](https://arxiv.org/abs/2610.41073) bf16 丢更新；[PACE 2610.41114](https://arxiv.org/abs/2610.41114) 代理→人增益曲线；[RW-DPO 2610.41588](https://arxiv.org/abs/2610.41588)；[StrictPRMBench 2610.41333](https://arxiv.org/abs/2610.41333)；[DMD Critic 2610.42135](https://arxiv.org/abs/2610.42135)（少步主责）。"
+      "line": "PACE 2610.41114；RW-DPO 2610.41588；StrictPRMBench 2610.41333；DMD Critic 2610.42135（少步主责）；LOCOGEN locality hack。"
     },
     {
-      "title": "没覆盖来源",
-      "line": "API 窗口（0）；X；GitHub；HF Daily；种子/作者追引轻量跳过；G11 pastweek。Nov2 补发由另一执行器收口，不阻塞本日。"
+      "title": "没覆盖",
+      "line": "API 窗口；X；GitHub；HF Daily；G11 pastweek。"
     },
     {
       "title": "闭环下一步",
-      "line": "Codex 合并后精读 LARC（若机制站得住）+ Fair Cast 可迁移核；少步关键词转蒸馏同事；API poll 长齐后补筛。"
+      "line": "parent 发少步转发稿；Henry 可选核对 cast；下期照常。"
     }
   ],
-  "trend_summary": "初步最小版：papers=[]。跨篇收敛：本期人工种子暂无 ≥3 独立同机制。"
+  "trend_summary": "跨篇收敛：本期无新的 ≥3 独立同机制候选。Fair Cast 把「训推 mismatch」拆成 visible ratio vs hidden export lag，可与 TIS/IcePop 并列记入 lineage 观察。"
 }

@@ -1,13 +1,14 @@
-## 框架雏形（最小版）
+# 框架速览（2026-11-03）
 
-今日人工种子未见必读/值得看成卡。观察：
+按「更新方向从哪来」：
 
-| 格 | 候选（未深读） |
+| 格 | 本期 |
 |---|---|
-| ② 黑盒 PG | — |
-| ③ 对比回归 / DMD | [2610.42135](https://arxiv.org/abs/2610.42135) DMD critic 容量与 step-aware（少步同事主责） |
-| ④ 离线偏好 | [2610.41588](https://arxiv.org/abs/2610.41588) RW-DPO；[2610.41114](https://arxiv.org/abs/2610.41114) PACE 代理增益曲线 |
-| ⑤ / 诊断 | [2610.41073](https://arxiv.org/abs/2610.41073) bf16 静默丢更新；[2610.40945](https://arxiv.org/abs/2610.40945) train-infer mismatch |
-| AR/统一 | [2610.42149](https://arxiv.org/abs/2610.42149) LARC 连续潜空间推理 + info-gain RL（T2I） |
+| ① 可微 reward 回传 | — |
+| ② 黑盒策略梯度 | **LARC**（了解即可）：UMM 上 latent 轨迹 + info-gain GRPO |
+| ③ 正负对比回归 | — |
+| ④ 离线偏好 | — |
+| ⑤ 收敛目标改写 | — |
+| ⑥ 测量/诊断 | **Fair Cast**（值得看）：bf16 RN 导出死区 + 无偏导出修复 |
 
-Geo-FSRL（2610.41949）已在 [11-02](https://thughy.github.io/genrl-daily/daily/2026-11-02/) 成卡，本日 list 重现不重复评级。
+对我们训练：先核对 RL 栈的 master→serve cast；UMM latent 叙事暂不跟跑，等「R=−Lflow」类对照。
