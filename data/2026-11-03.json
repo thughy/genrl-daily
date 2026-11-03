@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-03",
+  "version": "minimal-v0",
+  "headline": "初步（G9 API=0）：Mon mailing union=468；人工种子暂无必读/值得看成卡，观察 LARC（UMM+RL）与 Fair Cast（bf16 丢更新）。",
+  "notice": {
+    "file": "2026-11-03/notice.md"
+  },
+  "overview": {
+    "file": "2026-11-03/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周一 mailing 落盘（list=RSS=468，API 仍空→初步）；人工种子未见必读，观察 LARC / Fair Cast / PACE；少步侧 DMD critic 与 Any Forcing 转同事。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "list union=468（Mon 2 Nov，age=0）；kw_hits=128，gen_hint=28；人工种子 40 篇；精读卡 0（Codex triage 并行中）。"
+    },
+    {
+      "title": "没过线原因",
+      "line": "Geo-FSRL 2610.41949=周五已成卡不重复；SRC 自精炼无 reward；Dreamer 想象门控=控制 RL；TACO/编辑评测/肿瘤合成=非本追踪训练线；多数 LLM GRPO 仅 EDGE。"
+    },
+    {
+      "title": "观察名单",
+      "line": "[LARC 2610.42149](https://arxiv.org/abs/2610.42149) UMM 连续潜推理+info-gain RL；[Fair Cast 2610.41073](https://arxiv.org/abs/2610.41073) bf16 丢更新；[PACE 2610.41114](https://arxiv.org/abs/2610.41114) 代理→人增益曲线；[RW-DPO 2610.41588](https://arxiv.org/abs/2610.41588)；[StrictPRMBench 2610.41333](https://arxiv.org/abs/2610.41333)；[DMD Critic 2610.42135](https://arxiv.org/abs/2610.42135)（少步主责）。"
+    },
+    {
+      "title": "没覆盖来源",
+      "line": "API 窗口（0）；X；GitHub；HF Daily；种子/作者追引轻量跳过；G11 pastweek。Nov2 补发由另一执行器收口，不阻塞本日。"
+    },
+    {
+      "title": "闭环下一步",
+      "line": "Codex 合并后精读 LARC（若机制站得住）+ Fair Cast 可迁移核；少步关键词转蒸馏同事；API poll 长齐后补筛。"
+    }
+  ],
+  "trend_summary": "初步最小版：papers=[]。跨篇收敛：本期人工种子暂无 ≥3 独立同机制。"
+}
