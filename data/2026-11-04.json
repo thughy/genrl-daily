@@ -1,40 +1,48 @@
 {
- "date": "2026-11-04",
- "version": "v0.1-minimal",
- "headline": "初步：周二 1352 篇收口——唯一 IN 是 Visual RL×Best-of-N 分位诊断（2611.02366），精读中；本版无必读/值得看成卡。",
- "notice": {
-  "file": "2026-11-04/notice.md"
- },
- "overview": {
-  "file": "2026-11-04/overview.md"
- },
- "papers": [],
- "brief": [
-  {
-   "title": "要不要出手",
-   "line": "无。等 2611.02366 D2 结论后再说训推 BoN 预算是否要改。"
+  "date": "2026-11-04",
+  "version": "v0.1-minimal",
+  "headline": "初步：周二 1352 篇落盘；生成器 RL 主 IN 仅 Visual RL×BoN 缩放诊断（02366）排队精读，晨间无成卡。",
+  "revision_note": "G9 **初步**：开跑 API=0；list∪RSS=1352（Tuesday 3 Nov 2026，age=0）作 B 替代。本版=triage 收口最小发布，papers=[]；D2 后补发。",
+  "notice": {
+    "file": "2026-11-04/notice.md"
   },
-  {
-   "title": "一句主线",
-   "line": "视觉生成 RL 抬单样本分，不一定抬 Best-of-N 上沿；本批把这条诊断推到前台（精读中）。"
+  "overview": {
+    "file": "2026-11-04/overview.md"
   },
-  {
-   "title": "2611.02366 Visual RL×BoN（排队 D2）",
-   "link": "https://arxiv.org/abs/2611.02366",
-   "line": "IN：跨方法/骨干刻画 RL 增益随 N 衰减/饱和/反转；分位数转移解释；QUPO 干预。预测已登记，卡片随完整版。"
-  },
-  {
-   "title": "观察 EDGE",
-   "line": "03244 RM-edit 预报（类 Fair Cast 可迁移）；03140 人因扩散优化；03622 VLM 机器人 reward。"
-  },
-  {
-   "title": "少步转发待发",
-   "line": "OmniOPD（02803）、History Forcing（02782）等 FEWSTEP≈21；run 末汇总发给少步同事。"
-  },
-  {
-   "title": "没过线 / 没覆盖",
-   "line": "多数 LLM OPD/GRPO、UI/CAD/语音 BWE 降 OUT 或 EDGE。未覆盖：API 窗口、X、GitHub、HF Daily、G11、种子共引。"
-  }
- ],
- "trend_summary": "**初步**。主线是视觉生成 RL 与 test-time Best-of-N 的分位错配（02366）。完整版补 D2 卡 + 少步转发回执。"
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。晨间无必读/值得看；等 02366 深读结论再决定是否改「RL 后再 Best-of-N」默认部署。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周二大 mailing 初筛：真·图像/视频生成器 RL 只剩 [2611.02366](https://arxiv.org/abs/2611.02366)（Visual RL 增益能否随 Best-of-N 缩放）；其余多为 LLM OPD/EDGE 或少步蒸馏交叉。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "union=1352（new=1102 / cross=648）；kw=170（gen_hint=25）；triage IN=1 EDGE=40 FEWSTEP=21 OUT=108；D2 队列 1（02366）；成卡 0。"
+    },
+    {
+      "title": "没过线",
+      "line": "Codex 软 IN 已人工降档（X-World 模拟器 / S2ST / 语音 BWE / CAD bench 等非本线生成器 RL）；ODC 推理漂移校正、纯对比 DiT 正则、Value Forcing（非生成器）OUT。"
+    },
+    {
+      "title": "观察名单",
+      "line": "主：[02366 Visual RL×BoN](https://arxiv.org/abs/2611.02366)（D2）。EDGE：[03244 RM-edit 预报](https://arxiv.org/abs/2611.03244)；[03140 人意图×扩散优化](https://arxiv.org/abs/2611.03140)；[03622 VLM 零样本奖励](https://arxiv.org/abs/2611.03622)；OC/Evidence/Bernoulli OPD（01965/01967/02093，LLM 可迁移）。"
+    },
+    {
+      "title": "少步 / 转发",
+      "line": "[OmniOPD 2611.02803](https://arxiv.org/abs/2611.02803)（AV on-policy distill，少步主责）；[History Forcing 2611.02782](https://arxiv.org/abs/2611.02782)（少步+世界模型）；另 FEWSTEP=21 待转发稿。"
+    },
+    {
+      "title": "没覆盖",
+      "line": "API 窗口；X；GitHub；HF Daily；seed/author chase；G11 pastweek。"
+    },
+    {
+      "title": "闭环下一步",
+      "line": "精读 02366（PDF 已备）→ 对照 Flash-BoN / Flow-GRPO 族写卡；少步命中转同事；API 回升后补标。"
+    }
+  ],
+  "trend_summary": "跨篇：OPD 变体（顺序/伯努利/证据旁路/观测协调）在 LLM 侧扎堆，对生成器 OPD（如 OmniOPD）是可迁移观察，不立新原理。02366 若成立，则「post-train RL + 部署 BoN」两条线不能默认相加。"
 }

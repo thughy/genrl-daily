@@ -1,15 +1,14 @@
-## 召回
-- list_date：**Tuesday, 3 November 2026**；union=1352（new=1102，cross=648）。
-- 关键词宽筛 → triage 输入 170；合并后 **IN=1 / EDGE=40 / FEWSTEP=21 / OUT=108**（ESS1=90）。
+# 框架速览（2026-11-04 · 最小）
 
-## 主线
-唯一晨间 IN：**[2611.02366](https://arxiv.org/abs/2611.02366) Do Visual RL Gains Scale at Test Time?**（视觉生成模型 RL 后训练在 Best-of-N 下的分位数转移 / 增益反转诊断）。已登记预测，D2 精读进行中；本版不成卡。
+**一句话：** 周二大 batch 初筛后，真正进本线的生成器 RL 只有 1 篇诊断向 IN（Visual RL×BoN 缩放转移失败），晨间无必读/值得看卡。
 
-## 观察（不成卡）
-- **2611.03244** Forecasting RLHF × RM edits（LLM，迁 gen-RL 改 RM 可先预报）
-- **2611.03140** Human-Centered Diffusion Optimization（意图 vs 固定指标）
-- **2611.03622** D&A VLM 零样本机器人 reward
-- **2611.02803 OmniOPD** / **2611.02782 History Forcing** → 少步同事主评；本追踪旁注
+| 格 | 本期（观察，未评级） |
+|---|---|
+| ① 可微 reward 回传 | — |
+| ② 黑盒策略梯度 | 02366 背景含多类 visual RL post-train（待 D2 对表） |
+| ③ 正负对比回归 | — |
+| ④ 离线偏好 | — |
+| ⑤ 收敛目标改写 | OmniOPD / History Forcing → 少步线 |
+| ⑥ 测量/诊断 | **02366**（BoN 上沿 vs RL 均值增益）；03244 RM-edit 预报（LLM，可迁移） |
 
-## 跨篇收敛
-本期暂无（待 D2 后补）。
+对我们训练：先等 02366 深读——若 RL 抬均值却在大 N BoN 上被 base 追上/反超，部署侧「训完再 Best-of-N」默认假设要改。
