@@ -1,0 +1,40 @@
+{
+ "date": "2026-11-04",
+ "version": "v0.1-minimal",
+ "headline": "初步：周二 1352 篇收口——唯一 IN 是 Visual RL×Best-of-N 分位诊断（2611.02366），精读中；本版无必读/值得看成卡。",
+ "notice": {
+  "file": "2026-11-04/notice.md"
+ },
+ "overview": {
+  "file": "2026-11-04/overview.md"
+ },
+ "papers": [],
+ "brief": [
+  {
+   "title": "要不要出手",
+   "line": "无。等 2611.02366 D2 结论后再说训推 BoN 预算是否要改。"
+  },
+  {
+   "title": "一句主线",
+   "line": "视觉生成 RL 抬单样本分，不一定抬 Best-of-N 上沿；本批把这条诊断推到前台（精读中）。"
+  },
+  {
+   "title": "2611.02366 Visual RL×BoN（排队 D2）",
+   "link": "https://arxiv.org/abs/2611.02366",
+   "line": "IN：跨方法/骨干刻画 RL 增益随 N 衰减/饱和/反转；分位数转移解释；QUPO 干预。预测已登记，卡片随完整版。"
+  },
+  {
+   "title": "观察 EDGE",
+   "line": "03244 RM-edit 预报（类 Fair Cast 可迁移）；03140 人因扩散优化；03622 VLM 机器人 reward。"
+  },
+  {
+   "title": "少步转发待发",
+   "line": "OmniOPD（02803）、History Forcing（02782）等 FEWSTEP≈21；run 末汇总发给少步同事。"
+  },
+  {
+   "title": "没过线 / 没覆盖",
+   "line": "多数 LLM OPD/GRPO、UI/CAD/语音 BWE 降 OUT 或 EDGE。未覆盖：API 窗口、X、GitHub、HF Daily、G11、种子共引。"
+  }
+ ],
+ "trend_summary": "**初步**。主线是视觉生成 RL 与 test-time Best-of-N 的分位错配（02366）。完整版补 D2 卡 + 少步转发回执。"
+}
