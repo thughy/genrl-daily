@@ -1,48 +1,122 @@
 {
   "date": "2026-11-04",
-  "version": "v0.1-minimal",
-  "headline": "初步：周二 1352 篇落盘；生成器 RL 主 IN 仅 Visual RL×BoN 缩放诊断（02366）排队精读，晨间无成卡。",
-  "revision_note": "G9 **初步**：开跑 API=0；list∪RSS=1352（Tuesday 3 Nov 2026，age=0）作 B 替代。本版=triage 收口最小发布，papers=[]；D2 后补发。",
+  "version": "v1.1-deep",
+  "headline": "补发：Visual RL 的 BoN scaling-transfer 会衰减/反转——QUPO 值得看（finding×solid）。",
+  "revision_note": "**延误补发**：11-04 晨 minimal 后 deep 中断；11-05 晨续跑精读 2611.02366 并升 v1.1-deep。G9 仍初步（当时 API=0）。",
   "notice": {
     "file": "2026-11-04/notice.md"
   },
   "overview": {
     "file": "2026-11-04/overview.md"
   },
-  "papers": [],
+  "papers": [
+    {
+      "id": "qupo-scaling",
+      "directions": [
+        "online-rl",
+        "test-time",
+        "reward-model"
+      ],
+      "title": "Do Visual RL Gains Scale at Test Time? A Quantile View of Post-Training (QUPO)",
+      "published": "arXiv 2611.02366 (v1, 2026-11-02)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.02366",
+        "code": "https://github.com/austin-k-wang/QUPO"
+      },
+      "institutions": [
+        "ByteDance Seed"
+      ],
+      "rating": "worth",
+      "originality": "finding",
+      "credibility": "solid",
+      "rating_reason": "系统测出 visual RL 的 BoN scaling-transfer 可衰减/反转，并用分位转移解释；T=1 vs T>1 消融站住。QUPO 本身接近 Pass@k/Max@K，主价值在诊断。",
+      "tldr": "视觉生成 RL 抬高 Bo1 后，难组合 held-out 上大 N 的 Best-of-N 优势常衰减甚至被 base 反超；原因是 BoN 越来越吃奖励上尾，而标准期望奖励优化会压缩稀有高质量样本。QUPO 把优势换成 Best-of-k 效用混合，可保住上尾。",
+      "delta": "相对 Flow-GRPO/DiffusionNFT/AWM/GRPO-Guard 的 Bo1 叙事，以及 Max@K/Pass@k 尾部目标：首次在 visual 多方法/骨干上分型 scaling transfer，并证明 T=1（纯期望）同学步会大 N 翻车而分位混合不会。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "unavailable",
+        "note": "全文+Tab.1/6+Fig.1–5+App.C/D/E；样例仅看论文图；代码声明 github.com/austin-k-wang/QUPO，本机未克隆核行"
+      },
+      "lineage": {
+        "equivalent_form": "格② 黑盒 PG 的 **优势重定义**：A_i = Σ_k k·q_k·(E[max_{S∋i} r]−E[max_{S∌i} r])，q_k=k^α；T=1 退回标准组相对/期望奖励优势。不改采样与 KL 管线。",
+        "baseline": "同管线同预算改 advantage：FlowGRPO / UniGRPO / DiffusionNFT / AWM / GRPO-Guard；诊断协议=源任务训、更难 held-out 上画 BoN 前沿。QUPO 在该协议下正面对比。",
+        "rows": [
+          {
+            "work": "Flow-GRPO / UniGRPO / DanceGRPO",
+            "how": "组相对标量优势最大化期望奖励；主报 GenEval/Bo1",
+            "change": "同一管线换成 QUPO 优势；验收改看 held-out BoN 全前沿与上尾分位 lift"
+          },
+          {
+            "work": "Max@K / SatisDive / LLM Pass@k 尾部目标",
+            "how": "集合多样性或 pass@k 效用",
+            "change": "目标是标量奖励的 BoN 质量–算力前沿，不是集合代表多样性；并先完成跨方法失败分型"
+          },
+          {
+            "work": "Flash-BoN / test-time Best-of-N 测量",
+            "how": "推理侧选样与加速",
+            "change": "把 BoN 权重推回训练目标；证明训练若忽略上尾，推理加 N 会失效甚至反转"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂 Pass@k/尾部 RL 的人能料到「抬均值未必抬上尾」；难事先定量的是组合任务会出现 frontier reversal、OCR 仅衰减、偏好更持久，且分位 lift 与 BoN 曲线同号对齐。"
+        },
+        "essence_shadow": {
+          "label": "本质·存疑（诊断）",
+          "codex_blind": "closest: partly（与我一致）；essence Codex 超时未收齐，影子以我方 T0–T3 为准",
+          "T0": "方向（均值≠上尾→大N变差）可推；反转是否出现、任务分型与量级不完全可推",
+          "T1": "当选择器随算力加重奖励分布上尾时，只优化期望会系统性牺牲被选择器吃到的那截尾巴",
+          "T2": "若我们对视频 Flow-GRPO 类只优化帧/片段期望奖励，在难组合 held-out 上 BoN@64 相对 base 的优势预计转负或接近 0（锚定 GenEval2 上 FlowGRPO† Bo128 相对 base −0.038）；改成 T≈16 的 BoN 效用混合后该优势应回到小正（锚定 QUPO +0.015）。证伪：期望训练下大 N 仍稳赢，或分位混合无增益",
+          "T3": "① Flow-GRPO 高 GenEval + 难组合翻车可重读为上尾被压缩而非「泛化差」一句；② 多样性塌缩可伴随失败，但 LPIPS 不是决定量——上尾分位才是",
+          "evidence": "固定预算直接改 T；T=1 对照；跨方法/骨干；评测 Soft-TIFA held-out。视频未测；VLM 评测可 hack"
+        }
+      },
+      "insight": "Best-of-N 不是「多抽几次同样的均值模型」：N 变大等于把训练时没优化到的上尾分位拿来做主指标。视觉 RL 若只推期望奖励，典型样本变好、稀有高分样本变少，部署一加 N 就会眼睁睁看着优势缩水甚至被 base 反超。",
+      "method": "诊断：源任务 RL 后，在更难 held-out 上画 BoN 曲线与分位 lift。干预 QUPO：对 rollout 组算每个样本对 Best-of-k 的边际贡献，再按 q_k=k^α 混合为优势，塞回 FlowGRPO/UniGRPO 的 PG 更新；推荐 T=16、α≈−0.5（SD3.5）/−0.875（BAGEL）。",
+      "evidence": "- Fig.1/Tab.1：GenEval2 上 FlowGRPO† Bo128 **0.6471 < base 0.6850**；QUPO **0.7000** 全程高于 base；官方 FlowGRPO 亦在大 N 低于 base。\n- ConceptMix 同趋势（Tab.1b）。\n- Fig.2：组合任务上尾 lift 为负，与反转对齐；偏好任务上尾更正。\n- Tab.6 关键消融：同学步 α=-0.5，**T=1 Bo128=0.6729<base**；**T=16 Bo128=0.7000**；T=23 无额外增益。\n- App.E：FlowGRPO 降 LPIPS 多样性；QUPO 较高但仍低于 base，说明多样性不是充分统计量。",
+      "reward_check": {
+        "train_reward": "组合：GenEval detector；OCR：PaddleOCR Levenshtein；偏好：PickScore",
+        "eval_reward": "组合：GenEval2/ConceptMix Soft-TIFA（Qwen3-VL-8B）；OCR：TextInVision 同族 OCR；偏好：Parti+HPSv2",
+        "overlap": {
+          "value": "partial",
+          "note": "组合训评都是组合正确性族但 prompt 与 scorer 不同（detector vs Soft-TIFA）；偏好 PickScore→HPSv2 held-out；OCR 同度量更难 held-out"
+        },
+        "heldout": "GenEval2 / ConceptMix / TextInVision / Parti+HPSv2",
+        "hacking_signs": "论文图未见明显过饱和叙述；Soft-TIFA/VLM 评分本身可被风格捷径影响（未做人评）"
+      },
+      "solidity": "跨 4 类 RL×多任务分型 + 配对种子 BoN + 分位对齐 + T 消融。无多种子方差表；代码未核；无真人评。诊断部分站得住；QUPO 增益中等但方向一致。",
+      "samples": "论文 Fig.4/7–9：QUPO 更常抽到满足组合约束的稀有好样本；未下载原图做网格盲审。",
+      "code_analysis": "声明 https://github.com/austin-k-wang/QUPO；本机时间盒未克隆，未核对 advantage 实现行号。",
+      "concerns": "① Soft-TIFA/VLM 评测可靠性；② QUPO 相对 Max@K/Pass@k 增量有限，主看诊断；③ 未测视频/音频 gen-RL；④ 官方 vs 匹配预算 checkpoint 两套数需分清；⑤ 多样性↓仍可缩放——部署别用 LPIPS 当代理验收。",
+      "principle": "部署若靠加重奖励上尾的选择器（Best-of-N 等），训练只优化期望会系统性卖掉上尾；要用与部署预算匹配的分位效用验收和优化，而不是只看 Bo1。",
+      "takeaway": "**值得改我们的验收默认**：凡是「先 RL 再 BoN」的栈，先画 held-out 大 N 前沿和上尾分位，不要只看 GenEval/Bo1。若已出现大 N 被 base 追上，试把 GRPO 优势换成短视野 BoN 效用混合（T≈8–16）作对照。视频栈先当假说验证 T2。"
+    }
+  ],
   "brief": [
     {
       "title": "要不要出手",
-      "line": "无。晨间无必读/值得看；等 02366 深读结论再决定是否改「RL 后再 Best-of-N」默认部署。"
+      "line": "建议核对「先 RL 再 Best-of-N」验收：难组合 held-out 上画大 N 前沿；若已反超失败，试 T≈8–16 的 BoN 效用优势对照。无训练侧强制改动。"
     },
     {
       "title": "一句主线",
-      "line": "周二大 mailing 初筛：真·图像/视频生成器 RL 只剩 [2611.02366](https://arxiv.org/abs/2611.02366)（Visual RL 增益能否随 Best-of-N 缩放）；其余多为 LLM OPD/EDGE 或少步蒸馏交叉。"
+      "line": "**QUPO 值得看**：视觉 RL 抬 Bo1 后，难组合上大 N 常被 base 反超；分位上尾被压缩是机制；同学步 T=1 会翻车、分位混合不会。"
     },
     {
       "title": "扫了多少 / 进精读",
-      "line": "union=1352（new=1102 / cross=648）；kw=170（gen_hint=25）；triage IN=1 EDGE=40 FEWSTEP=21 OUT=108；D2 队列 1（02366）；成卡 0。"
+      "line": "union=1352（Tue 3 Nov）；triage IN=1 EDGE=40 FEWSTEP=21；D2 成卡 1（02366）。"
     },
     {
       "title": "没过线",
-      "line": "Codex 软 IN 已人工降档（X-World 模拟器 / S2ST / 语音 BWE / CAD bench 等非本线生成器 RL）；ODC 推理漂移校正、纯对比 DiT 正则、Value Forcing（非生成器）OUT。"
+      "line": "同 minimal：LLM OPD/EDGE、少步交叉归同事。"
     },
     {
       "title": "观察名单",
-      "line": "主：[02366 Visual RL×BoN](https://arxiv.org/abs/2611.02366)（D2）。EDGE：[03244 RM-edit 预报](https://arxiv.org/abs/2611.03244)；[03140 人意图×扩散优化](https://arxiv.org/abs/2611.03140)；[03622 VLM 零样本奖励](https://arxiv.org/abs/2611.03622)；OC/Evidence/Bernoulli OPD（01965/01967/02093，LLM 可迁移）。"
-    },
-    {
-      "title": "少步 / 转发",
-      "line": "[OmniOPD 2611.02803](https://arxiv.org/abs/2611.02803)（AV on-policy distill，少步主责）；[History Forcing 2611.02782](https://arxiv.org/abs/2611.02782)（少步+世界模型）；另 FEWSTEP=21 待转发稿。"
+      "line": "03244 RM-edit 预报等 EDGE 未升 D2。"
     },
     {
       "title": "没覆盖",
-      "line": "API 窗口；X；GitHub；HF Daily；seed/author chase；G11 pastweek。"
-    },
-    {
-      "title": "闭环下一步",
-      "line": "精读 02366（PDF 已备）→ 对照 Flash-BoN / Flow-GRPO 族写卡；少步命中转同事；API 回升后补标。"
+      "line": "API；X/GitHub/HF Daily；G11；代码未核行。"
     }
-  ],
-  "trend_summary": "跨篇：OPD 变体（顺序/伯努利/证据旁路/观测协调）在 LLM 侧扎堆，对生成器 OPD（如 OmniOPD）是可迁移观察，不立新原理。02366 若成立，则「post-train RL + 部署 BoN」两条线不能默认相加。"
+  ]
 }

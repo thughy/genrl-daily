@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-05",
+  "version": "v0.1-minimal",
+  "headline": "初步：周三 602 篇落盘；晨间无生成器 RL 成卡。观察 DARS/PATTS/PROVE；StepX-OPD 归少步。另：昨日报 QUPO 补发卡。",
+  "revision_note": "G9 **初步**：开跑 API=0；list∪RSS≈602/607（Wednesday 4 Nov 2026，age=0）作 B 替代。本版=triage 收口最小发布，papers=[]。执行器 resource_exhausted 后本机续跑。",
+  "notice": {
+    "file": "2026-11-05/notice.md"
+  },
+  "overview": {
+    "file": "2026-11-05/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。晨间无必读/值得看；生成器 RL 无硬 IN。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周三 mailing 初筛：真·图像/视频生成器 RL 没有够进 D2 的 IN；最值得盯的交叉是 [DARS](https://arxiv.org/abs/2611.04792)（密度感知奖励缩放保多样性）与 [PATTS](https://arxiv.org/abs/2611.04948)（thought-image TTS）。[StepX-OPD](https://arxiv.org/abs/2611.04386) 归少步主评。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "union=602（new=471 / cross=261）；kw 粗筛 316；triage IN=0 EDGE=4 FEWSTEP=22 OUT=290；D2 队列 0；成卡 0。"
+    },
+    {
+      "title": "没过线",
+      "line": "Shuffled OPSD/P²-MOPD/FP4-RL 等 LLM-only；ReVi/Kling 观察无 RL；HTML RL、权重空间编程复原扩散等出界。"
+    },
+    {
+      "title": "观察名单",
+      "line": "DARS 2611.04792；PATTS 2611.04948；PROVE 2611.05158；TIF 2611.04873（VLA）；少步 StepX-OPD 2611.04386。"
+    },
+    {
+      "title": "没覆盖",
+      "line": "API=0（B-list 替代）、X/GitHub/HF Daily、G11、种子共引。"
+    }
+  ]
+}
