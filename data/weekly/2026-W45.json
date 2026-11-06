@@ -1,0 +1,37 @@
+{
+  "week": "2026-W45",
+  "title": "训练涨分之后：核对serve策略、独立裁判与BoN上尾",
+  "range": [
+    "2026-11-02",
+    "2026-11-06"
+  ],
+  "summary": "### 周五认知：先查增益是否真的兑现\n相较上周偏重reward能否骗裁判，本周把检查推进到整条链：Fair Cast提醒核对实际送去采样的策略；QUPO提醒Bo1变好不代表Best-of-N上尾保住。今日两篇进一步要求独立裁判、非结果选择的prompt、匹配总训练预算和全程多样性。\n\n- **EmoReward：了解即可（机制×存疑）**。当前样本有效性门控与上一run相关性校准有具体delta，但不是在线RM自进化。\n- **LeNO：了解即可（机制×存疑）**。黑盒噪声策略可把搜索搬到训练；不是首次摊销，严格KL界也不是语义多样性保证。\n- **审计边界**：周五召回只完成10/40，hard0/soft1；有偏小样本不报总体漏检率。Codex当日两份影子均技巧，LeNO的窄状态依赖对照成立、强方差机制未证。W45其余分歧账覆盖不足；全周预测命中率不报虚构分母。\n\n[本周认知页](../../weekly/2026-W45/)；两篇代码均未核，不据此触发训练侧改动。",
+  "highlights": [
+    {
+      "date": "2026-11-03",
+      "paper_id": "fair-cast",
+      "title": "Fair Cast",
+      "note": "值得看；先核实际导出与serve策略，LLM证据迁生成器需查路径。"
+    },
+    {
+      "date": "2026-11-04",
+      "paper_id": "qupo-scaling",
+      "title": "Visual RL / QUPO",
+      "note": "值得看；主价值是BoN scaling-transfer诊断。"
+    },
+    {
+      "date": "2026-11-06",
+      "paper_id": "emoreward",
+      "title": "EmoReward",
+      "note": "了解即可；跨run配权、独立情绪泛化待证。"
+    },
+    {
+      "date": "2026-11-06",
+      "paper_id": "leno",
+      "title": "LeNO",
+      "note": "了解即可；黑盒摊销噪声策略、总预算和视频未证。"
+    }
+  ],
+  "threads": "②黑盒PG既可以更新生成器，也可以只更新生成器前的噪声策略；优化哪个对象、reward从哪来、评测是否独立要分开记。推导或统一梯度形式不是机制因果已验证。",
+  "watchlist": "EmoReward：等强度global/shuffle-memory、独立盲评、全prompt与多训练seed；LeNO：同总调用预算、5k终点多样性、视频/AV迁移。W44 ACWM/VaLoP持有与未批准G10/G11均不动。审计：补30/40与G6专门复审；不以本页宣告审计全完成。"
+}

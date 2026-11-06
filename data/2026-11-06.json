@@ -1,35 +1,206 @@
 {
   "date": "2026-11-06",
-  "version": "v0.1-minimal",
-  "headline": "初步：周四 520 篇落盘；硬 IN 两篇进晨间 D2——EmoReward（情感视频 GRPO 自演化奖励校准）与 LeNO（少步生成 Local-GRPO 噪声奖励对齐）。成卡待补。",
-  "revision_note": "召回标「初步」：API 窗口计数仍为 0，G9 用 B-list 替代（/list∪RSS=520，age≈0，list_date=Thu 5 Nov）。周五另做查漏/周认知。",
-  "notice": "最小版。D2 精读进行中；完整卡与周五「本周认知变化」随后补发。",
-  "overview": "框架雏形：①可微 reward 回传 — 无新硬点；②黑盒 PG（GRPO）— EmoReward 把多奖励权重做成 run 间自校准；③正负对比回归 — 无；④离线 DPO — 无；⑤收敛目标改写 — LeNO 把 test-time 噪声优化摊销成可学 residual transport（Local GRPO）。",
-  "papers": [],
+  "version": "v1.0-deep",
+  "headline": "不新增实施项：EmoReward、LeNO均了解即可；训练reward涨分不等于独立情绪质量或少步泛化已证。",
+  "revision_note": "D2恢复完成：两篇全文、先验、影子T0–T3与claim_check归档，均成完整卡并默认展开；两轴仍原创性×可信度。召回保留「初步」：API=0、B-list替代；周五仅轻量抽检10/40。纠正晨版LeNO归格为②黑盒PG。",
+  "notice": "完整版深读；无必读/值得看新增。代码未核；周五召回/分歧账有覆盖缺口。",
+  "overview": "先不换训练配方。②黑盒PG：EmoReward重配固定评分器的相对权重，LeNO冻结少步生成器、学习噪声策略；前者先审独立裁判/样本选择，后者先对齐调用预算/全程多样性。两者均非新收敛目标；①可微reward回传、③正负对比回归、④离线DPO、⑤收敛目标改写今日无新增硬点。",
+  "papers": [
+    {
+      "id": "emoreward",
+      "arxiv_id": "2611.06518",
+      "rating": "fyi",
+      "rating_zh": "了解即可",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "video-rl",
+        "reward-model",
+        "online-rl"
+      ],
+      "title": "EmoReward: Self-Evolving Reward Calibration for Emotional Video Generation RL",
+      "institutions": [
+        "HKUST",
+        "Tencent Hunyuan"
+      ],
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.06518",
+        "project": "https://emoreward-project.github.io/",
+        "code": "https://github.com/Tencent-Hunyuan/EmoReward"
+      },
+      "rating_reason": "新机制 × 存疑：把评分有效性与跨run权重校准做成插件，有人评信号；但同源outcome自证、缺global-memory等强度对照、未报告训练种子与视频多样性，暂不建议照搬。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "全文含附录原文核对；项目页一组5秒视频的逐帧运动统计+三时刻目视；未核代码、未跑作者评测。"
+      },
+      "tldr": "评分器不更新，也能通过「当前样本哪些证据可用」与「上一轮哪些通道跟目标一致」重分奖励；但跟同一个裁判更一致，不等于更懂情绪。",
+      "delta": "相对VideoAlign的固定多头融合、VisionReward的固定线性问卷权重，新增样本门控 × completed-run情境相关性乘子；GRPO更新本身不变。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "VideoAlign / VideoReward (2501.13918)",
+            "link": "https://arxiv.org/abs/2501.13918",
+            "how": "§3.2多头VQ/MQ/TA，§5.2固定线性标量化；本轮直接读原文",
+            "change": "先保持通用reward，再混入按样本有效性/情境可靠性融合的情感分支"
+          },
+          {
+            "work": "VisionReward (2412.21059)",
+            "link": "https://arxiv.org/abs/2412.21059",
+            "how": "§3.2二元rubric问卷+人类偏好学习固定线性权重；§6.2已有元素存在性mask，本轮直接读",
+            "change": "不把缺失mask当首次提出；delta是已完成run相关性表与当前gate的组合"
+          }
+        ],
+        "equivalent_form": "R_emo=Σ_k(w⁰_k·g_k(x,p)·m_k(regime))s_k / (Σ_k w⁰_k g_k m_k+ε)；m_k=exp(clip((Corr(s_k,y)−平均Corr)/τ,−c,c))。再把R_emo与R_vid混合，送入普通clipped GRPO。两个KL不同：一个约束provider权重，一个约束生成器策略。",
+        "baseline": "比较的是同HunyuanVideo1.5上的Dance/Flow/SAGE-GRPO奖励配置；没有证明成为新最强优化器。Table2引文仅表示routing/fusion机制，不是复现完整agent系统。",
+        "counterfactual": {
+          "value": "partly",
+          "text": "去除无效证据、提高可靠通道权重的方向可预测；跨run情境表能否胜同强度全局表、能否提升独立情绪质量及其量级不可由已知融合直接推出。缺关键对照，不据此升格。"
+        }
+      },
+      "insight": "**本质影子 v2.3：技巧（机制待证），不驱动两轴评级。**\n- T0：partly；不是新PG，缺失mask也非首次；跨run校准实际泛化仍待证。\n- T1（去名）：「只有改变候选间有效证据的相对排序，奖励重加权才可能改变组内策略梯度」；§3.1、App.F给出不变性；Table6测Corr但未测独立情绪排序的因果改善。\n- T2：对AV世界模型的VLM/检测器融合，按证据有效性分层可能优于共同缩放；可靠量级写不出——Table2是归一化proxy、人评+7pp也不能充当跨模态校准增益锚。证伪：固定视频库/调用数打乱provider乘子并匹配权重偏移，比较独立人工排序；T2不通过。\n- T3：①GRPO常数通道经中心化抵消（已知代数，§3.1）；②VisionReward存在性mask解释为什么不该把缺失读数算作中立偏好（前作§6.2已说）；均不构成两个新解释。\n- 门槛：Table2固定backbone和名义训练预算、有random/round-robin/fixed对照；但缺同偏移强度global/shuffled-memory + 独立outcome；27组memory扫描重用相同traces，不是27个种子（App.H）。",
+      "method": "①生成器采G=4视频；②七个冻结provider给分与有效性，色彩/运动强度两个通道仅辅助诊断；③phase/face/conflict/subtlety规则gate并renormalize；④用Reflect完成的reference run构造按arousal、face-branch activity分组的相关性表；⑤下一run中表冻结，仅更新生成器。不是在线训练reward model，不是每个rollout实时写回memory。",
+      "evidence": "[原文核对，均作者自报，未复现]\n- Table1，302个训练外情绪prompt子集：SAGE Overall −0.8269→−0.2624（+0.5645）；MQ −0.3275→−0.0926。项目页另明确这是 **outcome-conditioned selected subset**，不能当无偏全基准效果。\n- Dance行实用的是Reflect（不含memory）；PickScore 0.7177→0.7039、CLIPScore 0.5675→0.5565，不能说所有指标都涨。\n- Table3 / App.B：18人×30 prompts，每method×criterion 540 judgments；情感Good 53.0%→60.0%，Bad 31.5%→15.4%；非pairwise胜率。缺prompt/participant原始记录、盲法与抽样来源，不能由4860次重复评分算独立显著性。\n- Table2 SNR* 0.451→7.022是变异系数，不是梯度SNR；EF是ImageReward偏好proxy，不是独立情感测量；core/emo是七臂min-max组合分。\n- Table6三通道micro/body/temporal在参考traces恒0.5；macro相关0.429、乘子1.833但含VideoAlign信息。并不证明所有视频没脸/没身体。\n- App.J图像迁移SD3.5 baseline420–500 vs calibrated2780–3000 updates，非等预算因果证据；FLUX baseline的HPSv3仍领先。",
+      "reward_check": {
+        "train_reward": "VideoAlign R_vid + 七provider门控情绪R_emo；memory的y也是VideoAlign",
+        "eval_reward": "VideoAlign、frame PickScore/CLIPScore、ImageReward派生EGB composites；另有人类序数评分",
+        "overlap": "partial",
+        "heldout": "302 prompts仅是prompt留出，不是裁判留出；18人30prompt人评独立于自动裁判但统计/选择记录不足",
+        "hacking_signs": "不能证明无hack。自测公开curated pair的光流下降，受镜头/构图混杂，不能推断总体运动被压制。"
+      },
+      "solidity": "有同backbone奖励策略消融和小规模人评；但outcome-conditioned子集、同源校准、无matched global-memory、无独立训练种子/视频多样性。MQ是同源RM头，不替代Dynamic Degree或运动实测。reference run额外成本未给总墙钟对齐。",
+      "samples": "[本轮实测+目视] 项目页backstage-1(base) / backstage-2(guided)，各121帧、24fps、5.04s。288×160灰度Farneback平均位移1.367→0.834 px/frame（约−39%），平均相邻帧差0.02256→0.01418；0.5/2.5/4.5s目视：两者都有转头动作，guided镜头更宽、人物尺度更小，camera motion不同。只能作为运动专项复核提示，绝不能称Dynamic Degree下降39%或情绪更好。仅一组策展样例、不测总体胜率/多样性。",
+      "media": [
+        {
+          "src": "assets/2026-11-06/emoreward-contact.webp",
+          "caption": "公开策展视频，三时间点；base与guided镜头尺度不同，运动统计有混杂。"
+        }
+      ],
+      "code_analysis": "未核代码、未运行作者reward/评测脚本；论文与项目页提供仓库链接不等于实现已验证。",
+      "concerns": "优先缺口：①同总reference-run预算的global/shuffled-memory；②以非VideoAlign独立outcome校准；③全prompt、不按结果选择；④多训练种子、独立运动与同prompt多样性；⑤人评原始分层记录。项目页比PDF更明确暴露子集选择，卡片并列标来源。",
+      "principle": "对组内标准化的策略梯度，共同平移/缩放不是新增学习信号；必须检查重加权是否改变有效排序，以及这个排序对独立目标是否正确。",
+      "takeaway": "不建议换训练配方；先做离线reward审计：同一视频池比较原配方、同幅度shuffle、全局表、情境表，对独立人评排序和运动分别拆开看。音视频可复用的是score与validity分离，不是照搬情绪工具箱。",
+      "details": "本轮流程记录：predict-before-Codex已落盘；closest、essence v2.3影子、claim_check已完成。主文与附录原文核对，作者结果未复现。最终定级由我方my_judgment决定，Codex不代替评级。"
+    },
+    {
+      "id": "leno",
+      "arxiv_id": "2611.06255",
+      "rating": "fyi",
+      "rating_zh": "了解即可",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "distill-rl",
+        "online-rl",
+        "test-time"
+      ],
+      "title": "Learning Noise Optimization for Reward Alignment in Few-Step Generative Models",
+      "institutions": [
+        "KAIST AI"
+      ],
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.06255"
+      },
+      "rating_reason": "新机制 × 存疑：黑盒局部PG学习初始噪声corrector与严格KL上界有实用delta；但非首次摊销，训练预算/优化器不匹配、训练种子不明，泛化不胜HyperNoise。保留完整卡，不降成静默观察。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "方法、证明、主表和附录核对；目视Fig3六组策展图及Fig4/5；未核代码/未跑作者打分。"
+      },
+      "tldr": "不用改少步生成器，也不用对reward求导：围绕同一初始噪声试多个小修正，学习一次性corrector，把每次推理的搜索搬到训练。",
+      "delta": "相对HyperNoise将可微reward反传换成在线scalar-reward Local GRPO；相对ZeNO把每样本反复搜索摊销成anchor-conditioned transport。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "HyperNoise (2508.09968)",
+            "link": "https://arxiv.org/abs/2508.09968",
+            "how": "原文§3 Eq6/11 residual noise hypernetwork、冻结生成器、reward反传；KL以小Lipschitz近似L2；本轮直接读",
+            "change": "加入高斯残差动作和黑盒score-function更新；norm-preserving stochastic map给DPI严格上界，不用原来的Jacobian近似"
+          },
+          {
+            "work": "ZeNO (2605.11347)",
+            "link": "https://arxiv.org/abs/2605.11347",
+            "how": "原文§3.2 Alg1 reward-weighted局部扰动、逐样本反复更新；本轮直接读",
+            "change": "用共享网络学习状态依赖的修正，不再每个测试样本重做搜索"
+          }
+        ],
+        "equivalent_form": "a=ημθ(z,c)+σε；z′=||z||·(z+a)/||z+a||；G冻结。首次未clip更新∇μJ=η/(Kσ)Σ_i A_i ε_i − βη²μ/σ²；之后有PPO likelihood ratio与clip，不能写成始终精确等于零阶reward梯度。归②黑盒PG，不是⑤收敛目标改写。",
+        "baseline": "Table1同SDXL-Turbo重训HyperNoise；Table5两法训练60k SGD vs5k Adam、32 particles开销另计，未对齐总reward调用/墙钟。Table2 SANA-Sprint同复合reward，GenEval0.70<HyperNoise0.71。不替换谱系最强。",
+        "counterfactual": {
+          "value": "partly",
+          "text": "HyperNoise已有摊销、ZeNO已有黑盒局部方向；组合的定性涨分可推，但其严格DPI界、有限调用预算下表现与多样性量级不可全部推出。实际delta不等于新认知已实证。"
+        }
+      },
+      "insight": "**本质影子 v2.3：技巧（机制待证），不驱动两轴评级。**\n- T0：partly；摊销与初噪修正非首次，黑盒动作PG+prior-preserving界是具体机制delta。\n- T1（去名）：「不同初始状态处的局部改进方向越不一致，单一共享修正越容易把有效信号平均掉」；App.C Lemma1给局部线性surrogate gap=Tr Cov(g)/(2α)，不是完整非线性训练定理。Fig4测dummy-anchor消融，未直接测/控制方向方差。\n- T2：对8步视频/AV冻结生成器+黑盒rubric，先预测σ过小产生组内同分、过大失去局部对应；原文SDXL σ约0.2最好、>1.2崩（§4.2/Fig5）不能直接外推视频σ阈值。跨模态可靠量级写不出，T2不通过；可用≤8GPU一天的固定视频噪声池测group reward方差/方向一致性，打乱anchor-correction匹配。\n- T3：①HyperNoise为何能摊销推理成本：本就用noise map，前作已说；②ZeNO为何每样本仍要多次调用：没有学习共享transport，前作已有。不是两个新解释。\n- 门槛：Fig4同网络dummy输入、其余Local GRPO不变，是结构对照；仍缺同实际angular displacement的shuffle匹配。Fig5改变σ但未直接测中介方向方差；不把曲线最佳值当认知变量已测。\n- Codex独立复核：把T1改述为「训练换推理的状态条件化修正」时，Fig4直接证据门槛窄义通过；我方更强的「局部方向方差决定摊销收益」仍未被实测。两者不可混为一谈；影子仍技巧、两轴仍机制×存疑。",
+      "method": "每个prompt+anchor采32个高斯residual动作，norm-preserving投影后由冻结生成器出图，黑盒reward打分；组内标准化advantage更新corrector的action likelihood。推理仍采一次随机residual（不是去掉σ的确定性mean-only），一次corrector+一次生成器=2NFE，无reward query。Prop1先证明零均值动作保留Gaussian prior，再对joint(anchor,action)用DPI：KL(qθ||p0)≤η²E||μ||²/(2σ²)；这约束分布偏移上界，不保证语义多样性或不hack。",
+      "evidence": "[原文核对，作者自报，未复现]\n- Table1各列来自分别优化的reward模型，不能拼成一个checkpoint：SDXL-Turbo PickScore21.932→22.715，HyperNoise21.951；ImageReward0.761→1.019，HyperNoise0.939。LeNO2NFE，ZeNO/BoN800NFE；不等总训练+推理成本。\n- Table2 SANA-Sprint，训练复合reward但GenEval未参与训练：0.67→0.70，HyperNoise0.71；耗时0.2→0.3s自报，不能称完全无推理开销。\n- Fig4同网络dummy-noise输入的state-independent臂早饱和，支持状态条件化；Fig5 σ≤0.1信号弱，约0.2最好，>约1.2增益崩。\n- App.E.1/Table7：100 held-out prompts×8固定生成噪声seed，paired-bootstrap按prompt算CI；step800 PickScore模型LPIPS保留101.2%、DINO99.5%，整个观察窗口minimum97.7%/98.0%。这不是8个独立训练seed，也不能补全到Table5 5k训练终点。\n- Table3 RMF-M设计成功0.15→0.31（ZeNO0.28），RMF-L0.29→0.42（ZeNO0.40）；RMF-L scRMSD2.95劣于ZeNO2.60，非每项都赢。设计pipeline同源，train4条sequence/eval8条；MaxCluster与pairwise scTM只支持有限结构多样性检查。\n- §4.3，1000×36≈36k训练reward queries，除以每样本480≈75 backbones是query摊销点；不是75个样本后墙钟或GPU总成本必更低。",
+      "reward_check": {
+        "train_reward": "图像单独Aesthetic/PickScore/ImageReward；多reward ImageReward+HPSv2+PickScore+CLIPScore；蛋白ProteinMPNN/ESMFold soft-min scRMSD",
+        "eval_reward": "同训练reward主表；独立GenEval、LPIPS/DINO、MUSIQ/CLIP-IQA；蛋白同pipeline scRMSD/designability",
+        "overlap": "partial",
+        "heldout": "GenEval evaluator与prompts不用于多reward训练；单reward之间cross-reward，仅对该checkpoint而言留出；无新增人评",
+        "hacking_signs": "800步图像诊断未见显著多样性塌缩，不可宣称所有训练终点/视频上无hack；保范数不等于保方向分布。"
+      },
+      "solidity": "有真实黑盒蛋白任务、跨reward与独立quality/diversity诊断、明确KL证明；但主图像训练没有独立训练seed方差，HyperNoise对照训练预算/优化器不同。蛋白reward与评测同源，未做湿实验。仅图像+蛋白，未做Wan视频，不把catchup FewStepRL实验归给本篇。",
+      "samples": "目视Fig3六组策展base/corrected图：猴子数量、印刷文字、花朵与肖像风格有变化；单对变化不能验证通用准确性，且仍有多余猴子/文字布局等细节风险。未下载独立prompt多seed全样本，不用策展图代替多样性统计。",
+      "media": [
+        {
+          "src": "assets/2026-11-06/leno-figure3.webp",
+          "caption": "原文Fig3六组策展对比；非随机胜率测试。"
+        }
+      ],
+      "code_analysis": "未核代码、未跑作者评测。本文全文未发现明确项目/代码链接，不能据此断言全网未开源。",
+      "concerns": "①同总reward调用/墙钟比较HyperNoise与黑盒摊销；②多个独立训练种子；③主表checkpoint与800步diversity诊断对齐；④打乱anchor-correction但匹配投影后角位移；⑤视频/AV黑盒裁判下组内离散同分与探索成本。预测记录有流程缺口：先见toy数字，toy排除盲预测命中统计。",
+      "principle": "冻结生成器也可训练噪声策略；可微性与推理预算共同决定是否把搜索摊销，而保范数/分布KL上界不替代独立质量与多样性检查。",
+      "takeaway": "RL-on-few-step收录，我方成卡但不抢少步同事主评。若不可微reward昂贵且预计批量生成很多，才值得先跑noise-corrector小对照；本日不因其2NFE就立项。音视频迁移先测局部reward可辨性，不直接搬σ。",
+      "details": "本轮流程记录：predict-before-Codex已落盘；closest、essence v2.3影子、claim_check已完成。主文与附录原文核对，作者结果未复现。最终定级由我方my_judgment决定，Codex不代替评级。"
+    }
+  ],
   "brief": [
     {
       "title": "要不要出手",
-      "line": "暂无。晨间无已成卡的必读/值得看；两篇硬 IN 在 D2 中。"
+      "line": "不新增实施项；EmoReward与LeNO都成「了解即可」完整卡，不因缺多样性/seed而静默观察。"
     },
     {
       "title": "一句主线",
-      "line": "周四 mailing：生成器 RL 回来了——[EmoReward](https://arxiv.org/abs/2611.06518)（情感视频多奖励自演化校准，挂 Dance/Flow/SAGE-GRPO）与 [LeNO](https://arxiv.org/abs/2611.06255)（少步生成器上摊销 reward-guided 噪声优化）。另 [Ruby-OPD](https://arxiv.org/abs/2611.06403) TTS、[RLVR-Icon](https://arxiv.org/abs/2611.06123) 生产管线待定级。"
+      "line": "重配reward或摊销噪声搜索都能让训练分数涨；要证明值得迁移，必须排除同裁判自证、样本选择和训练预算不匹配。"
     },
     {
       "title": "扫了多少 / 进精读",
-      "line": "union=520（new=410 / cross=255，Thu 5 Nov）；triage 池 219；seed IN=4 EDGE=5 FEWSTEP=26 OUT=184；ESS1=6；D2 队列 2；成卡 0。"
+      "line": "union=520（Thu 5 Nov，new=410/cross=255；初步）；triage219：IN4、EDGE37、FEWSTEP29、OUT149；ESS1=51；D2两篇均成卡。"
     },
     {
-      "title": "没过线 / 观察",
-      "line": "LLM-only OPD/rubric（EvoOPD、ORSD、MOPD 外推失败）进 EDGE 可迁移观察；VA-TDM 等纯少步归 FEWSTEP；TouchéWorld/ReactWorld 转文献追踪。"
+      "title": "没过线",
+      "line": "今日两篇未过值得看可信度线；EmoReward缺等强度memory对照和独立情绪泛化，LeNO缺同总预算与多训练seed，全5k多样性未覆盖。"
     },
     {
-      "title": "观察名单",
-      "line": "D2：EmoReward 2611.06518；LeNO 2611.06255。Watch：Ruby-OPD 2611.06403；RLVR-Icon 2611.06123；CAST-Bench 2611.05422；TailSteer 2611.06741。"
+      "title": "观察",
+      "line": "Ruby-OPD2611.06403、RLVR-Icon2611.06123仍未D2定级；FewStepRL2611.08240已做D1旁注，少步主评持有、不抢评。"
+    },
+    {
+      "title": "FewStepRL D1旁注",
+      "line": "Wan视频Table8：DMDNFT训练reward16.54→17.93但独立VBench83.68→83.38；可微分支只覆盖HPS，部分方法样本预算1.5×，不能照搬图像gradient胜负。",
+      "link": "https://arxiv.org/abs/2611.08240"
+    },
+    {
+      "title": "本周认知变化",
+      "line": "从「裁判会不会被利用」推进到核查整条兑现链：真正serve的策略（Fair Cast）、独立裁判、以及BoN上尾/多样性（QUPO）；训练分数不是部署收益。"
+    },
+    {
+      "title": "周五召回与Codex",
+      "line": "适配后OUT492条日-论文记录，轻量审10/40：hard0/soft1（GARDEN应EDGE），不能估总体漏检率。今日影子两篇均技巧；1个T1门槛分歧，各对一半。全周分歧日志不完整。"
     },
     {
       "title": "没覆盖",
-      "line": "API=0（B-list）、X/GitHub/HF Daily、G11、种子共引；Codex triage 仍在跑，稍后与 seed 合并。"
+      "line": "API窗口、X/GitHub/HF Daily、种子共引、G11；代码未核；召回剩30抽样、专门G6三篇复审及全周统一预测命中率未补。"
+    },
+    {
+      "title": "闭环",
+      "line": "少步29条转发回执已闭环；两篇完整卡与核查记录落盘。下次只追具体证据缺口，不升级W44持有，不改未批准G10/G11。"
     }
-  ]
+  ],
+  "fyi_open": true,
+  "trend_summary": "### 周五认知：先查增益是否真的兑现\n相较上周偏重reward能否骗裁判，本周把检查推进到整条链：Fair Cast提醒核对实际送去采样的策略；QUPO提醒Bo1变好不代表Best-of-N上尾保住。今日两篇进一步要求独立裁判、非结果选择的prompt、匹配总训练预算和全程多样性。\n\n- **EmoReward：了解即可（机制×存疑）**。当前样本有效性门控与上一run相关性校准有具体delta，但不是在线RM自进化。\n- **LeNO：了解即可（机制×存疑）**。黑盒噪声策略可把搜索搬到训练；不是首次摊销，严格KL界也不是语义多样性保证。\n- **审计边界**：周五召回只完成10/40，hard0/soft1；有偏小样本不报总体漏检率。Codex当日两份影子均技巧，LeNO的窄状态依赖对照成立、强方差机制未证。W45其余分歧账覆盖不足；全周预测命中率不报虚构分母。\n\n[本周认知页](../../weekly/2026-W45/)；两篇代码均未核，不据此触发训练侧改动。"
 }
