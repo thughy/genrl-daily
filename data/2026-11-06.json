@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-06",
+  "version": "v0.1-minimal",
+  "headline": "初步：周四 520 篇落盘；硬 IN 两篇进晨间 D2——EmoReward（情感视频 GRPO 自演化奖励校准）与 LeNO（少步生成 Local-GRPO 噪声奖励对齐）。成卡待补。",
+  "revision_note": "召回标「初步」：API 窗口计数仍为 0，G9 用 B-list 替代（/list∪RSS=520，age≈0，list_date=Thu 5 Nov）。周五另做查漏/周认知。",
+  "notice": "最小版。D2 精读进行中；完整卡与周五「本周认知变化」随后补发。",
+  "overview": "框架雏形：①可微 reward 回传 — 无新硬点；②黑盒 PG（GRPO）— EmoReward 把多奖励权重做成 run 间自校准；③正负对比回归 — 无；④离线 DPO — 无；⑤收敛目标改写 — LeNO 把 test-time 噪声优化摊销成可学 residual transport（Local GRPO）。",
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "暂无。晨间无已成卡的必读/值得看；两篇硬 IN 在 D2 中。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周四 mailing：生成器 RL 回来了——[EmoReward](https://arxiv.org/abs/2611.06518)（情感视频多奖励自演化校准，挂 Dance/Flow/SAGE-GRPO）与 [LeNO](https://arxiv.org/abs/2611.06255)（少步生成器上摊销 reward-guided 噪声优化）。另 [Ruby-OPD](https://arxiv.org/abs/2611.06403) TTS、[RLVR-Icon](https://arxiv.org/abs/2611.06123) 生产管线待定级。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "union=520（new=410 / cross=255，Thu 5 Nov）；triage 池 219；seed IN=4 EDGE=5 FEWSTEP=26 OUT=184；ESS1=6；D2 队列 2；成卡 0。"
+    },
+    {
+      "title": "没过线 / 观察",
+      "line": "LLM-only OPD/rubric（EvoOPD、ORSD、MOPD 外推失败）进 EDGE 可迁移观察；VA-TDM 等纯少步归 FEWSTEP；TouchéWorld/ReactWorld 转文献追踪。"
+    },
+    {
+      "title": "观察名单",
+      "line": "D2：EmoReward 2611.06518；LeNO 2611.06255。Watch：Ruby-OPD 2611.06403；RLVR-Icon 2611.06123；CAST-Bench 2611.05422；TailSteer 2611.06741。"
+    },
+    {
+      "title": "没覆盖",
+      "line": "API=0（B-list）、X/GitHub/HF Daily、G11、种子共引；Codex triage 仍在跑，稍后与 seed 合并。"
+    }
+  ]
+}
