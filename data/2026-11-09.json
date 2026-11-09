@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-09",
+  "version": "v0.1-minimal",
+  "headline": "初步：周一吃周五 mailing（509篇）；生成器RL有FewStepRL/GARM/ArtiVidRM三篇硬IN，晨间不成卡，前两篇进D2。",
+  "revision_note": "G9 **初步**：API 窗口 `submittedDate [202611041900 TO 202611051900]` 计数=473，最新 published `2026-11-05T18:59:42Z`（约北京时间 11-06 02:59），**G9a=PASS**。RSS 对账失败（未见 `Fri, 06 Nov 2026`，计数=0）。改用 B-list（9 分类 list new+cross 去重 union=509，Friday 6 November 2026，age≈0）替代；|509−473|/509≈7.1%≤10%。本版=triage 收口最小发布，`papers=[]`。",
+  "notice": {
+    "file": "2026-11-09/notice.md"
+  },
+  "overview": {
+    "file": "2026-11-09/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。最小版不成卡；没有要立刻改训练配方的事项。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周五 mailing 初筛：真·生成器 RL 有三篇硬 IN。[FewStepRL](https://arxiv.org/abs/2611.08240)（少步扩散 RL，本追踪主责）与 [GARM](https://arxiv.org/abs/2611.07648)（生成器对齐奖励建模 + 有界优化）进 D2；[ArtiVidRM](https://arxiv.org/abs/2611.07301) 先观察。[LeNO](https://arxiv.org/abs/2611.06255) 周五已读，不重复升级。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "union=509（Fri 6 Nov，new=413 / cross=237；初步）；kw 36；triage 67：IN=5 EDGE=9 FEWSTEP=7 OUT=46；D2=2；成卡 0。"
+    },
+    {
+      "title": "没过线",
+      "line": "LLM OPD/GRPO 对照（如 [2611.08453](https://arxiv.org/abs/2611.08453)）作可迁移 EDGE；WAM-Sim / RoboImagine 转文献追踪；文本 dLLM 的 PBPO 放 EDGE；纯少步蒸馏交少步同事。"
+    },
+    {
+      "title": "观察名单",
+      "line": "ArtiVidRM 2611.07301；WeLM-Image 2611.07392；FUSEMOS 2611.07562。FewStepRL 周五 D1 旁注：训练 reward 涨、独立 VBench 微降，预算不完全可比。"
+    },
+    {
+      "title": "没覆盖",
+      "line": "RSS=0（B-list 替代，与 API 差约 7.1%）、X/GitHub/种子共引/G11；HF Daily 已扫无额外生成器 RL 漏网。"
+    }
+  ]
+}
