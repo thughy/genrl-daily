@@ -1,39 +1,212 @@
 {
   "date": "2026-11-09",
-  "version": "v0.1-minimal",
-  "headline": "初步：周一吃周五 mailing（509篇）；生成器RL有FewStepRL/GARM/ArtiVidRM三篇硬IN，晨间不成卡，前两篇进D2。",
-  "revision_note": "G9 **初步**：API 窗口 `submittedDate [202611041900 TO 202611051900]` 计数=473，最新 published `2026-11-05T18:59:42Z`（约北京时间 11-06 02:59），**G9a=PASS**。RSS 对账失败（未见 `Fri, 06 Nov 2026`，计数=0）。改用 B-list（9 分类 list new+cross 去重 union=509，Friday 6 November 2026，age≈0）替代；|509−473|/509≈7.1%≤10%。本版=triage 收口最小发布，`papers=[]`。",
+  "version": "v1.0-deep",
+  "fyi_open": true,
+  "headline": "不新增实施项：FewStepRL、GARM均了解即可；少步适配能改变更新，但视频训练分涨不等于独立VBench变好，生成器对齐的奖励模型也还没到换配方。",
+  "revision_note": "完整版于 11-10 上午补发（R2）：11-09 深读成卡未写完。两篇全文、先验、影子 T0–T3 与 claim_check 已归档，均成完整卡并默认展开；两轴仍是原创性×可信度，影子本质不改评级。召回保留「初步」：API=473、B-list=509、RSS=0。少步同事对 FewStepRL 的「值得读+限定」不改，本页是 RL 侧独立判断。",
   "notice": {
     "file": "2026-11-09/notice.md"
   },
   "overview": {
     "file": "2026-11-09/overview.md"
   },
-  "papers": [],
+  "papers": [
+    {
+      "id": "fewsteprl",
+      "arxiv_id": "2611.08240",
+      "rating": "fyi",
+      "rating_zh": "了解即可",
+      "originality": "finding",
+      "credibility": "doubtful",
+      "directions": [
+        "distill-rl",
+        "online-rl",
+        "diff-reward",
+        "video-rl"
+      ],
+      "title": "FewStepRL: Fine-tuning Few-step Diffusion Models with Reinforcement Learning",
+      "institutions": [
+        "Tencent Hunyuan",
+        "Westlake University",
+        "University of Chinese Academy of Sciences"
+      ],
+      "published": "arXiv 2026-11-05 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.08240",
+        "project": "https://edapinenut.github.io/fewsteprl.page/",
+        "other": [
+          {
+            "label": "HF image checkpoints (Delcher/fewsteprl-sd35)",
+            "url": "https://huggingface.co/Delcher/fewsteprl-sd35"
+          },
+          {
+            "label": "HF video checkpoints (Delcher/fewsteprl-wan21)",
+            "url": "https://huggingface.co/Delcher/fewsteprl-wan21"
+          }
+        ]
+      },
+      "rating_reason": "新发现 × 存疑：少步适配相对直接代入平均速度有可核对增量，图像侧样本预算对齐；但统一锚点是已知目标的改写，单次训练，视频梯度法 48/32 GPU 样本数不对齐，训练 reward 涨可与独立 VBench 持平或下降同现。少步同事评「值得读+限定」，本卡是 RL 侧独立判断，不抢其主评。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "主文 §3–6、附录 C/D 与 Table 6–8 原文核对；目视论文图与项目页画廊/说明；未核作者代码、未跑评测。"
+      },
+      "tldr": "少步模型输出的是区间平均速度，不能直接拿多步 RL 目标里的瞬时速度来用；图像上可微且梯度完整时 reward-gradient 仍然最强，视频上这个优势迁不过去，训练分数涨了也不等于独立 VBench 变好。",
+      "delta": "相对已有 MeanFlowNFT 对 DiffusionNFT 的少步适配，把 FlowGRPO / AWM / NFT / OPSD / ReFL 写成同一套 x-space 锚点与权重，并在共享代码下比较；不是新的收敛目标。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "MeanFlowNFT (Huang et al., 2026b)",
+            "how": "已把 DiffusionNFT 用到 average-velocity policy，并用旧策略的 detached derivative correction 恢复瞬时速度；本轮依据方法节引文与 closest_prior，未另开全文重读",
+            "change": "把这一构造放进统一的 anchors/weights，并推广到 GRPO / AWM / OPSD / ReFL 以及 auxiliary-velocity（DMD）基线"
+          },
+          {
+            "work": "DiffusionNFT (2509.16117)",
+            "link": "https://arxiv.org/abs/2509.16117",
+            "how": "有界 reward 权重混合正、负隐式策略的回归损失；谱系 L3 已读",
+            "change": "拆成 self-regression + signed reward displacement，再为 few-step transport 重写 prediction 与 anchors"
+          },
+          {
+            "work": "DiffusionOPSD / ReFL (2608.24646 / 2304.05977)",
+            "link": "https://arxiv.org/abs/2608.24646",
+            "how": "OPSD 在旧策略 clean-output 处沿 ∇R 构造 detached 目标再回归，一阶与 ReFL 同向；谱系 L1/L2 已读",
+            "change": "FewStepOPSD 证明共享 J 在其 v-form 损失里抵消；ReFL 是该框架的 proxy 配置（只保留正向位移、无 self-regression）"
+          }
+        ],
+        "equivalent_form": "实际梯度可写成 $\\nabla_\\theta L = 2\\,\\mathbb{E}\\big[(D_\\theta \\tilde x_\\theta)^\\top\\{W_{\\mathrm{reg}}(\\tilde x_\\theta-\\tilde x_{\\mathrm{reg}})-W_{\\mathrm{rwd}}\\sum_k\\omega_k(\\tilde x_{\\mathrm{rwd},k}-\\tilde x_{\\mathrm{base},k})\\}\\big]$。除当前 prediction 外，anchors、weights 与 reward displacement 均 detached。机制就是：回归到 reference，同时沿 reward 指定的位移更新；少步适配改变这些点怎么算、以及哪些 $(t,r)$ 获得梯度。归⑤目标/梯度等价改写，实例覆盖①可微梯度路径、②组内优势 PG、③ NFT 正负回归。不是④离线成对偏好。",
+        "baseline": "图像在同一 AnyFlow 蒸馏的 SD3.5-Medium、共享 1152 rollouts / 8×H20 下比较七种训练器，并包括未经适配、直接代入平均速度的 FlowGRPO / AWM / DiffusionNFT。这不是 DiffusionOPSD 的 Protocol O（多步或官方 NFT 协议），也不替换谱系各子线最强基线。视频侧 ReFL/OPSD 为 48 GPU、3072 rollouts，其余 32 GPU、2048 rollouts，作者自己写明只对齐 iteration、不对齐样本数。",
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂 MeanFlowNFT / NFT / OPSD / ReFL 的人可以预先推出「正负回归能拆成 reference 回归与 reward 位移」以及「少步必须处理平均/瞬时速度差异」；推不出固定样本预算下的排序与量级，以及视频上可微优势是否消失、训练 reward 与独立 VBench 是否脱钩。"
+        }
+      },
+      "insight": "**本质影子 v2.3：技巧（机制待证），不驱动两轴评级。**\n- T0：partly；最接近 MeanFlowNFT、DiffusionNFT、OPSD/ReFL。统一分解与少步需要恢复瞬时速度可事先推出；推不出图像排序量级和视频迁移结果。\n- T1（去名/方法）：「把区间平均速度直接当作瞬时速度来构造锚点，会扭曲带优势权重的位移，因此在相同 rollout 预算下，恢复瞬时速度后再更新应优于直接代入。」已测：Fig.1/Fig.6，FewStepGRPO vs 直接代入的 FlowGRPO 训练 reward 1.461 vs 1.438、HPSv3 11.58 vs 9.62；MeanFlowNFT vs DiffusionNFT 1.509 vs 1.440、HPSv3 13.23 vs 11.79、best GenEval2 0.411 vs 0.399（作者自报分辨率约 0.03）。未直接测量瞬时速度估计误差 MSE，强机制句「估计误差越小增益越大」未测。\n- T1（发现）：「当只有部分奖励可微、且解码/数值被迫简化时，图像上看到的 reward-gradient 优势不能迁到视频；训练奖励上升可以和独立基准持平或下降同时发生。」已测：Table 6 vs Table 8。\n- T2：对 4 步蒸馏的音视频世界模型、混合可微美学分 + 不可微对齐分，只用可微部分做梯度更新，预测训练加权和相对 NFT 不再领先（锚：图像 OPSD 1.641 vs NFT 1.509，即 +0.191 vs +0.059；视频 OPSD 16.26 < init 16.54，DMDNFT +1.39），独立整体分变化落在约 ±0.3（VBench overall 跨度 0.32）。证伪：完整可微路径下梯度法仍明显落后，或仅部分可微却把独立 overall 提高 ≥0.5。跨模态可靠量级写不稳，T2 不通过。\n- T3：①为何 FewStepOPSD 与 ReFL 在少步图像上曲线接近：附录 C 证明共享 J 抵消，D.3 两分支系数相差约 2.4%（OPSD App.B 已说一阶同向）；②为何直接代入会变差：平均/瞬时速度错配锚点（与谱系 P10 相关）。不构成两个新解释。\n- 门槛：图像 naive vs adapted 是固定其他设置的结构对照，但测的是锚点计算方式而非估计误差本身（代理+中介）；视频梯度法样本预算不固定。seeds：§6.6 写明各为 single run。评测：图像 mixed 有 GenEval2 / HPSv3 / ImageReward / aesthetic / OCR 留出；视频 VBench 不参与训练，256 held-out prompts 上的训练 reward 不是独立质量。\n- 最便宜的验证：在同一 4 步图像 checkpoint 上，打乱瞬时速度 correction 但匹配更新范数，看训练 reward 与 GenEval2 是否仍优于直接代入。\n- Codex closest_prior 与我方分解/T0 一致，并预判论文不会做严格的估计误差干预；未另跑 essence v2 盲审。",
+      "method": "三阶段：①把各 RL 目标变到 x-space 的同一 prediction；②梯度拆成 self-regression + reward-augmentation，方法只差 anchors 与 weights；③用 u-form（只训 r=0）或 v-form（采 (t,r)，瞬时速度来自网络自身的 detached J，或来自在线拟合的 auxiliary v_ϕ）计算这些点。七个训练器共享 rollout / reward / 评测代码。图像：AnyFlow 蒸馏的 SD3.5-Medium，4 步无 CFG，LoRA rank 32，512²，每 outer iteration 48 prompts × K=24 = 1152 rollouts、8×H20。视频：AnyFlow 蒸馏的 Wan2.1-T2V-1.3B，4 步、81 帧；多数方法 32×H20、2048 rollouts，FewStepOPSD/ReFL 因显存改为 48 GPU、3072 rollouts。视频训练奖励 = HPSv3-general + HPSv3-percentile + VideoAlign MQ + TA；仅 HPSv3 可微（作者称在 z 归一化权重下约占合计的 96%），且梯度只解码 21/81 帧、无因果前缀，并用 fp32 RM（附录 D.5：bf16 相对 fp32 分数约差 0.003，梯度平均偏转 76.2°）。",
+      "evidence": "[原文核对，作者自报，未复现；各方法均为 single run]\n- 图像 mixed-reward、迭代 400（Table 6b）：init 训练 reward 1.450 / HPSv3 10.30 / ImageReward 1.113 / GenEval2 0.363。FewStepOPSD 1.641 / 13.06 / 1.476 / 0.463（best 0.463@400）；ReFL 1.623 / 13.24 / 1.469 / 0.452（best 0.465@200）；DMDNFT 1.519 / 13.49 / 1.343 / 0.412；MeanFlowNFT 1.509 / 13.23 / 1.385 / 0.407（best 0.411@300）；FewStepGRPO 仅到 1.461 / 11.58 / 1.193 / 0.379。组内优势五法都未抬升 CLIPScore（0.289→0.279–0.285），仅 OPSD/ReFL 升到 0.322/0.317。\n- 适配 vs 直接代入（§6.3）：FewStepGRPO 训练 reward 1.461、HPSv3 11.58，对位 FlowGRPO 为 1.438 与 9.62；MeanFlowNFT 1.509 / 13.23 / 1.385 / best GenEval2 0.411，对位 DiffusionNFT 为 1.440 / 11.79 / 1.317 / 0.399（最后一项落在约 0.03 分辨率内）。\n- OCR（Table 6a，无梯度，OPSD/ReFL 不适用）：MeanFlowNFT 在迭代 100 先到 OCR≥0.85（0.850），迭代 150 到约 0.945；DMDAWM 迭代 200 到 0.936，但其首次 OCR>0.82 的保存点上 HPSv3 12.86→5.05、ImageReward 1.233→0.092。FewStepGRPO / MeanFlowAWM 在 200 步内只到 0.776 / 0.802。\n- 图像成本（Table 7）：ReFL 219 s/iter、OPSD 268，DMD 系 304–326，共享 J 的 v-form 423–435。样本预算对齐，墙钟不对齐。\n- 视频迭代 250（Table 8）：init 训练 reward 16.54、VBench overall 83.68。DMDNFT 升到 17.93，但 overall 降到 83.38，dynamic degree 53.33（对位 MeanFlowAWM 的 83.70 与 58.89）。FewStepGRPO 掉到 15.89（TA 1.85→1.23）。OPSD/ReFL 训练 reward 16.26/16.46，略低于 init，VBench 83.60/83.69；二者多用 1.5× 样本，GPU-h 也更高（2623/2426 vs 1631–1824）。\n- 测试时加步（§6.5）：4→32 步时六个训练器的 HPSv3 变化约 +1.0% 到 −6.8%，聚合指标无系统性好处；所选 OCR 敏感例子上 NFT 家族可塌成前景文字（HPSv3 12.18→0.32 与 11.36→0.32，同时 CLIPScore 上升）。",
+      "reward_check": {
+        "train_reward": "图像 OCR 设定：OCR accuracy；图像 mixed：CLIPScore+HPSv2+PickScore 不加权和。视频：HPSv3-general + HPSv3-percentile + VideoAlign MQ + TA（MQ/TA 先 z-score 再加和）",
+        "eval_reward": "图像另报 aesthetic、OCR（在 mixed 中留出）、HPSv3、ImageReward、GenEval2。视频另报独立 VBench（946 prompts×5=4730 视频/方法）",
+        "overlap": {
+          "value": "partial",
+          "note": "图像 mixed 的训练三项同时出现在表中；HPSv3/ImageReward/GenEval2/aesthetic/OCR（mixed 设定）留出。视频表中的 sum 就是训练目标（只是换了 256 个 held-out prompts），VBench 不参与训练"
+        },
+        "heldout": "图像：GenEval2、HPSv3、ImageReward、aesthetic；mixed 中的 OCR；OCR 设定中的 CLIPScore。视频：VBench。无人评",
+        "hacking_signs": "OCR 上 DMDAWM 训练分大涨、HPSv3/ImageReward 崩；mixed 中 OPSD/ReFL 约 100 步后 aesthetic/HPSv3 开始下降而训练 reward 仍升。项目页写明 DMDAWM 图像有 16-px latent-patch 格子伪影。视频 DMDNFT 训练 reward 最高、VBench overall 与 dynamic degree 最低。"
+      },
+      "solidity": "共享代码与图像侧对齐的样本预算是加分项；作者明确写出视频预算不对齐、单次运行、视频梯度只覆盖部分奖励。没有多训练种子或置信区间。不把这篇的 Wan 视频数字嫁给周五的 LeNO（LeNO 冻结生成器只训噪声 corrector）。",
+      "samples": "目视论文 Fig.1/3/4/6–10 与项目页画廊。项目页说明 DMDAWM 展示图经过 σ=2px 模糊以掩盖格子伪影，ImageReward 也是在模糊后重算；不能把这些展示图当成无处理原样。TTS 所选失败例是 OCR 敏感提示，不是总体。视频 dolphin clip 是从 436 条里挑跨训练器差异大的（项目页自报中位像素差 17.3 vs 总体中位 7.2），不能当平均效应。",
+      "code_analysis": "未核代码、未跑作者评测。论文 HTML 曾写 checkpoints coming soon；项目页现列出 Hugging Face `Delcher/fewsteprl-sd35`（图像）与 `Delcher/fewsteprl-wan21`（视频）及推理命令，并称每条实验有发布的 Stage-3 LoRA。仓库存在不等于实现已与正文一致。",
+      "concerns": "优先缺口：①多训练种子；②视频上把 ReFL/OPSD 样本预算对齐后再比；③直接测量瞬时速度估计误差，而不是只比较整套适配；④独立人评或非训练家族的视频质量；⑤弄清 DMDAWM 格子伪影是否来自 auxiliary baseline。预测登记有流程缺口：周五 D1 已见过 Table 8，故不再把视频主表当作盲测命中。",
+      "principle": "少步模型的平均速度不能直接冒充多步目标里的瞬时速度；可微且梯度完整时优先走 reward-gradient，部分可微或梯度太贵时这个优势不能外推，必须看独立评测而不能只看训练奖励。",
+      "takeaway": "不改今日训练配方。若有人要在少步学生上套多步 RL 实现，先对齐瞬时速度，再按可微性选方法，并单独看独立基准。视频不要默认「图像上梯度法更强」仍然成立。少步同事将本文评为值得读并加了与我方一致的限定；本卡是 RL 侧判断，维持了解即可，不改他们的主评。",
+      "details": "本轮流程：11-09 08:29 已登记预测（视频侧因周五 D1 见过 Table 8，不计入盲测）；closest_prior Codex 已落盘；影子 T0–T3 由我方撰写；claim_check Codex 复核 22/22 与原文一致（提醒：Table 6b 的 AnyFlow Init 是第 0 次迭代基线；视频 reward 总和使用 z 归一化后的 MQ/TA，不能把表中原始四项直接相加）。主文与附录原文核对，作者结果未复现。最终定级由我方判断，Codex 不代替评级。完整版于 11-10 上午补发，原因是 11-09 深读成卡未写完。"
+    },
+    {
+      "id": "garm",
+      "arxiv_id": "2611.07648",
+      "rating": "fyi",
+      "rating_zh": "了解即可",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "reward-model",
+        "online-rl",
+        "diff-reward",
+        "video-rl"
+      ],
+      "title": "Generator-Aligned Reward Modeling with Target-Aware Bounded Optimization for Visual Generation",
+      "institutions": [
+        "Institute of Artificial Intelligence, China Telecom (TeleAI)",
+        "The University of Sydney"
+      ],
+      "published": "arXiv 2026-11-05 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.07648"
+      },
+      "rating_reason": "新机制 × 存疑：生成器支撑对齐 + 真实正例校准的有界奖励 + TA-GRPO 固定阶段标准差，是可操作组合；但视频上 GARM 相对真实数据 Baseline 目标属性几乎打平，Support-only 有时更高，缺打乱饱和权重对照，RGB 评估器参与选 checkpoint，附录 H 还写明 GARM 的 VBench/VideoReward 是六个 checkpoint 按指标分别取最好再平均，VADER 线上 Dynamic Degree 明显下降。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "unavailable",
+        "note": "方法、实验主表与附录 H/I 原文核对；目视 Fig.3/4/6/7 策展图；全文未见代码/项目链接，未跑评测。"
+      },
+      "tldr": "先用生成器自己撑得住的样本来训属性奖励模型，再把奖励做成对真实正例校准的光滑上界；属性会往上走、画质伤得比无界最大化小，但视频上这套数据对齐相对普通真实监督几乎没有多加目标强度。",
+      "delta": "相对直接用真实正负例训 RM 再做 VADER/Flow-GRPO：增加生成器支撑匹配与内容匹配难负例，并把原始 logit 映射成真实正例校准的 softplus 有界奖励；TA-GRPO 还用阶段内固定标准差，避免组标准化把饱和尺度抹掉。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "VADER (Prabhudesai et al., 2024)",
+            "how": "把可微 reward 经视频生成过程直接反传；closest_prior 与方法节引用，本轮未另开 VADER 全文重读",
+            "change": "主改变的是 RM 的训练样本分布，并在反传前乘上基于真实正例校准的饱和因子 ∂B/∂R=σ((T−R)/η)",
+            "link": "https://arxiv.org/abs/2407.08737"
+          },
+          {
+            "work": "Flow-GRPO",
+            "link": "https://arxiv.org/abs/2505.05470",
+            "how": "flow 采样轨迹 + 组内相对优势；谱系 L4 已读",
+            "change": "先做 TABO 变换，再用阶段开始时标定、之后固定的 v_k 代替当前组标准差；另加 generator-to-target curriculum 与 timestep 权重"
+          },
+          {
+            "work": "DRaFT / ReFL 类可微回传 (Clark et al., 2023; Xu et al., 2023)",
+            "link": "https://arxiv.org/abs/2309.17400",
+            "how": "沿生成过程回传可微 reward；谱系 L1 已读",
+            "change": "梯度传递路线本身不变，只是按当前奖励相对真实正例阈值的远近衰减系数"
+          }
+        ],
+        "equivalent_form": "RM：$\\phi^*=\\arg\\min_\\phi \\mathbb{E}_{(x,y)\\sim q_{\\mathrm{pools}}}\\mathrm{BCE}(\\sigma(R_\\phi(z_{\\mathrm{VAE}}(x))),y)$。TABO：$B(R;T,\\eta)=-\\eta\\,\\mathrm{softplus}((T-R)/\\eta)$，$\\partial B/\\partial R=\\sigma((T-R)/\\eta)$，$T$ 取真实正例奖励的分位数（文中最终用 75th），$\\eta$ 为真实正例 IQR 的一半。直接梯度：$\\nabla_\\theta B=(\\partial B/\\partial R)\\,\\nabla_\\theta R$。TA-GRPO：$\\tilde R_i=B(R_i;T_{a,k},\\eta)$，$A_i^{\\mathrm{TA}}=(\\tilde R_i-\\overline{\\tilde R}_G)/(v_k+\\epsilon)$，其中 $v_k$ 在阶段开始标定后固定。分类：①与②是两条实现路径，⑤是共同的目标改写。$B'(R)>0$，所以这是软衰减而不是在 $R=T$ 处停止；普通组标准化会近似抵消这种衰减，这也是他们不用当前组标准差的原因。",
+        "baseline": "Part I 在同一 VADER、同一生成器与优化步数下只改 RM 监督构造（§5.1.1）。Part II 在 Wan2.1-T2V-14B 上比较 raw-reward maximization vs TABO，在 1.3B 上比较 Vanilla Flow-GRPO vs TA-GRPO；两条优化器线的 backbone 不同，不能横比。没有证明成为新的最强优化器或最强通用 RM。",
+        "counterfactual": {
+          "value": "partly",
+          "text": "改善监督与生成器分布的相关性、减弱高分区更新、避免标准化抵消衰减，这些方向可事先推出；推不出五池组合相对同预算真实监督的量级，以及真实正例阈值是否优于任意分位数。"
+        }
+      },
+      "insight": "**本质影子 v2.3：技巧（机制待证），不驱动两轴评级。**\n- T0：partly；最接近 VADER、Flow-GRPO、DRaFT/ReFL。难负例/支撑对齐与软饱和都有先例。推不出组合的属性-质量权衡量级。\n- T1（去名/优化）：「生成样本相对真实正例的标准化奖励余量，决定它还应获得多少优化压力；逐组方差归一化会抹掉这种压力差异。」式(21)(27)给出衰减与近似抵消；Table 6 只比较有界 vs 无界的终点，未测有效更新强度，也未做打乱饱和权重的等强度对照。中介量未测。\n- T1（数据）：「在生成器支撑上监督、并用内容匹配的真实对比，应优于只用真实数据。」§5.1.1 固定 VADER 与步数、只改监督构造。但视频目标 Mean：GARM 68.722 ≈ Baseline 68.579，Support-only 69.160 更高；Vintage Faded 上 Support-only 75.614 > GARM 74.425。组合并非一致最优。\n- T2：对 AV 世界模型用学到的属性 RM + 有界变换做 GRPO，预测中性提示上的无关属性泄漏低于普通组标准化（锚：Table 13 leakage 0.0631 vs 0.1425），质量/运动回撤小于无界最大化（锚：Table 6 DD 0.1450 vs raw 0.1200，Base 0.2117）。证伪：打乱饱和权重并匹配更新范数后独立质量不更差，或把真实正例阈值换成任意分位数结果不变。量级依赖作者自训 RGB 评估器，T2 不通过。\n- T3：①为何普通 GRPO 的组标准化会抵消饱和：式(27)局部展开（思路先验可知）；②为何无界可微最大化更容易伤画质：边际增益不随接近真实正例而减小（谱系 P4 已有过优化）。不是两个新解释。\n- 门槛：Part I 固定预算、只改数据构造，但是终点比较；Part II 同时改变变换与更新强度。seeds：未报告。评测：目标 Mean/P20 来自作者自训 RGB 评估器，并用其验证集 logit 选 checkpoint；HPSv3/Q-Align/VBench/VideoScore2 更独立。RGB 评估器与潜空间 RM 不是同一个头，但共享属性标注体系。\n- 最便宜的验证：固定 RM 与调用次数，打乱 $w_i=\\sigma((T-R_i)/\\eta)$ 与样本的对应并匹配更新范数，比较独立质量与目标属性。\n- Codex closest_prior 已指出组标准化近似抵消衰减、缺少打乱权重对照；与我方一致。未另跑 essence v2 盲审。",
+      "method": "GARM 用 Base/Target 成对生成锚点估计生成器支撑，把真实样本按是否落入 Target/Base 邻域分成匹配正例、覆盖正例、内容匹配难负例、匹配负例和覆盖负例（图像采样比约 0.380/0.120/0.075/0.275/0.150）。潜空间 RM 在真实样本的 VAE latent 上做 BCE；生成器更新时直接吃最终去噪 latent，不再解码。TABO 把原始 logit 映射成上界为 0 的光滑函数，T 与 η 用真实正例校准后冻结。VADER 分支把 ∂B/∂R 乘进对最终 latent 的反传；TA-GRPO 先变换再除以阶段内固定的 v_k，并用从生成 Target 锚点分位数走向真实正例分位数的 curriculum，外加 timestep 权重。另有 KL 到预训练参考。图像生成器是 Z-Image，三个属性 Vintage Faded / Oil Painting / Muscular；视频 Anime 上 VADER 用 Wan2.1-T2V-14B，TA-GRPO 用 1.3B。",
+      "evidence": "[原文核对，作者自报，未复现]\n- 图像 post-target（Table 2，RGB 百分位 Mean / HPSv3）：Muscular Base 51.838 / 9.469，Baseline 57.341 / 9.340，GARM 62.862 / 9.549。Oil Painting Base 51.282 / 10.818，Baseline 74.455 / 9.787，GARM 76.102 / 10.146（仍低于 Base）。Vintage Faded Base 50.733 / 11.555，Baseline 72.862 / 10.108，Support-only 75.614 / 10.271，GARM 74.425 / 10.805——这里 Support-only 目标更高，GARM 质量回撤更小。\n- 图像 post-neutral 泄漏（Table 3）：Muscular 上 GARM 与 Generated-only 同为 0.002；Oil Painting GARM 0.036，高于 Generated-only 的 0.026；Vintage Faded GARM 0.029，低于 Baseline 0.046。\n- 视频 14B post-target（Table 4a）：目标 Mean Base 59.263，Baseline 68.579，Support-only 69.160，GARM 68.722。VBench 三指标均值 Base 0.6166，Baseline 0.5810，GARM 0.5885；Dynamic Degree Base 0.2117 → Baseline 0.1350 / Support-only 0.0900 / GARM 0.1450。VideoScore2 均值 GARM 4.0013，高于 Baseline 3.9700 与 Base 3.8763。\n- 视频 post-neutral（Table 4b）：泄漏 Generated-only 0.1033，Baseline 0.0281，GARM 0.0101，Support-only 0.0052 最低。\n- SFT vs 奖励引导（Table 5）：SFT 弱于 Baseline/GARM，例如 Muscular Mean 50.460 < Base 51.838，Oil Painting 60.614 < Baseline 74.455。\n- TABO vs 无界最大化（Table 6a，同一 14B VADER）：raw 目标 Mean 69.543 / DD 0.1200 / VBench 均值 0.5774；TABO 68.722 / 0.1450 / 0.5885。中性泄漏 raw 0.0341 vs TABO 0.0101（Table 13a）。\n- TA-GRPO vs Flow-GRPO（Table 6b，1.3B）：目标 Mean 71.684 vs 67.227 vs Base 61.706；DD 0.2800 vs 0.1450 vs Base 0.1200；VBench 均值 0.6286 vs 0.5893。中性泄漏 0.0631 vs 0.1425（Table 13b）。VideoScore2 均值 TA-GRPO 3.9355 略低于 Vanilla 3.9483。\n- RGB 评估器验证（Table 10/11）：图像 generated-pair preference 约 0.96–0.97，真实验证 AUROC 0.955–0.999；视频 Anime AUROC 0.997。这测的是评估器分得开，不是生成质量。\n- 附录 H / Table 12 原文：GARM 的 VBench 与 VideoReward「reports the per-metric best values across the six evaluated checkpoints, with each mean computed from these selected component values」。Table 4 中 GARM 的 SC 0.9772 / DD 0.1450 / Aes. 0.6434 与 Table 12 相同，因此这三项及由其算出的 0.5885 不能当成单一 checkpoint 的成绩；Baseline 等对照按 §5.1.1 是按 RGB 验证 logit 选一个 checkpoint。",
+      "reward_check": {
+        "train_reward": "各属性一个潜空间二分类 RM 的 logit；TABO/TA-GRPO 用其有界变换。优化器是 VADER 或 TA-GRPO，不是该 RGB 评估器",
+        "eval_reward": "作者自训的属性 RGB 评估器（Mean/P20/泄漏）；图像另报 HPSv3、Q-Align quality/aesthetic、HPSv2、PickScore、VQAScore；视频另报 VBench 子集与 VideoScore2，附录 H 还有 VideoReward",
+        "overlap": {
+          "value": "partial",
+          "note": "RGB 评估器不进入训练损失，但用验证提示上的 RGB logit 选 checkpoint，且与 RM 共享属性标注体系；HPSv3/Q-Align/VBench/VideoScore2 更独立"
+        },
+        "heldout": "RGB 评估器有真实数据验证划分，与选 checkpoint 的生成验证提示分开（§4.2）；无人评",
+        "hacking_signs": "VADER 线上目标增强伴随 Dynamic Degree 下降（0.2117→0.1450，无界最大化更低到 0.1200，Support-only 低到 0.0900）。不能声称无 hack。"
+      },
+      "solidity": "Part I 写明只改监督构造，对照完整；Part II 有界 vs 无界、TA-GRPO vs Flow-GRPO 方向与预测一致。但无训练种子、无人评、无打乱饱和权重对照；视频目标上 GARM 几乎不优于真实监督 Baseline；14B 与 1.3B 不能横比优化器；GARM 的视频 VBench/VideoReward 还存在按指标跨 checkpoint 取最好的报告方式。",
+      "samples": "目视 Fig.3（图像 Muscular/Oil Painting/Vintage Faded 的 Base/SFT/Baseline/Generated-only/GARM）、Fig.4（动漫视频）、Fig.6（raw vs TABO）、Fig.7（Base/Flow-GRPO/TA-GRPO）。策展图上目标属性更明显，raw reward 看起来伤主体和场景更重；这不是随机胜率，不能替代表中的 DD/质量数字。",
+      "code_analysis": "未核代码。全文与 HTML 中未见项目页或代码链接，不能据此断言全网未开源，只能说本轮没有可核的实现。",
+      "concerns": "优先缺口：①打乱饱和权重并匹配更新强度；②真实正例阈值对任意分位数的对照；③不按 RGB 评估器选 checkpoint，或换独立属性裁判，并且视频质量表应报告单一 checkpoint 而不是按指标取最好；④多训练种子与视频多样性/运动的预注册指标；⑤人评。方法节 Algorithm 1 与正文式(7)对哪些正例进入 matched pool 的表述不完全一致，closest_prior 已标出，本轮未把它当成主结论。附录 H 的 per-metric best 只点名 GARM，对照是否同样处理原文没写清楚。",
+      "principle": "奖励模型的监督分布要靠近生成器撑得住的区域，有界校准可以减轻无界最大化对画质和运动的伤害；但组内标准化会抵消饱和，必须检查有效更新强度是不是真按余量在衰减。",
+      "takeaway": "不建议立刻换奖励模型或训练配方。若要做属性定向增强，可以把「生成器支撑负例 + 有界目标」当成对照项，先做打乱权重和任意阈值实验，并单独看 Dynamic Degree。无公开代码，今天没有可开工的实现票。",
+      "details": "本轮流程：11-09 08:29 已登记预测（当时尚未看图表或数字）；closest_prior Codex 已落盘；影子 T0–T3 由我方撰写；claim_check Codex 复核 21/21 与原文一致（并提醒 Table 12 Graph-only 与 Table 4 Content-Matched-only 数字相同不能自动等同方法名，卡片未把二者等同）。主文与附录原文核对，作者结果未复现。最终定级由我方判断。完整版于 11-10 上午补发，原因是 11-09 深读成卡未写完。"
+    }
+  ],
   "brief": [
     {
       "title": "要不要出手",
-      "line": "无。最小版不成卡；没有要立刻改训练配方的事项。"
+      "line": "无。两篇精读都是了解即可，没有要立刻改训练配方的事项。"
     },
     {
       "title": "一句主线",
-      "line": "周五 mailing 初筛：真·生成器 RL 有三篇硬 IN。[FewStepRL](https://arxiv.org/abs/2611.08240)（少步扩散 RL，本追踪主责）与 [GARM](https://arxiv.org/abs/2611.07648)（生成器对齐奖励建模 + 有界优化）进 D2；[ArtiVidRM](https://arxiv.org/abs/2611.07301) 先观察。[LeNO](https://arxiv.org/abs/2611.06255) 周五已读，不重复升级。"
+      "line": "[FewStepRL](https://arxiv.org/abs/2611.08240) 把多种 RL 目标改写成少步锚点：图像上预算对齐、可微时梯度法仍最强，视频上训练分涨了、独立 VBench 没涨。[GARM](https://arxiv.org/abs/2611.07648) 用生成器支撑训奖励模型再做成有上界，属性会往上走、画质伤得比无界最大化小，但视频上相对普通真实监督几乎打平。"
     },
     {
       "title": "扫了多少 / 进精读",
-      "line": "union=509（Fri 6 Nov，new=413 / cross=237；初步）；kw 36；triage 67：IN=5 EDGE=9 FEWSTEP=7 OUT=46；D2=2；成卡 0。"
+      "line": "union=509（Fri 6 Nov，new=413 / cross=237；初步）；kw 36；triage 67：IN=5 EDGE=9 FEWSTEP=7 OUT=46；D2=2；成卡 2（均为了解即可，默认展开）。"
     },
     {
       "title": "没过线",
-      "line": "LLM OPD/GRPO 对照（如 [2611.08453](https://arxiv.org/abs/2611.08453)）作可迁移 EDGE；WAM-Sim / RoboImagine 转文献追踪；文本 dLLM 的 PBPO 放 EDGE；纯少步蒸馏交少步同事。"
+      "line": "LLM OPD/GRPO 对照作可迁移 EDGE；WAM-Sim / RoboImagine 已转文献追踪；文本 dLLM 的 PBPO 放 EDGE；纯少步蒸馏交少步同事（回执已关，不再重发）。"
     },
     {
       "title": "观察名单",
-      "line": "ArtiVidRM 2611.07301；WeLM-Image 2611.07392；FUSEMOS 2611.07562。FewStepRL 周五 D1 旁注：训练 reward 涨、独立 VBench 微降，预算不完全可比。"
+      "line": "ArtiVidRM 2611.07301；WeLM-Image 2611.07392（少步评为值得读、缺码不升必读，我方不作今日方法卡）；FUSEMOS 2611.07562。"
     },
     {
       "title": "没覆盖",
-      "line": "RSS=0（B-list 替代，与 API 差约 7.1%）、X/GitHub/种子共引/G11；HF Daily 已扫无额外生成器 RL 漏网。"
+      "line": "RSS=0（B-list 替代，与 API 差约 7.1%）、X/GitHub/种子共引/G11；两篇代码未核。HF Daily 最小版已扫，无额外生成器 RL 漏网。"
     }
   ]
 }
