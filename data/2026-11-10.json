@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-10",
+  "version": "v0.1-minimal",
+  "headline": "初步：周一 mailing；生成器 RL 硬点 SIFR（有符号 advantage + 速度漂移约束）进 D2，晨间不成卡。",
+  "revision_note": "G9 **初步**：export API 500；cs.CV list 429。8 类 list union≈422（Mon 9 Nov，age≈0）+ RSS Mon 种子 triage。本版=triage 收口最小发布，`papers=[]`。并行补发 2026-11-09 完整版。",
+  "notice": {
+    "file": "2026-11-10/notice.md"
+  },
+  "overview": {
+    "file": "2026-11-10/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。最小版不成卡；没有要立刻改训练配方的事项。11-09 完整版补发中。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周一 mailing：[SIFR](https://arxiv.org/abs/2611.09175) 用有符号 advantage + 参考速度漂移做稳定的迭代 flow reward 微调，进 D2。[Flow-Direct](https://arxiv.org/abs/2605.16348)、[VideoGen-Agent](https://arxiv.org/abs/2609.24997)、[AUTEUR](https://arxiv.org/abs/2611.09351) 先观察。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "list union≈422（缺 CV HTML）+ RSS 种子；triage 97 → IN=5 EDGE=15 FEWSTEP=23；D2=1；成卡 0。"
+    },
+    {
+      "title": "观察 / 没覆盖",
+      "line": "观察 Flow-Direct / VideoGen-Agent / AUTEUR / RuACT。未覆盖：API、CV list、X、GitHub、共引、G11。"
+    }
+  ]
+}
