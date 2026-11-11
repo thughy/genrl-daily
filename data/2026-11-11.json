@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-11",
+  "version": "v0.1-minimal",
+  "headline": "初步：周二 mailing 量很大；生成器 RL 硬点 PhysOPSD（用物理代码作 OPSD 特权上下文）进 D2，晨间不成卡。",
+  "revision_note": "G9 **初步**：list 与 RSS new+cross 均为 1146（Tue 10 Nov，age≈0–1），API 窗口 454（G9a PASS，G9b 数字差 60%）。抽查显示部分「New」是晚公告。本版=triage 收口最小发布，`papers=[]`。11-09 完整版已在线上，通知补发；11-10 SIFR 精读待补。",
+  "notice": {
+    "file": "2026-11-11/notice.md"
+  },
+  "overview": {
+    "file": "2026-11-11/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。最小版不成卡；没有要立刻改训练配方的事项。11-09 完整版通知补发；11-10 SIFR 精读待补。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周二 mailing：[PhysOPSD](https://arxiv.org/abs/2611.12411) 把 OPSD 的特权上下文换成物理代码，用来管视频动力学，进 D2。[DTO](https://arxiv.org/abs/2611.11821)、[REAL](https://arxiv.org/abs/2611.12406)、[M5-TTS](https://arxiv.org/abs/2611.10162)、[STEER](https://arxiv.org/abs/2611.10630) 先观察。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "list=RSS union=1146（API=454，初步）；triage 145 → IN=8（含已处理 2 篇）EDGE=22 FEWSTEP=36；D2=1；成卡 0。"
+    },
+    {
+      "title": "观察 / 没覆盖",
+      "line": "观察 DTO / REAL / M5-TTS / STEER / Look-ahead 流编辑 / CADMA。未覆盖：X、GitHub、共引、完整 G11。"
+    }
+  ]
+}
