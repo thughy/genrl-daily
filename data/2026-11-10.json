@@ -1,31 +1,114 @@
 {
   "date": "2026-11-10",
-  "version": "v0.1-minimal",
-  "headline": "初步：周一 mailing；生成器 RL 硬点 SIFR（有符号 advantage + 速度漂移约束）进 D2，晨间不成卡。",
-  "revision_note": "G9 **初步**：export API 500；cs.CV list 429。8 类 list union≈422（Mon 9 Nov，age≈0）+ RSS Mon 种子 triage。本版=triage 收口最小发布，`papers=[]`。并行补发 2026-11-09 完整版。",
+  "version": "v1.0-deep",
+  "fyi_open": true,
+  "headline": "不新增实施项：SIFR了解即可；有符号优势加上自适应速度漂移约束能拉长有效训练，但还不能证明它比调好的固定正则更本质。",
+  "revision_note": "完整版于 11-11 补发（R2）：11-10 最小版已上线，D2 SIFR 精读当天未写完。本页成卡一篇并默认展开。召回仍标「初步」（API 当时 500；B-list/RSS 替代）。不改 G10/G11，不升级既有持有。",
   "notice": {
     "file": "2026-11-10/notice.md"
   },
   "overview": {
     "file": "2026-11-10/overview.md"
   },
-  "papers": [],
+  "papers": [
+    {
+      "id": "sifr",
+      "arxiv_id": "2611.09175",
+      "rating": "fyi",
+      "rating_zh": "了解即可",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "online-rl",
+        "diff-reward"
+      ],
+      "title": "SIFR: Stable Signed Flow Reinforcement",
+      "institutions": [
+        "NVIDIA",
+        "The University of Texas at Austin"
+      ],
+      "published": "arXiv 2026-11-06 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.09175",
+        "project": "https://research.nvidia.com/labs/cosmos-lab/sifr/"
+      },
+      "rating_reason": "新机制部分 × 存疑：把已有 flow RL 写成有符号速度回归，再用自适应乘子维持速度漂移预算；Fig.5a/长训曲线支持「卸载信号 + 约束」方向，但 NFT 在两个骨干上采样器未对齐，自适应 λ 未与匹配平均 drift 的固定 λ 比较，多样性未报。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "主文 §2–4、Table 1–4、Fig.1–6 与 App.C.5 原文核对（pdftotext -raw；官方 HTML 404）；目视论文图；未核代码、未跑评测。"
+      },
+      "tldr": "正的 reward 权重只鼓励拟合高分样本、卸载信号要靠有符号优势；直接最小化有符号 MSE 可能没有下界，所以用对参考速度的漂移预算和反馈乘子把它稳住。现有 NFT / RAM / AWM 等被写成同一框架下不同的正则系数。",
+      "delta": "相对 DiffusionNFT 和 RAM 的隐式参考正则，改成显式约束 $E[\\|v_\\theta-v_{\\mathrm{ref}}\\|^2]\\le\\delta$，并用 log 空间乘子跟踪实测 drift；主实验只和这两个方法比，AWM / FlowAWR 的等价系数写在 Table 1 与 App.C.5，没有进入同一训练表。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "DiffusionNFT (Zheng et al., 2026)",
+            "link": "https://arxiv.org/abs/2509.16117",
+            "how": "正负分支的正 MSE；App.C.5.3 推导其梯度等价于 $w=\\beta A$、$c_{\\mathrm{ref}}=\\beta(\\beta-A)$，在当前快照处第二项消失。谱系 L3 已读",
+            "change": "把隐式参考项换成对 EMA 速度漂移的预算约束与自适应 λ"
+          },
+          {
+            "work": "RAM (Bergmeister et al., 2605.10759)",
+            "how": "detached 回归目标混合固定教师与动态参考；C.5.4 给出 $w=\\eta A$、$c_{\\mathrm{ref}}=-\\eta A$、$c^{\\mathrm{fix}}=1$",
+            "change": "默认只用一个 EMA 参考，不再手调 η 与固定教师项的组合"
+          },
+          {
+            "work": "AWM / FlowAWR（Xue et al., 2026；Fu et al., 2026）",
+            "how": "有符号或 advantage 加权的 flow matching，外加 EMA 参考项；Table 1 与 C.5.2/C.5.6",
+            "change": "理论纳入统一形式，但主实验没有与它们同协议训练对比"
+          }
+        ],
+        "equivalent_form": "每轮最小化 $E[A(X_1)\\|v_\\theta-(X_1-X_0)\\|^2]$，约束 $E[\\|v_\\theta-v_{\\mathrm{ref}}\\|^2]\\le\\delta$，即对 $A(v_\\theta-(X_1-X_0))+\\lambda(v_\\theta-v_{\\mathrm{ref}})$ 做下降，λ 按 $D_{\\mathrm{ema}}/\\delta$ 反馈（Eq.4/7–9，Algorithm 1）。归 **③ 黑盒 reward 正负对比回归** + 显式速度信任域。不是 ② 策略梯度，也不是 ① 可微回传。",
+        "baseline": "三骨干上对位 DiffusionNFT 与 RAM。每轮 48×24=1152 rollouts，LoRA rank 32，lr $3\\times10^{-4}$。Cosmos 上三方法都用 Euler 35 步；SD3.5 与 FLUX 上 SIFR/RAM 用 Euler 20 步，NFT 用原版 DPM-Solver++ 及每任务步数（§4.1），采样器不对齐。不是 Protocol O，也不替换 NFT 线最强基线。",
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂有符号回归和信任域的人能预见到正权重会塌、显式约束能稳住训练；预见不到偏好奖励上 2–4 倍更快越过基线平台、以及 Cosmos 2000 轮仍继续涨到约 25.36。"
+        }
+      },
+      "insight": "**本质影子 v2.3：已知原理·工具，不驱动两轴。**\n- T0：partly。最接近 NFT / RAM / AWM 与 CPO 式约束。能推出符号与正则的必要性；推不出自适应 λ 相对充分调参固定 λ 的增量，以及 2–4× 的量级。\n- T1：有符号优势提供卸载信号，速度漂移预算防止负曲率发散。已测：Fig.5a 正权重（有/无预算）崩溃；Fig.5b 自适应 λ 在 500 轮高于五个固定系数 0.01–0.5。未测条件曲率 $E[A|X_t]+\\lambda$ 的符号区域，也未让固定 λ 匹配平均 drift。\n- T2：VLM 奖励的视频世界模型在线回归，预测比 NFT 更晚进入平台（锚 Fig.1a 平台约 24.4 vs 25.36@2000）。若匹配 drift 的固定 λ 打平曲线则证伪。T2 不稳。\n- T3：可部分解释 NFT 隐式系数不能按实测 drift 调节、RAM 在 FLUX 约 300 轮崩溃（Table 2 注），支撑有限。\n- 门槛：Fig.5a 直接改符号；Fig.5b 对「自适应」只是弱直接。主曲线多为训练奖励换提示；另有 ImageReward/HPSv3/UniRwd2/Aesthetic。无多样性、无训练种子。\n- Codex closest_prior：T0=partly，归③，杀手消融=匹配平均 drift 的固定 λ。与我方一致。",
+      "method": "每轮用参考模型（默认 EMA，β=0.5）做 ODE rollout，标准化优势 $A=(r-\\mu)/(\\sigma+\\epsilon)$，对有符号 RF 损失加 λ 倍速度漂移做 S 步更新，再按 Eq.(9) 调整 λ，最后更新 EMA。预算 δ 取预训练 RF loss 的 κ 倍并保持固定。可加冻结教师作为第二约束，但不是默认。需要似然、不限制采样器。",
+      "evidence": "[原文核对，作者自报，未复现]\n- Table 2 多奖励、held-out prompts、500 轮（FLUX 的 RAM 为崩溃前第 300 轮）：SD3.5-M PickScore 21.78→NFT 23.06 / RAM 23.37 / SIFR 23.76，HPSv3 9.18→10.52 / 11.92 / 12.12；FLUX Pick 21.82→23.69 / 23.26 / 24.00；Cosmos 22.27→23.46 / 23.70 / 24.07，Aesthetic 5.95→6.42 / 6.46 / 6.62。少数留出项 RAM 略高（SD3.5 UniRwd2 3.294 vs 3.290）。\n- Fig.1a：Cosmos 单奖励 2000 轮，基线平台约 24.4，SIFR 约 1/4 轮次越过并标到 25.36。\n- Table 3：规则奖励都接近饱和；SIFR 6 项中 5 项最高，到达 0.97 从不更慢（SD OCR 峰值 0.984 略低于 NFT 0.985，但 40 轮 vs 80 轮先到 0.97）。\n- Table 4：同一 Cosmos 多奖励 ckpt 迁到 UniGenBench+物理 / DrawBench / 长字幕，七项指标均最高。\n- Fig.5a 正权重崩溃；Fig.5b 自适应 λ 高于固定网格；成对比较 79.9%–93.5% 的 prompt×seed 同时高于两基线。",
+      "reward_check": {
+        "train_reward": "分跑：PickScore；PickScore+HPSv2.1+CLIPScore；OCR；GenEval（后两者跟随 Flow-GRPO 管线）",
+        "eval_reward": "上述训练奖励在 held-out prompts 上；另报 ImageReward、HPSv3、UnifiedReward-2.0、Aesthetic；另有 UniGenBench+物理提示、DrawBench、长字幕",
+        "overlap": {
+          "value": "partial",
+          "note": "主曲线是训练奖励换提示，不是换 RM。留出奖励多数同向，但 PickScore 家族已知可被 hack"
+        },
+        "heldout": "ImageReward / HPSv3 / UniRwd2 / Aesthetic 与新提示集。无人评",
+        "hacking_signs": "未报多样性。RAM 在 FLUX 多奖励下崩溃说明不约束会出问题；SIFR 是否以模式变窄换取分数，原文没有直接测量"
+      },
+      "solidity": "跨 2.5B/9B/64B 与 12 个骨干–奖励组合，加上留出奖励和新提示集，完成度高于许多方法文。主要协议伤口是 SD3.5/FLUX 上 NFT 采样器不同，以及自适应 λ 没有匹配平均 drift 的固定对照。多样性与训练种子缺失不单独否决。",
+      "samples": "目视 Fig.1 与附录定性图（预训练 vs SIFR，标 held-out HPSv3）。未做网格多样性统计。",
+      "code_analysis": "项目页已列出；官方 HTML 404。本轮未核实现是否与 Algorithm 1 / Eq.(9) 一致。",
+      "concerns": "①NFT 采样器未在两个骨干上对齐。②未实验对比 AWM/FlowAWR。③Fig.5b 固定 λ 网格未必匹配 SIFR 的平均 drift。④无样本多样性。⑤无多训练种子。⑥默认 EMA 参考不限制相对初始化的总漂移（Codex 指出可累积到 O(K√δ)）。",
+      "principle": "在线速度回归里，正权重缺少卸载信号，有符号权重又可能没有下界；真正起作用的是「卸载」加上「按实测速度漂移调节的正则强度」，而不是再发明一种看起来不同的正 MSE。",
+      "takeaway": "不改今日训练配方。若已在用 NFT/AWM/RAM，值得把参考项理解成速度漂移正则，并先做「匹配平均 drift 的固定系数 vs 反馈乘子」小对照，同时盯独立奖励和多样性。不要只看训练 PickScore 曲线。",
+      "details": "预测于 2026-11-10T08:33+08:00 登记后未改写。Closest-prior 归③、T0=partly，与我方一致。Claim_check：15 一致 / C16 原表述「只在 Table 1 给出等价系数」已改为 Table 1 + App.C.5。影子本质不改两轴。最终定级由我方做出。"
+    }
+  ],
   "brief": [
     {
       "title": "要不要出手",
-      "line": "无。最小版不成卡；没有要立刻改训练配方的事项。11-09 完整版补发中。"
+      "line": "无。了解即可，不改训练配方。"
     },
     {
       "title": "一句主线",
-      "line": "周一 mailing：[SIFR](https://arxiv.org/abs/2611.09175) 用有符号 advantage + 参考速度漂移做稳定的迭代 flow reward 微调，进 D2。[Flow-Direct](https://arxiv.org/abs/2605.16348)、[VideoGen-Agent](https://arxiv.org/abs/2609.24997)、[AUTEUR](https://arxiv.org/abs/2611.09351) 先观察。"
+      "line": "[SIFR](https://arxiv.org/abs/2611.09175) 把在线 flow RL 写成有符号速度回归，并用反馈乘子把相对 EMA 参考的速度漂移维持在预算内；偏好奖励上比 DiffusionNFT/RAM 更快更高，正权重即使有约束也会崩。SD3.5/FLUX 上 NFT 采样器未对齐。"
     },
     {
       "title": "扫了多少 / 进精读",
-      "line": "list union≈422（缺 CV HTML）+ RSS 种子；triage 97 → IN=5 EDGE=15 FEWSTEP=23；D2=1；成卡 0。"
+      "line": "list union≈487（周一 mailing，初步；当时 API 失败）；triage 97 → IN=5 EDGE=15 FEWSTEP=23；D2=1；成卡 1。"
+    },
+    {
+      "title": "没过线",
+      "line": "SIFR 未过「值得看」：采样器部分不对齐，自适应 λ 未与匹配平均 drift 的固定 λ 比，未报多样性与训练种子。单 seed/缺多样性不单独否决。"
     },
     {
       "title": "观察 / 没覆盖",
-      "line": "观察 Flow-Direct / VideoGen-Agent / AUTEUR / RuACT。未覆盖：API、CV list、X、GitHub、共引、G11。"
+      "line": "观察 Flow-Direct / VideoGen-Agent / AUTEUR。未覆盖：当时的 API/部分 CV list、X、GitHub、共引、G11。代码未核。"
     }
   ]
 }

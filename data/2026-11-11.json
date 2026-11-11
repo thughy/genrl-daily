@@ -1,31 +1,186 @@
 {
   "date": "2026-11-11",
-  "version": "v0.1-minimal",
-  "headline": "初步：周二 mailing 量很大；生成器 RL 硬点 PhysOPSD（用物理代码作 OPSD 特权上下文）进 D2，晨间不成卡。",
-  "revision_note": "G9 **初步**：list 与 RSS new+cross 均为 1146（Tue 10 Nov，age≈0–1），API 窗口 454（G9a PASS，G9b 数字差 60%）。抽查显示部分「New」是晚公告。本版=triage 收口最小发布，`papers=[]`。11-09 完整版已在线上，通知补发；11-10 SIFR 精读待补。",
+  "version": "v1.0-deep",
+  "fyi_open": true,
+  "headline": "不新增实施项：PhysOPSD、GenRM-Flow均了解即可；物理代码是训练教师特权不是推理插件，生成器当过程奖励也还没证明自己在给真实轨迹打分。",
+  "revision_note": "完整版：D2 PhysOPSD 成卡；今早 catchup 的 GenRM-Flow 已由本追踪终判为了解即可并整合进本页，不是待用户来判。召回仍标「初步」（list/RSS=1146，API=454）。11-10 SIFR 完整版另行补发。G10/G11 未改，不升级 W44 持有。",
   "notice": {
     "file": "2026-11-11/notice.md"
   },
   "overview": {
     "file": "2026-11-11/overview.md"
   },
-  "papers": [],
+  "papers": [
+    {
+      "id": "physopsd",
+      "arxiv_id": "2611.12411",
+      "rating": "fyi",
+      "rating_zh": "了解即可",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "video-rl",
+        "distill-rl",
+        "other"
+      ],
+      "title": "PhysOPSD: Code as Privilege for Physically Plausible Video Generation",
+      "institutions": [],
+      "published": "arXiv 2026-11-09 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.12411",
+        "project": "https://haroldchen19.github.io/PhysOPSD-site/",
+        "code": "https://github.com/aigc3d/PhysOPSD"
+      },
+      "rating_reason": "新机制部分 × 存疑：固定 3K 样本下，可执行仿真草稿作教师特权明显强于陈述性文本和真实参考视频；但更新式是已知的特权 OPD 速度匹配，不是 DiffusionOPSD 2608.24646 的 ∇R Protocol O，未测教师误差中介，未报训练种子，评测物理分由 GPT-5.5 等裁判给出。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "主文 §3–7、Table 1、Fig.6–8、Algorithm 1 与 App.B 原文核对（HTML）；目视论文图与案例分析；未核作者代码、未跑评测。"
+      },
+      "tldr": "物理代码并不在推理时喂给生成器，它只在训练里给 EMA 教师渲染一份可编辑的仿真草稿；学生始终只看文本，部署零额外开销。同样 3K 样本下，这份草稿把物理分拉开，扩写文本和真实参考视频几乎帮不上忙。",
+      "delta": "相对特权信息 OPD / D-OPSD / OPSD-V，把教师多看的内容从文本、理由或真实视频换成由代码执行出来的分层仿真草稿，并加上成对参数扰动；不是谱系 L2 的 DiffusionOPSD（2608.24646）奖励梯度目标。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "Privileged / self-distilled OPD（Zhao et al. 2601.18734；Penaloza et al. 2602.04942）",
+            "how": "学生在自生成状态上匹配「多看了特权信息」的教师；部署时只保留学生条件。本轮按本文 §2 与引文核对，未另开全文重读",
+            "change": "特权改为可执行物理程序渲染的视觉草稿，而不是标准答案或 rationale"
+          },
+          {
+            "work": "D-OPSD / OPSD-V（Jiang et al. 2605.05204；Liu et al. 2607.08766）",
+            "how": "少步图像用目标图像的多模态表示作特权；视频 AR 用真实视频帧替换 KV 历史。§2 原文",
+            "change": "面向通用 T2V/TI2V 的物理动态，强调仿真可编辑，而不是外观拷贝或缓存稳定"
+          },
+          {
+            "work": "DiffusionOPSD（Zhou et al., 2608.24646）",
+            "link": "https://arxiv.org/abs/2608.24646",
+            "how": "谱系 L2 / Protocol O：在旧策略 clean-output 处沿 ∇R 构造 detached 目标再回归，一阶同向 ReFL。本文未引用、未比较",
+            "change": "名称相近但不是同一目标。本文损失是特权教师速度 MSE，没有标量物理 reward，也没有沿 ∇R 移动。主表不能读成 Protocol O 胜利"
+          }
+        ],
+        "equivalent_form": "实际回归目标是 $\\mathcal{L}=\\mathbb{E}[\\|v_\\theta(x_t^S,t,c^{(\\ell)})-\\mathrm{sg}(v_{\\bar\\theta}(x_t^S,t,c^{(\\ell+1)}))\\|^2]$，再对成对物理变体、共享初始噪声取平均（Eq.5/9/14）。代码程序本身不进入速度网络，只生成教师看见的 $d^{\\mathrm{dense}}/d^{\\mathrm{abs}}$。部署条件固定为 $c^{(0)}=p$。**不属于五格中的 reward 更新**（不是 ① ∇R、不是 ② PG、不是 ③ 正负回归）；是特权教师的 on-policy 速度蒸馏。Codex closest_prior 标成 ⑤，我方不采用：这里没有改写收敛 SDE/ODE，只是换了教师条件。",
+        "baseline": "主表对照 base、测试时 PhyT2V、WISA-80K 上的 SFT、以及 21K 离线 PhysHPO，样本数不对齐。同协议对照是 Fig.6：同一套 OPSD、固定 3K，只换特权模态（无特权 / 扩写文本 / 真实视频 / 编码草稿）。这不是 DiffusionOPSD Protocol O（SD3.5-M、可微奖励、100 次更新）。",
+        "counterfactual": {
+          "value": "partly",
+          "text": "懂特权 OPD 的人能预见到「教师多看一份更干净的物理演示，学生只看文本」可能有效；预见不到扩写文本和真实视频在 3K 预算上几乎为零、而仿真草稿能把 VideoPhy-2 All 从 62.9 拉到 67.0。"
+        }
+      },
+      "insight": "**本质影子 v2.3：技巧（机制待证）偏已知原理·工具，不驱动两轴。**\n- T0：partly。最接近特权 OPD、D-OPSD/OPSD-V、DiffusionOPD（2605.15055，不是 2608.24646）。能推出不对称条件蒸馏；推不出代码草稿相对真实视频的量级。\n- T1（去名）：「教师多看的那份视觉演示若来自参数可编辑的仿真而不是陈述性扩写或外观纠缠的真实视频，学生在只看文本部署后的物理合理性更高。」已测：Fig.6，OmniWeaving、3K，All 62.8 / 63.1 / 67.0（文本 / 真实视频 / 代码草稿），无特权 62.9；PhyGround Overall 代码草稿 68.3（文称相对真实视频 +3.5）。未测教师在学生状态上的物理预测误差。\n- T2：双向视频世界模型上，教师看仿真草稿、学生看文本，预测相对「教师看真实视频」All 约 +3–4（锚 Fig.6 +3.9），VBench Total 变化约 ±0.5（锚 Table 1）。证伪：真实视频特权打平或反超。跨模态不稳，T2 不通过。\n- T3：解释不充分，不通过。\n- 门槛：Fig.6 固定样本数改变特权来源（代理，缺中介测量）；Fig.7 Dual-Level +4.1 vs Dense-Only +3.4 vs Abstract-Only +2.6，Controlled Pairs +4.1 vs Independent-Only +3.3。seeds 未报告。无训练标量 reward；VideoPhy-2 用 GPT-5.5。\n- Codex closest_prior：T0=partly，强调共享噪声本身不改变期望目标、杀手消融应是打乱配对噪声。与我方「代码 vs 文本/视频」主对照不冲突，指向额外缺口。",
+      "method": "PhysOPSD-Engine 把参考视频翻成可执行场景程序（MuJoCo / Genesis / Blender），渲染稠密与抽象草稿，并扰动摩擦、质量、初速等参数得到成对变体。训练时学生按 $c^{(\\ell)}$ 做 $K=20$ 步 on-policy rollout，EMA 教师（衰减 0.9999）在同一状态上用 $c^{(\\ell+1)}$ 给速度目标；两个物理变体共享初始高斯噪声。优化学生 LoRA，AdamW $1\\times10^{-5}$，H20、BF16。推理扔掉全部仿真与草稿。物理范围限于仿真稳定的刚体接触、弹性与流体（§7）。",
+      "evidence": "[原文核对，作者自报，未复现；训练种子未写]\n- Table 1 UniVideo 13B：base PhyGround Overall 64.9 / VideoPhy-2 All 63.1 / VBench Total 83.5 → PhysOPSD（3K）66.5 / 67.3 / 84.0；SFT（80K）64.8 / 64.0 / 83.9；PhysHPO（21K）65.8 / 66.3 / 83.5。正文 §5.2：All +4.2、Overall +1.6。Semantic 80.0→79.7。\n- Table 1 OmniWeaving 8.3B：64.9 / 62.9 / 83.1 → 68.3 / 67.0 / 83.3（+3.4 / +4.1）。PhysHPO 为 67.0 / 66.0 / 83.2。\n- Fig.6（OmniWeaving，3K）：无特权 All 62.9，扩写文本 62.8，真实视频 63.1，代码草稿 67.0（相对真实视频 +3.9）；PhyGround Overall 68.3（相对真实视频 +3.5）。\n- Fig.7：Dual-Level +4.1 All，Abstract-Only +2.6，Dense-Only +3.4；Controlled Pairs +4.1，Independent-Only +3.3。\n- Fig.8：1K 即 +1.6 All；4K +5.1。未报 Dynamic Degree。",
+      "reward_check": {
+        "train_reward": "无标量 reward；监督来自仿真草稿条件下的 EMA 教师速度",
+        "eval_reward": "VideoPhy-2 SA/PC（GPT-5.5，App.B.2）；PhyGround General/Physics；VBench 1.0 Quality/Semantic/Total",
+        "overlap": {
+          "value": "no",
+          "note": "训练不优化这些基准分数。但仍可能与仿真域、GPT 裁判的物理口味重叠；不是训练-评测同一 RM"
+        },
+        "heldout": "物理基准与 VBench 均未参与训练。无人评。未单列 Dynamic Degree",
+        "hacking_signs": "Semantic 在 UniVideo 上 80.0→79.7 的小幅下降；教师可能把仿真几何偏好当成纠偏。未看到明显过饱和证据"
+      },
+      "solidity": "Fig.6 的同预算特权替换是这篇最有用的对照。主表对 SFT/PhysHPO 只对齐「我们用的样本更少」，不对齐 GPU-h 或每样本 K=20 的教师查询。裁判是 GPT-5.5 与官方 PhyGround，不是人评。VBench Total 持平略升，不能代替运动多样性。",
+      "samples": "目视 Fig.4/5/11–17 的案例分析（秋千角速度、多米诺重力、流体出口半径等）。论文展示开域外观迁移，但挑图不能当平均效应。未下载项目页视频做运动量统计。",
+      "code_analysis": "仓库 https://github.com/aigc3d/PhysOPSD 与项目页已列出，本轮未打开实现、未核对 Eq.5/9/14 是否与代码一致。",
+      "concerns": "①未在 Protocol O 或任何物理 ∇R / Flow-GRPO 协议下对比 DiffusionOPSD 2608.24646（名称易混，本文实际引的是 DiffusionOPD 2605.15055）。②未测量教师纠偏误差。③未做 shared-noise 打乱对照。④训练种子与多样性缺失。⑤3K vs 80K/21K 不是计算对齐。⑥物理范围排除燃烧等难仿真现象（§7）。",
+      "principle": "特权蒸馏是否有用，取决于教师多看的那份上下文能不能在学生访问过的状态上提供可迁移的纠偏，而不是上下文看起来「更丰富」。对物理动态，可执行仿真草稿可以做到这一点，陈述性文本和真实视频在他们的 3K 设定里几乎做不到。",
+      "takeaway": "不改今日训练配方。若要试「代码作物理教师」，记住这是训练特权、推理仍是纯文本生成器；先复现 Fig.6 的文本/真实视频对照，并单独看独立物理基准和运动幅度。不要把它当成 DiffusionOPSD 奖励梯度的视频版，也不要当成测试时的物理引擎插件。",
+      "details": "预测于 2026-11-11T08:26+08:00 登记后未改写。Closest-prior 与我方 T0=partly 一致；杀手消融建议为打乱配对噪声。Essence Codex：技巧（机制待证），与我方影子一致。Claim_check：17 一致；C18 代码链接在 HTML 页头（github.com/aigc3d/PhysOPSD），抽取后的 paper.txt 丢失该锚点，已回 HTML 核对。影子本质不改两轴。最终定级由我方做出。"
+    },
+    {
+      "id": "genrm-flow",
+      "arxiv_id": "2611.11421",
+      "rating": "fyi",
+      "rating_zh": "了解即可",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "reward-model",
+        "video-rl",
+        "offline-dpo"
+      ],
+      "title": "GenRM-Flow: Generators are Process-aware Reward Models in Flow Matching",
+      "institutions": [],
+      "published": "arXiv 2026-11-09 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.11421"
+      },
+      "rating_reason": "新机制部分 × 存疑：偏好微调后的生成器相对参考模型的速度预测误差差，可以当作奖励并接入 FlowAWR；留出偏好准确率与只换奖励的生成指标都有数字，但评分对象是最终视频再加噪后的状态，不是真实去噪轨迹。父级已于今日终判，不是待用户来判。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "unavailable",
+        "note": "今早 catchup 全文 §1–5 与 Table 2–4；见 deep/11421/d2_evidence.md 与 my_judgment.md。未核代码（无发布）。"
+      },
+      "tldr": "离线偏好优化隐含的奖励，可以用 flow matching 的速度误差差读出来，从而让偏好微调过的生成器自己当过程奖励模型；它能提高偏好打分和下游 FlowAWR 指标，但还没有证明自己在给真实生成轨迹分配信用。",
+      "delta": "相对 DPO 隐式奖励、Diffusion-DPO / Flow-DPO 与图像上的 LPO，把对数似然换成连续时间速度误差，并接到已有 FlowAWR；对照视频特征头 PAVRM。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "DPO 隐式奖励 / Diffusion-DPO / VideoAlign·Flow-DPO",
+            "how": "偏好优化的解析最优策略里可以分离出奖励项",
+            "change": "用速度预测误差代替精确生成对数似然，并逐步在噪声潜变量上读出"
+          },
+          {
+            "work": "LPO（Zhang 2025）与 PAVRM（Mi 2025）",
+            "how": "图像噪声感知潜空间奖励；视频上在生成器特征上训打分头",
+            "change": "不另训打分头，直接用生成器相对参考模型的速度误差差"
+          },
+          {
+            "work": "FlowAWR（2606.30376）",
+            "how": "advantage 加权的 flow matching 容器",
+            "change": "用该过程奖励替换外部 VLM scorer，超参共享"
+          }
+        ],
+        "equivalent_form": "$\\hat r(x,c)\\approx\\beta\\mathbb{E}_t[L_{\\mathrm{ref}}(x_t,c)-L_{\\theta^*}(x_t,c)]$。下游按 FlowAWR 回归。RM 训练归④；下游更新归③。",
+        "baseline": "偏好准确率对照 VideoAlign 与 PAVRM；下游在共享超参下只换奖励来源接入 FlowAWR。",
+        "counterfactual": {
+          "value": "partly",
+          "text": "构造方向可由隐式奖励 + flow-matching 似然替代推出；视频上相对 PAVRM 的准确率量级，以及逐步对终点是否必要，事先推不出。"
+        }
+      },
+      "insight": "**本质影子：已知原理·工具（我与今早 Codex 一致），不驱动两轴。** §5 写明评分对象是最终生成结果前向加噪后的状态，不是实际经过的去噪轨迹。缺逐步 vs 终点对照。多样性不能用 Dynamic Degree 代替（1.3B 65.19→73.46，14B 65.46→74.87，运动不降）。",
+      "method": "用 DPO（实验 β=2000）偏好微调生成器，奖励读出为参考模型与当前模型的速度误差差；再以 FlowAWR（过程奖励 β=1）替换外部 VLM。",
+      "evidence": "[原文核对，见 deep/11421] 14B 留出偏好准确率 88.96，对照 PAVRM 82.64、VideoAlign 78.26；噪声段 [0,0.2] 已达 89.10。同 FlowAWR 超参只换奖励后，生成指标上升。40 人标、留出 4,800 对。未证轨迹级信用分配。",
+      "reward_check": {
+        "train_reward": "下游：GenRM-Flow 读出的过程奖励（来自偏好微调生成器）",
+        "eval_reward": "留出偏好对准确率；VBench 等生成指标",
+        "overlap": {
+          "value": "partial",
+          "note": "RM 评测有人标留出对；下游质量指标不等于该偏好标签"
+        },
+        "heldout": "4,800 留出偏好对；40 人标",
+        "hacking_signs": "尚未隔离过程 vs 终点；DD 上升不能当成多样性"
+      },
+      "solidity": "RM 评测相对干净；机制主张超过了实验所证明的「终态再加噪」。无代码。",
+      "samples": "未见独立样例视频分析。",
+      "code_analysis": "无公开代码。",
+      "concerns": "过程感知名不副实（§5）；缺逐步对终点、DPO 策略直接使用、墙钟对齐。",
+      "principle": "生成器相对参考模型的预测误差差可以当作隐式奖励的可计算替代，但这不等于它理解了真实采样轨迹上的逐步对错。",
+      "takeaway": "不改配方。需要视频奖励模型时可以把它当作可尝试的实现，先补「逐步 vs 终点」对照，不要把它当成已经证实的轨迹级信用分配。",
+      "details": "父级终判见 deep/11421/my_judgment.md（2026-11-11）。今日完整版整合进日报，不另发独立通知。此前「待用户终判」已更正。"
+    }
+  ],
   "brief": [
     {
       "title": "要不要出手",
-      "line": "无。最小版不成卡；没有要立刻改训练配方的事项。11-09 完整版通知补发；11-10 SIFR 精读待补。"
+      "line": "无。两张了解即可卡都不改训练配方。"
     },
     {
       "title": "一句主线",
-      "line": "周二 mailing：[PhysOPSD](https://arxiv.org/abs/2611.12411) 把 OPSD 的特权上下文换成物理代码，用来管视频动力学，进 D2。[DTO](https://arxiv.org/abs/2611.11821)、[REAL](https://arxiv.org/abs/2611.12406)、[M5-TTS](https://arxiv.org/abs/2611.10162)、[STEER](https://arxiv.org/abs/2611.10630) 先观察。"
+      "line": "[PhysOPSD](https://arxiv.org/abs/2611.12411) 用可执行仿真草稿作 OPSD 教师特权，部署仍是纯文本生成器；同 3K 下文本/真实视频几乎无效，代码草稿把 VideoPhy-2 All 从 62.9 拉到 67.0。它不是 DiffusionOPSD 2608.24646 的奖励梯度协议。[GenRM-Flow](https://arxiv.org/abs/2611.11421) 能提高偏好打分并接入 FlowAWR，但打的是最终视频再加噪后的状态。"
     },
     {
       "title": "扫了多少 / 进精读",
-      "line": "list=RSS union=1146（API=454，初步）；triage 145 → IN=8（含已处理 2 篇）EDGE=22 FEWSTEP=36；D2=1；成卡 0。"
+      "line": "list=RSS union=1146（API=454，初步）；triage 145 → IN=8 EDGE=22 FEWSTEP=36；D2=PhysOPSD；另整合 GenRM-Flow；成卡 2。"
+    },
+    {
+      "title": "没过线",
+      "line": "两篇都未过「值得看」线：PhysOPSD 未测教师误差、未比 2608.24646/物理奖励 RL、种子与 Dynamic Degree 缺失；GenRM-Flow 缺逐步对终点对照。单 seed/缺多样性不单独否决。"
     },
     {
       "title": "观察 / 没覆盖",
-      "line": "观察 DTO / REAL / M5-TTS / STEER / Look-ahead 流编辑 / CADMA。未覆盖：X、GitHub、共引、完整 G11。"
+      "line": "观察 DTO / REAL / M5-TTS / STEER。未覆盖：X、GitHub、共引、完整 G11。两篇代码未核。"
     }
   ]
 }

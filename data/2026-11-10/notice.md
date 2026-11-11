@@ -1,1 +1,6 @@
-**初步（召回未完全过 G9）**：export API 连续 500；cs.CV list 多次 429，本版用其余 8 类 list（union≈422，age≈0）+ RSS Mon 种子做 triage。HF Daily 11-09 扫过（Video-Coder 已在昨日 catchup）。X/GitHub/种子共引/G11 未做。昨日（11-09）完整版精读仍在补发中。
+# 2026-11-10 说明（完整版 · 补发）
+
+- **迟到原因**：11-10 当天最小版（v0.1-minimal）已发布；D2 SIFR 精读未在当天写完。本次是 11-11 按 R2 补完精读、合并与完整发布，不是新一天的召回。
+- **本期性质**：周一 mailing（list 日期 Monday 9 November 2026）。当时 export API 500，G9 用列表/RSS 替代，仍标「初步」。
+- **本版范围**：SIFR 已成完整卡并默认展开（`fyi_open: true`）。影子本质不驱动两轴。无必读/值得看新增。
+- **没覆盖**：当时的 API 与部分 CV list、X / GitHub / 种子共引 / G11；代码未核。
