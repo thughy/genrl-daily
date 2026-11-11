@@ -132,7 +132,7 @@
             "change": "用该过程奖励替换外部 VLM scorer，超参共享"
           }
         ],
-        "equivalent_form": "$\\hat r(x,c)\\approx\\beta\\mathbb{E}_t[L_{\\mathrm{ref}}(x_t,c)-L_{\\theta^*}(x_t,c)]$。下游按 FlowAWR 回归。RM 训练归④；下游更新归③。",
+        "equivalent_form": "奖励读出约等于 β 乘以各噪声时刻（参考模型速度误差 − 偏好微调模型速度误差）的期望。下游按 FlowAWR 回归。RM 训练归④；下游更新归③。",
         "baseline": "偏好准确率对照 VideoAlign 与 PAVRM；下游在共享超参下只换奖励来源接入 FlowAWR。",
         "counterfactual": {
           "value": "partly",
