@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-16",
+  "version": "v0.1-minimal",
+  "fyi_open": true,
+  "headline": "要不要出手：无。周五列表里没有新的生成器 RL 配方过线；先看评测诊断——T2I 计数分数会随裁判和协议一起变。",
+  "revision_note": "最小版。11-12/11-13 两期延误：周四窗口已并进本批周五列表；周三 mailing 已补筛、无额外 D2。周一 mailing 尚未公告，约 09:00 后补。D2 Verifier Choice 精读后补完整版。周五周报稍后补发。",
+  "notice": {
+    "file": "2026-11-16/notice.md"
+  },
+  "overview": {
+    "file": "2026-11-16/overview.md"
+  },
+  "papers": [],
+  "brief": [
+    {
+      "title": "要不要出手",
+      "line": "无。最小版不成卡，也没有要改训练配方的事。"
+    },
+    {
+      "title": "一句主线",
+      "line": "周五 13 Nov 列表（union=772，含并进的周四窗口）没有新的生成器 RL 配方过线。[Verifier Choice](https://arxiv.org/abs/2611.15433) 表明 T2I 结构计数分数是生成器×裁判×协议的性质，固定图像只换裁判就会改排序（进 D2，拟了解即可）。旁证：[Over-Realization](https://arxiv.org/abs/2611.16630)、补筛的 [PhyRubric](https://arxiv.org/abs/2611.13576)。"
+    },
+    {
+      "title": "扫了多少 / 进精读",
+      "line": "list union=772（new=593 / cross=399，age=0；API 周五窗 378 + 周四窗 355 均在列表内）。triage 108 → 过值得看线 0；D2=Verifier Choice；成卡 0。周三补筛 568 → triage 45，无额外 D2。"
+    },
+    {
+      "title": "没过线",
+      "line": "没有 on-policy / 奖励优化新配方过线。PhysLoop 是物理筛选/修复不是明确 RL；dLLM 重掩码不新开；纯 LLM 的 GRPO/漂移不进。"
+    },
+    {
+      "title": "观察 / 没覆盖",
+      "line": "观察 Verifier Choice、Chekhov's Gun、PhyRubric、PhysLoop。未覆盖：X、GitHub、共引、正式 G11、周一 mailing。11-12/11-13 延误原因见更新说明。"
+    }
+  ]
+}
