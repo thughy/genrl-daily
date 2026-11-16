@@ -1,1 +1,11 @@
-这期吃的是周五 13 Nov 列表（union=772，含被推迟并进来的周四窗口），不是新的生成器 RL 配方。最值得往下读的是评测诊断：[Verifier Choice](https://arxiv.org/abs/2611.15433) 把 T2I 结构计数分数写成「生成器 × 裁判 × 协议」的性质，固定图像只换裁判，分差会缩小、排序还会反转（进 D2，拟了解即可）。同类观察：[Chekhov's Gun / Over-Realization](https://arxiv.org/abs/2611.16630)（目标被提示提到却不该出现，CLIP 等偏好指标反而奖励这种误生成）、补筛的 [PhyRubric](https://arxiv.org/abs/2611.13576)（T2V 物理常识不再打一个笼统分，而按原则拆量表）。[PhysLoop](https://arxiv.org/abs/2611.16748) 用 LLM 的物理知识做视频筛选/修复和自训练数据，还不是明确的奖励优化，先观察。少步侧 [eDMD](https://arxiv.org/abs/2611.17194)、[Condition Shifting](https://arxiv.org/abs/2611.14033)、[TaoMate-R1 / Self Gradient Forcing](https://arxiv.org/abs/2611.14307) 转少步同事。世界模型（WorldDraft、BirdDreams 等）转文献追踪。本版不成卡。
+## 结论：先验评估链，不换训练配方
+**Verifier Choice值得看**：总分只偏人评−2.85pp的裁判，仍能把生成器人差25.44pp压成.44pp。关键不是“裁判有偏”这句旧话，而是固定图像、固定人标的生成器条件偏差能大到掩盖方法差距；同构第三生成器与renderer对照使它成为直接诊断证据。
+
+| 研究对象 | 更新哪个对象 | reward/参照来源 | 本轮结论 |
+|---|---|---|---|
+| Verifier Choice | 不更新生成器；干预测量协议 | 人工valid/count标签 | worth，固定suite诊断成立 |
+| Chekhov’s Gun | 不更新；同prompt配对审计 | 既有alignment/preference指标与标签 | D1→后续D2，未终判 |
+| PhyRubric | rubric与judge；事件/物理分开 | 共享rubric人标 | D1→后续D2，未终判 |
+| PhysLoop | 模拟约束生成/修复工作流 | 物理验证+工作流反馈 | D1保留，不是已证递归训练闭环 |
+
+诊断不强塞五格梯度更新；缺训练多样性不是排除它的理由。反过来，固定suite反转也不等于所有视频RL结果被推翻。

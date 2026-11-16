@@ -1,36 +1,121 @@
 {
   "date": "2026-11-16",
-  "version": "v0.1-minimal",
+  "version": "v1.0-deep",
   "fyi_open": true,
-  "headline": "要不要出手：无。周五列表里没有新的生成器 RL 配方过线；先看评测诊断——T2I 计数分数会随裁判和协议一起变。",
-  "revision_note": "最小版。11-12/11-13 两期延误：周四窗口已并进本批周五列表；周三 mailing 已补筛、无额外 D2。周一 mailing 尚未公告，约 09:00 后补。D2 Verifier Choice 精读后补完整版。周五周报稍后补发。",
+  "headline": "不换训练配方；Verifier Choice值得看：总体校准好，仍能抹平生成器差距。",
+  "revision_note": "D2卡1篇；逐图数据复算与G7完成。104条缺摘要已补并重筛；W46回顾补交。Chekhov/PhyRubric升级后续D2未终判，召回仍有来源缺口。",
   "notice": {
     "file": "2026-11-16/notice.md"
   },
   "overview": {
     "file": "2026-11-16/overview.md"
   },
-  "papers": [],
+  "papers": [
+    {
+      "id": "verifier-choice",
+      "rating": "worth",
+      "originality": "finding",
+      "credibility": "solid",
+      "directions": [
+        "reward-model"
+      ],
+      "title": "Verifier Choice is a Benchmark Design Variable: Auditing Structural Counting Evaluation in Text-to-Image Models",
+      "rating_reason": "值得看（新发现×站得住，限固定计数套件）：同图、同人标干预裁判协议，发现总体近似校准仍可几乎抹去25pp生成器差距，并用同构三生成器复核反转；不是新训练配方，不升必读。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "PDF正文与附录D2；Fig.1单例目视；下载公开45,600行逐图输出，自写聚合复算20配置关键分差。未跑作者脚本、未重跑模型推理。"
+      },
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.15433",
+        "code": "https://github.com/AzusaCat1111/verifier-choice-audit",
+        "other": [
+          {
+            "label": "原始审计数据",
+            "url": "https://huggingface.co/datasets/neurips2026-ed443/audit-release"
+          }
+        ]
+      },
+      "published": "arXiv:2611.15433v1，2026-11-11",
+      "tldr": "固定生成图像后，一个总分只偏人评−2.85pp的裁判，仍把两模型的人评差距25.44pp压成0.44pp；总分校准好，不等于模型比较可信。",
+      "delta": "相对Gecko的协议敏感性与IsoVRBench的属性失察，新增生成器条件偏差的配对量化、同构排名反转和输入渲染混杂对照。",
+      "lineage": {
+        "rows": [
+          {
+            "work": "Gecko（2404.16820）",
+            "link": "https://arxiv.org/abs/2404.16820",
+            "how": "比较prompt覆盖、人工模板、自动指标与人类相关性。",
+            "change": "固定图像与人标，将裁判/协议作为实验变量；直接核生成器差分偏差D，而不只看相关性。"
+          },
+          {
+            "work": "IsoVRBench（2610.17234）",
+            "link": "https://arxiv.org/abs/2610.17234",
+            "how": "受控视频属性干预；已有偏好榜单不预测帧序感知，且生成器身份可构成捷径。",
+            "change": "不改内容属性而改测量管线；发现同一个生成器上看似准确也不能保证两生成器差分准确。"
+          },
+          {
+            "work": "PhyMetric（2610.19823）",
+            "link": "https://arxiv.org/abs/2610.19823",
+            "how": "场景QA/先验对照；标签准确率与人类相关性可脱钩。",
+            "change": "进一步拆成总体偏差、逐图κ、生成器差分D及拒绝/数值覆盖，定位总体抵消结构。"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "“换裁判会变分”已知；20种配置全部压缩、25.44→0.44pp，以及在严格同构配置下四协议均反转约5pp人评优势的量级/结构，不能由先验直接推出。"
+        },
+        "equivalent_form": "测量而非策略梯度：S(G,P,V,π,σ)=E[σ(p,x,Vπ(x,p))]；D=(A₁−A₂)−(H₁−H₂)=b₁−b₂。总体偏差小不能约束D。",
+        "baseline": "本线的对手是人类逐图标签与固定图像协议对照；不把训练方法的等GPU预算、训练seed和多样性清单机械套在测量论文上。"
+      },
+      "insight": "**本质判断（影子）**：本质·存疑。固定suite上的新发现站得住；但“此前无人指出”的T3与音视频RL迁移尚未建立。Codex影子判“本质”，我方不照抄其迁移量级外推。\n\n总分校准、逐图判对、保住生成器差分是三件事。一个裁判可以在模型A上准确，却把对手B的无效图误放行，从而错排A和B。",
+      "method": "七类计数目标，三种prompt模板；先冻结57个结构cell，再对每生成器每cell取前20个独立seed-indexed样本，主矩阵2,280图。固定图像和人标，比较5个开源MLLM×4协议（zero/few-shot × count/reject-count），共45,600判断；count-only与reject-count不见目标数，TIFA-like问句见目标数，不能混同估计对象。\n\n**直接对照**：同Qwen4B、同SGLang/BF16、同原始输入的三生成器敏感性；另在228固定图上冻结权重、support、文字和顺序，改变多模态renderer。",
+      "evidence": "| 核查 | 原文证据 | 如何解释 |\n|---|---|---|\n| 总体近似校准仍抹平差分 | Gemma4 few-shot reject/count：A−H=−2.85pp、κ=.277；Qwen−FLUX人差25.44pp→自动.44pp（Tab.7/16） | 小pooled误差不保证逐图或比较准确 |\n| 不只是弱裁判 | κ最高的Qwen27B FV=.764，自动差16.32pp、D=−9.12pp；20配置D为−7.54至−25.00pp，固定cell 95%CI全排除0（Tab.16） | 高agreement也不等于差分无偏 |\n| 同构三生成器反转 | 人评Z−F=+4.74pp；四协议自动−3.07至−6.40pp；同Qwen4B/SGLang/BF16（Tab.18/19） | 排除了主矩阵跨模型后端差异这个替代解释；仅限固定suite |\n| 反转的边界 | 人差层次CI[−4.39,14.12]pp；去交通灯后人/自动点排序均为Qwen>FLUX>Z-Image，不再有该对反转（§5.3/K4） | 不可推广为任意任务总体的真排名反转 |\n| renderer替代解释 | 228图：support图与标签错位时Δκ=−.357，CI[−.513,−.203]；相邻3种renderer仅+.039至+.065，CI含0（Tab.14） | 部分few-shot负效应来自输入排列，而非模型不会用示例 |\n| 平均误差抵消 | support-trained object detector有效图count87.18%，κ却.016；交通灯高估抵消另两类低估（Tab.4/11） | 只验有效图计数不能验全部判分 |\n\n**独立复算**（本次自写聚合，非模型推理复现）：公开逐图CSV共45,600行/20配置；复得人差25.438596pp、Gemma4 FV自动差.438596pp、κ=.276692，所有配置D范围[−25.000000,−7.543860]pp，与Tab.7/16四舍五入一致。",
+      "solidity": "全套6,240图主要由H1标注；H1/H2/H3均论文作者。H2/H3覆盖600张去重图，不是全量三人标。H3对旧标签/生成器身份盲，但看得到目标数。数值计数在共同valid上高度一致，主要不确定性在拒绝边界（Tab.2/13）。主矩阵MLLM support在前20测试位之外；detector的57条support/test交叉单独排除后κ=.862（Tab.22），不能把前者说成泄漏。\n\n同一缓存图上的协议干预足够支撑测量诊断；20生成样本/格不是20训练seed，bootstrap也不是重跑。",
+      "reward_check": {
+        "train_reward": "不适用：未训练/更新生成器。检测器support训练另计。",
+        "eval_reward": "人工valid且count=target的pass标签，对比自动pass、κ、D、count fidelity、reject P/R。",
+        "overlap": {
+          "value": "no",
+          "note": "核心诊断无生成器训练reward自评问题；不等于人标或协议无偏。"
+        },
+        "heldout": "MLLM support/test分离；人工复核部分覆盖；第三生成器Z-Image仅H1标签。",
+        "hacking_signs": "无RL优化实验，不能说观察到了训练reward hacking；仅证明比较/选模型时可能误判。"
+      },
+      "samples": "目视Fig.1一张六抽屉柜：同图在不同裁判/协议下被判6、5或reject。它能解释协议差异，不是随机全样本质量审计；结论依赖逐图统计而不是单例。",
+      "media": [
+        {
+          "src": "assets/2026-11-16/verifier-choice-fig1.webp",
+          "caption": "原文Fig.1（说明性单例）：图像相同，判分随裁判/协议变化；主数值证据看Tab.7/16/19。"
+        }
+      ],
+      "code_analysis": "未读/未运行作者仓库脚本，不写实现已复现。核了公开数据逐图字段并独立聚合关键数字；原始CSV与计算记录在本地deep/data及independent_recompute.json。",
+      "concerns": "1. 目标是结构计数，不是一般美学或视频质量；三prompt/对象是有意设计的有限套件。\n2. Z-Image仅H1，跨cell推广的人类排序本身不确定；去交通灯使排序改变是重要负面结果。\n3. 模型大小与runtime混杂；原始输入vs历史resize也混杂runtime，不能归因为分辨率单因素。\n4. renderer消融排除部分few-shot误解，不证明任何few-shot算法普遍有害；大shot有上下文溢出，未执行不是得0分。\n5. 无生成器训练实验：不能直接声称某RL配方收益已被推翻，也不能把图像量级搬成视频/AV常数。",
+      "principle": "平均校准不约束成对差分；比较两种策略时，应在同一缓存样本与独立人工参照上检验条件偏差及差分误差，而不是只校准总分。",
+      "takeaway": "**现在改评估习惯，不改训练配方。** 对已有base/RL缓存图，冻结prompt、样本、裁判版本、renderer、输出parser与分母，人工分开标数量/有效性，报告pooled偏差、逐图一致性和checkpoint差分D。若D的不确定区间超出想辨别的收益，写“比较未决”，不要以榜单差宣告能力提升。视频/AV上这是待验证迁移建议，不是已证结论。",
+      "details": "### T0–T3与程序账\nT0=partly；T1=总体近校准仍有生成器条件偏差，量级足以抹平/反转固定suite排序，已直接测量。T2：待证预测是无效图率更高的checkpoint在count-only下获更大正偏差；不预设8–11pp迁移量级，冻结缓存样本即可检验。T3：可重读detector-count与VLM校准，但“此前无人说过”未排除，影子保守为本质·存疑；不因此把两轴价值降成fyi。\n\n预测登记早于Codex抽取，但已暴露于最小版/引言结果，属于部分结果知情预测，不纳入严格盲预测命中率。此前最近原文重读：IsoVRBench §3–4.1、PhyMetric组件消融、Gecko评测/人标结果。"
+    }
+  ],
   "brief": [
     {
-      "title": "要不要出手",
-      "line": "无。最小版不成卡，也没有要改训练配方的事。"
+      "title": "扫了多少 / 成卡",
+      "line": "Fri13列表772（含Thu窗口）+Wed11补查568，列表ID去重1,340；本轮含HF/历史补充triage共255 unique：95 Fri、151 Wed、9其他。主批108+旧Wed补充45+缺摘要104复审（其中2重复）。D2卡1；后续D2队列2，不造必读配额。"
     },
     {
-      "title": "一句主线",
-      "line": "周五 13 Nov 列表（union=772，含并进的周四窗口）没有新的生成器 RL 配方过线。[Verifier Choice](https://arxiv.org/abs/2611.15433) 表明 T2I 结构计数分数是生成器×裁判×协议的性质，固定图像只换裁判就会改排序（进 D2，拟了解即可）。旁证：[Over-Realization](https://arxiv.org/abs/2611.16630)、补筛的 [PhyRubric](https://arxiv.org/abs/2611.13576)。"
+      "title": "为什么升值得看",
+      "line": "同图同人标的20配置差分偏差均负；同构第三生成器仍反转固定suite人类顺序；renderer干预排除了部分few-shot替代解释。缺训练seed/多样性不适用作诊断自动淘汰。"
     },
     {
-      "title": "扫了多少 / 进精读",
-      "line": "list union=772（new=593 / cross=399，age=0；API 周五窗 378 + 周四窗 355 均在列表内）。triage 108 → 过值得看线 0；D2=Verifier Choice；成卡 0。周三补筛 568 → triage 45，无额外 D2。"
+      "title": "待D2而非静默观察",
+      "line": "[Chekhov’s Gun](https://arxiv.org/abs/2611.16630)：同prompt同generator配对指标奖励over-realization；[PhyRubric](https://arxiv.org/abs/2611.13576)：没呈现事件不能当物理做对。D1证据足以升级队列，未终判。"
     },
     {
-      "title": "没过线",
-      "line": "没有 on-policy / 奖励优化新配方过线。PhysLoop 是物理筛选/修复不是明确 RL；dLLM 重掩码不新开；纯 LLM 的 GRPO/漂移不进。"
+      "title": "其他与没覆盖",
+      "line": "PhysLoop仍D1：作者未盲评、外部test feedback与长期递归自改进尚未闭合。X、GitHub、共引、正式G11、Mon16 mailing待补。少步/世界模型仅本地备稿，未发送。"
     },
     {
-      "title": "观察 / 没覆盖",
-      "line": "观察 Verifier Choice、Chekhov's Gun、PhyRubric、PhysLoop。未覆盖：X、GitHub、共引、正式 G11、周一 mailing。11-12/11-13 延误原因见更新说明。"
+      "title": "补交W46回顾",
+      "line": "原三次run：2,142列表条目/2,141 unique、309次triage/308 unique、5卡；11-12/13断更。OUT抽检40/179，hard0/soft2，不能推全量零漏检。[本周回顾](../../weekly/2026-W46/)"
     }
   ]
 }
