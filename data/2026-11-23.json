@@ -1,9 +1,9 @@
 {
   "date": "2026-11-23",
-  "version": "v0.1-minimal",
-  "fyi_open": false,
-  "headline": "不立刻改训练配方。积压补扫有两篇值得看：SibPO 说明「只奖励唯一记录的未来」会学错结果频率；BlockAlign 说明少步模型监督错接口，偏好训练可能比不训更差。",
-  "revision_note": "本页是 11-16 午后至 11-20 的积压补发（11-17 至 11-20 例行失败，原因为账号当时没有可用的 Grok Bot 额度），不是周一 23 日新批次。周一列表仍写 Friday 20 November，API 窗口计数为 0，北京时间约 09:00 才会翻页。今早已把两篇补读结论发给 Henry（t88s434），本日正式上站。EmoReward v2 维持了解即可，Dance 分支 VideoAlign Overall 现为 −1.3930，已低于 Dance 基线 −1.2812；11-06 卡未写入旧 Overall 数字，此处补记，旧卡本日暂不改评级。强诊断候选 2611.26627（扩散 Transformer 的 RL 增益大部分可被常数激活平移恢复）进 D2，尚未定级。",
+  "version": "v1.0-deep",
+  "fyi_open": true,
+  "headline": "不立刻改训练配方。积压精读新增Activation Steering值得看：一组逐块偏置可恢复六图像教师指定reward增益的90.0–96.3%，不是通用质量恢复，且复制多样性损失；Shadow Posterior Matching了解即可。SibPO、BlockAlign维持值得看。",
+  "revision_note": "本版补齐2611.26627与2611.25998两篇D2，父级终判分别为值得看（新发现×站得住，限reward恢复充分性诊断）、了解即可（新机制×存疑）。原SibPO/BlockAlign及EmoReward v2勘误保留。这是11-16午后至11-20积压批次的精读增补，不代表周一23日mailing已覆盖，更不代表剩余六篇队列或11-20周报已完成。08:41（Asia/Shanghai）CV/LG列表仍Friday20、age0；本轮fresh API429，08:28 API0仅为旧记录。未到约09:00公告时间，不把旧批次写成周一新批次。",
   "notice": {
     "file": "2026-11-23/notice.md"
   },
@@ -146,32 +146,172 @@
       "concerns": "自动分很小；配方不统一；H3 裁判部分重叠；无代码无 seed；域窄。若更看重自动增量与可复现性，可降了解即可。不把 MiniMax-H3 写成 Loopit H3。",
       "principle": "偏好或 RL 更新必须打在部署真正使用的输出上。监督一个推理时会被融合掉的内部头，不但浪费，还可能把模型推到比不训练更差的点。",
       "takeaway": "不要立刻改配方，也不要开训练票。若正在对 PDD/PTD 这类块蒸馏少步模型做偏好对齐，先核对监督接口是不是部署用的融合块速度；不要在子头上直接套 DPO。底物蒸法归少步同事。"
+    },
+    {
+      "id": "activation-steering",
+      "rating": "worth",
+      "originality": "finding",
+      "credibility": "solid",
+      "directions": [
+        "online-rl",
+        "reward-model",
+        "video-rl"
+      ],
+      "title": "RL Post-Training in Diffusion Transformers Is Activation Steering",
+      "published": "arXiv 2026-11-19 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.26627",
+        "project": "https://rl-is-steering.github.io"
+      },
+      "rating_reason": "新发现 × 站得住，严格限已测reward增益的充分性诊断：均值/范数、匹配参数LoRA及注意力路径救回对照支持近完整恢复。不是通用质量结论，不立刻换配方；多样性副作用也被复制。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "27页PDF与HTML、主表/附录已源核；目视Fig5/FigS4。先写预测再跑有效Codex；摘要数字已知，且closest-prior方法HTML切片混入浮动Table1，因此不算盲预测、不计命中。另有独立全文essence review、20项claim check及人工源核；未运行论文代码。"
+      },
+      "tldr": "对六个图像RL教师，冻结基座加一组输入无关的逐块偏置，能恢复指定reward增益的90.0–96.3%；这说明这些收益未必需要新的输入相关计算，不代表通用质量恢复，也不意味着应立即换配方。",
+      "delta": "相对SHIFT的概念方向和First-Order Steering的平均Jacobian转换：端到端拟合RL教师velocity，检验常量干预能解释多少收益；再用等参数LoRA、等范数均值/随机方向和正确任务K/V救回约束解释。",
+      "lineage": {
+        "equivalent_form": "⑥诊断：s*=argmin E||v_base+s(x_t,t,y)−v_RL(x_t,t,y)||²，冻结两模型权重；额外从零训练向量的Flow-GRPO才归②黑盒策略梯度，不与teacher-fit混淆。",
+        "baseline": "容量诊断对照是同参数、同teacher缓存、同velocity目标、同update的LoRA；没有与原教师RL训练配平总算力。三篇前作的方法已实读，但本文没有对它们做八模型同协议head-to-head，不能称新steering算法全面胜出。",
+        "rows": [
+          {
+            "work": "SHIFT (2604.09213 §4)",
+            "link": "https://arxiv.org/abs/2604.09213",
+            "how": "概念对比均值/SVM方向加到DiT文字激活与pooled embedding，强度可动态门控。",
+            "change": "跨prompt/token/seed固定整组block-output向量，拟合既有RL教师，诊断reward恢复量级；不是首次DiT steering。"
+          },
+          {
+            "work": "First-Order Steering (2610.04283 §3)",
+            "link": "https://arxiv.org/abs/2610.04283",
+            "how": "对weight adaptation强度求Jacobian，再按样本平均，给出一阶误差关系。",
+            "change": "不止平均一阶激活变化，而是优化最终velocity匹配；OCR中平均方向漏掉大部分有效共享方向。"
+          },
+          {
+            "work": "Weight Updates as Activation Shifts (2603.00425 §3)",
+            "link": "https://arxiv.org/abs/2603.00425",
+            "how": "解释post-block位置的表达力，允许输入相关linear adapter及oracle分析。",
+            "change": "刻意限制成常量向量，研究RL收益的充分性及text→image传递通路；post-block本身不是新发明。"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "已有steering/参数高效适配能预测方向，却不能直接推出跨六图像教师90.0–96.3%的reward增益恢复量级，以及正确任务K/V能救回大部分OCR收益。只证充分性，不证原RL实际更新等于常量、必要性或低秩。"
+        }
+      },
+      "insight": "**本质判断（影子）：发现的价值在“受限干预已足够”，不是又一个加向量技巧。** 同一偏置经冻结attention、normalization、MLP仍会产生prompt相关效应；不必由新权重变换亲自提供这部分输入相关计算。路径干预及正确/错误任务救回支持诊断。跨音视频的路径保留≤30%只是阅读后提出的待测预测，不是本文结果。",
+      "method": "**不是全网一个向量，不是无训练，也不是免教师训练。** 在每个block输出向每个token广播偏置，按stream、CFG pass和早晚两step bins区分（SD3.5-M τ=.75）；共188个向量、288,768参数，对比rank32教师LoRA18.8M（参数约少65倍，非算力少65倍）。先量mean差作初始化，再反传拟合教师velocity；训练需要已RL教师、教师生成缓存及预测，推理才只用base+已保存向量。Eq2不含reward，但训练长度按验证reward选；全过程不能笼统叫reward-free。§3.2–3.3 Eq1–2 p3–4，AppA/TableS1–3 p13–14。",
+      "evidence": "**Table1，PDF p5：恢复的是 (R(base+s)−R(base))/(R(RL teacher)−R(base))，不是绝对质量百分比。**\n\n| 教师 / 训练reward | fit增益 / 教师增益 | 恢复比例 [95%CI] |\n|---|---:|---:|\n| SD3.5-M PickScore | 1.416 / 1.560 | 90.8 [89.8,91.7]% |\n| SD3.5-M PickScore no-KL | 1.612 / 1.693 | 95.2 [94.4,96.1]% |\n| SD3.5-M OCR | .325 / .344 | 94.4 [90.8,97.9]% |\n| SD3.5-M GenEval | .260 / .271 | 95.9 [92.0,99.7]% |\n| FLUX Flow-GRPO PickScore | 1.370 / 1.522 | 90.0 [88.9,91.1]% |\n| FLUX DanceGRPO HPSv2.1 | .052 / .054 | 96.3 [95.5,97.2]% |\n| Wan2.1 GenRL HPSv3 | 1.465 / 1.309 | 111.9 [106.5,118.0]% |\n| Wan2.2 VBVR-Pro rule | .072 / .080 | 89.8 [76.2,105.6]% |\n\n表内reward值为舍入显示，比例按作者原始值报告，不用舍入值重新推导。六图像行范围90.0–96.3%不是均值或CI。\n\n- **不只是均值/幅度**：OCR均值差仅恢复21.5%，fit94.4%；fit正交于mean的部分仍保留96%的fit收益（+.312/+.325，§4.3 p5）。PickScore均值匹配fit范数得+1.231，fit+1.416；逐向量同范数随机方向使base PickScore−4.704（AppD p17）。\n- **同参数对照**：相同缓存和updates的LoRA在大多数已测设置未检出优势；Wan2.1为LoRA69.7% vs偏置111.9%（TableS5 p17）。注入位置并非完全相同，不把它单独解释成纯输入依赖性的因果隔离，也不是等算力原始RL对照。\n- **路径破坏与救回**：把image queries读的text K/V换回base，fit只留OCR20.5%/PickScore10.5%，teacher26.4%/24.5%（Fig9 p8）。给OCR teacher换入OCR-steered base的text K/V，恢复95.2% [91.9,98.6]；错用PickScore向量仅44.0% [38.2,49.5]（AppI p24，1,018 prompts、一个sampling seed）。\n- **能力边界**：新虚拟身份SFT偏置只恢复68–83%，匹配参数LoRA81–91%（TableS7 p18）。不能推成“RL永远不学新能力”或“任意微调都能压成偏置”。",
+      "solidity": "**副作用显眼列出：带KL PickScore教师 / fit的within-prompt DINOv3多样性分别只有base的0.517 / 0.522**；空prompt .850/.847，颜色能量.550/.542（Table2 p6、AppC p16）。所以“接近teacher多样性”不是“保留base多样性”。主fit每setting一个training seed；仅SD3.5 PickScore/OCR子集做3个fit training seeds检查。Table1六个图像行五行为每prompt一个sampling seed、GenEval4；Wan2.1为2、Wan2.2为4。paired bootstrap不是跨training-run方差。缓存+校准+fit图像5.6–16.8 H100 GPU-h、视频69.7/22.4，不含获得RL教师的训练（TableS1）。",
+      "reward_check": {
+        "train_reward": "主fit目标是教师velocity MSE；教师RL用PickScore/OCR/GenEval/HPS及视频HPSv3、VideoAlign MQ/TA、rule。另有从零online向量RL。",
+        "eval_reward": "主表主要同训练reward换test prompts；另HPSv2.1、ImageReward、小人评和VideoAlign VQ。",
+        "overlap": {
+          "value": "partial",
+          "note": "held-out prompt≠独立reward；视频MQ/TA仍是训练维度，VQ才未用于该教师训练。"
+        },
+        "heldout": "PickScore目标外HPSv2.1增益teacher/fit .0407/.0393，ImageReward .388/.400（Table2）。50 prompts/25 raters：fit对base胜率64%(PickScore)/60%(OCR)，对teacher51%/50%未显著；小人评未检出差异不等于统计等价（Table3/S8）。",
+        "hacking_signs": "reward收益与多样性/颜色损失一并复制；fit within-prompt diversity仅base .522，no-KL约.457。"
+      },
+      "samples": "已目视作者Fig5与FigS4：同noise下fit与teacher几组图像/空prompt相近。仅作者选例，不当独立盲评或全量质量验收。",
+      "code_analysis": "未运行论文代码或复现权重；project page可见于论文，不将其当实现已核验。",
+      "concerns": "视频主表只覆盖6个被检查候选中2个在所评reward上显著正增益的教师（TableS13 p23），不是视频普遍结论；未报告充分独立Dynamic Degree/视频多样性。只测policy-gradient RL，不能直接推DPO或reward-backprop。完整training-run方差、同输出扰动强度对照与等总预算online向量vs权重训练仍缺。正文RaTE[9]与书目MapReduce LoRA对应存在歧义，未把它充当独立核过的前作。",
+      "principle": "参数更新多、结果依赖prompt，不证明收益必需新的输入相关计算；先用更受限的输入无关干预测充分性，并把收益与副作用一起验收。",
+      "takeaway": "把teacher-fit偏置当诊断探针，而非立即替换训练配方。固定teacher/prompt/noise，联看训练reward、独立裁判及多样性整条曲线；不以恢复指定reward增益90.0–96.3%替代通用质量验收。"
+    },
+    {
+      "id": "shadow-posterior-matching",
+      "rating": "fyi",
+      "originality": "mechanism",
+      "credibility": "doubtful",
+      "directions": [
+        "distill-rl",
+        "online-rl"
+      ],
+      "title": "Reinforcing Few-Step Diffusion Models via Shadow Posterior Matching",
+      "published": "arXiv 2026-11-19 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.25998"
+      },
+      "rating_reason": "新机制 × 存疑：shadow posterior给确定性末call构造黑盒reward方向值得了解，但实际是带近似的surrogate，未实测shadow/deploy中介，也缺同KL/同更新强度对照。归本追踪RL主评，不移交纯蒸馏。",
+      "coverage": {
+        "paper": "full",
+        "samples": "partial",
+        "code": "none",
+        "note": "10页PDF/HTML、Eq6/8/10–12、Table2与Fig4已源核；目视Fig3。先写摘要条件预测再做Codex closest-prior，另有全文提取/essence/13项claim check。训练seed数量未报告，不能擅写单seed；未运行代码。"
+      },
+      "tldr": "少步采样器输出sharp sample的速度，不等于描述其样本分布的forward velocity；用最终样本重加噪后的posterior residual，可为每次调用构造黑盒奖励方向，但当前只有surrogate与有限消融，尚不足换配方。",
+      "delta": "相对RTDMD的随机transition PG与末call可微回传、TDM-R1的在线reward proxy：用分布fake score中心化实测reward residual，增加每call输出的teacher anchor和endpoint matching；不是首次DMD anchor。",
+      "lineage": {
+        "equivalent_form": "③黑盒signed residual regression：G=A/Q·(u−F)+s/Z·[α(vT−Fhat_s)+γ_s(F−Fhat_s)]；target=stopgrad[vθ+G]，用½||vθ−target||²更新。末call的γ_s=0。不是原始目标通用无偏PG。",
+        "baseline": "同DMD2四步初始generator/fake，统一实现RTDMD、TDM-R1并固定rollout样本数/iterations；未报告等FLOPs/墙钟或完整调参预算，也未按新近FewStepRL统一协议对照，不称超越所有少步RL。",
+        "rows": [
+          {
+            "work": "RTDMD (2605.26108 §3)",
+            "link": "https://arxiv.org/abs/2605.26108",
+            "how": "KL到reward-tilted teacher；中间随机重加噪transition做PG，末call需可微reward梯度。",
+            "change": "黑盒reward时用shadow posterior residual给末call也提供credit，而不依赖reward梯度。"
+          },
+          {
+            "work": "TDM-R1 (2603.07700 §3)",
+            "link": "https://arxiv.org/abs/2603.07700",
+            "how": "在线拟合per-step differentiable reward surrogate，再以其梯度优化，配marginal KL。",
+            "change": "不拟合reward proxy，改用实测reward的signed residual；仍学fake score，因此并非没有可利用的拟合误差。"
+          },
+          {
+            "work": "DMD / DMD2",
+            "how": "teacher与生成分布fake score之差推动distribution matching。",
+            "change": "fake增加call condition，区分最终分布F与call输出分布Fhat_s，再用endpoint matching约束shadow/deploy错配。"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "分布速度错配和teacher anchor方向可预测；逐call shadow posterior构造有增量。但Lemma条件和组件消融尚不足证明实际输入gap已被修复或新机制独立于更强正则。"
+        }
+      },
+      "insight": "**本质判断（影子）：机制待证。** E[w(u−vref)|y]=Cov(w,u|y)+E[w|y](vq−vref)：只有前项携带reward方向。用采样器vθ代替分布速度vq会添朝posterior mean的reward-free偏移。Lemma1给出理想输入law匹配的iff条件，实验没有直接量出该gap或末call方向中介（p4）。",
+      "method": "从真实四步rollout最终sample x重加噪出shadow input ys，x是该输入的非退化posterior样本。F估最终分布forward velocity，conditioned Fhat_s估call输出分布；三项依次是reward residual、teacher anchor与endpoint match。**实际仅为surrogate**：用posterior平均reward gradient替代输出处gradient，Lemma2需affine reward或Gaussian posterior+smooth reward等条件/可逆协方差；再用scalar 1/Q替代precision、1/Z替代KL时间权重、clip group advantage到[−5,5]。不保证原E[R]−αKL梯度无偏（Eq8–12 p4–6）。",
+      "evidence": "**Table2，PDF p7**：最强已列4-NFE baseline→SPM为GenEval .86→.94、OCR .95→.96、PickScore23.36→23.84，分别对应TDM-R1、TDM-R1、RTDMD；均是训练reward在test prompts上的分数。\n\n- §4.1 p6：同DMD2 generator/fake起点、1,000 iterations、48 prompts×24 samples，8 H100、rank32 LoRA；按设置推算每task单次训练1,152,000评分样本，不含评测，不是作者报告的总reward调用数。部署4 NFE不含训练teacher/fake开销。\n- 去EM：OCR .95、ImageReward1.06；full .96/1.14。AW换标准Gaussian per-stop precision：.91/1.13（Fig4、§4.3 p7–8）。有组件作用证据，但无同有效步长/同KL普通teacher anchor对照、无输入gap实测。\n- α=.01：OCR .98但ImageReward **−1.50**；α=1：OCR .87/IR1.16（p8）。不是根治reward hacking。\n- OCR组DrawBench五项SPM 5.59/4.21/1.14/22.63/.31均高于DMD2 5.50/4.16/1.09/22.48/.30；但GenEval组若干指标低于DMD2，PickScore组DeQA4.21低于RTDMD4.27、HPS .31低于.32。不能说全任务质量无代价。\n- 作者10/15项最佳仅限三种四步RL方法；若含DMD2四步baseline则8/15（Table2逐项复算）。",
+      "solidity": "有DrawBench异源自动打分；没有本研究新人评、多样性/coverage、训练seed数、跨run方差或CI报告。24 samples是组内rollout数，不是24 seeds；未报告不等于单seed。只有SD3.5-M图像四步，视频/音频与其他少步架构尚未验证。统一采样预算不等于同总算力。",
+      "reward_check": {
+        "train_reward": "分别GenEval、OCR、PickScore黑盒reward；目标用group-relative advantage。",
+        "eval_reward": "test prompts上的同reward；DrawBench Aesthetic、DeQA、ImageReward、PickScore、HPSv2.1。",
+        "overlap": {
+          "value": "partial",
+          "note": "PickScore训练时DrawBench PickScore仍同reward，不是独立裁判。"
+        },
+        "heldout": "有异源自动quality/preference scores，没有本研究新人评；未报告独立多样性。",
+        "hacking_signs": "α=.01时OCR .98而ImageReward−1.50；默认配置部分指标较好不等于不可hack。"
+      },
+      "samples": "已目视Fig3作者选例，几组文字/计数较清楚；无盲评，不替代seed/多样性验收。",
+      "code_analysis": "本文未给SPM项目/训练代码链接；本轮未运行实现。不能由“按baseline官方仓库实现”推出SPM代码已开源。",
+      "concerns": "需在同teacher-KL/更新RMS下比较EM与加强teacher anchor，测shadow/deploy gap中介；再单独切换fake分布速度reference↔采样器reference及AW强度。Q/Z小分母稳定细节、完整调参与训练墙钟未给；未补跨训练seed、独立多样性、人评与视频运动。",
+      "principle": "少步生成器负责输出样本的速度，不必等于其样本分布的score/forward velocity；构造加噪回归方向前，先核reference代表哪个分布。",
+      "takeaway": "归本追踪RL主评，不分流纯蒸馏。先把机制作为候选解释，补等强度正则与输入gap审计；不将条件推导和终点涨分当无偏优化或部署分布对齐已证。"
     }
   ],
   "brief": [
     {
       "title": "扫了多少 / 成卡",
-      "line": "补扫 Mon16–Fri20 五次 mailing。pastweek 去重 3,269；API 窗口 378+986+555+539+589=3,047（各窗 G9a 均过，newest 均在截止前 1h 内）。周五 /new 去重 615（new 486 / cross 283，age=0），API Fri20=589；列表多出 26 篇经逐个 published 核对全部落在窗口外（晚公告或跨列），G9b 用列表替代过期 RSS 后通过。关键词初筛 194 条（含 HF Daily 11-16..20 共 221 条榜，21/22 为空）。本页成卡 2 篇值得看；另有诊断候选进精读。周一 23 日批次未公告。"
+      "line": "积压16–20日pastweek去重3,269篇，API合计3,047；周五列表615/API589，26条窗口外延迟公告或cross-list已对账；初筛194（IN23/EDGE34/FEWSTEP61/OUT76）。本页共4篇D2卡：原2篇+本轮2篇，另保留EmoReward v2勘误。周一23日mailing未覆盖，不能把这些积压统计当本周一新批次。"
     },
     {
       "title": "为什么是值得看、不要立刻改配方",
-      "line": "[SibPO](https://arxiv.org/abs/2611.24512) 的价值在目标设计（频率校准），不是全面画质领先，无代码。[BlockAlign](https://arxiv.org/abs/2611.20351) 的价值在错误监督接口可劣于不对齐；自动分只有 +0.04–0.05，两条骨干配方不同，MiniMax-H3 不是 Loopit H3。"
-    },
-    {
-      "title": "待 D2，不是静默观察",
-      "line": "[RL Post-Training Is Activation Steering](https://arxiv.org/abs/2611.26627)：与 prompt/token/seed 无关的块输出平移（0.29M vs LoRA 18.8M）恢复六张图像 RL 模型 90.0–96.3% 的奖励增益，两条视频为 89.8% 与 111.9%。这是本批优先精读的诊断候选，本页不定级，数字待源核。同批进入精读队列的还有 CANDOR（2611.25457）、Keystone（2611.25530）、Shadow Posterior Matching（2611.25998）、RiDEx（2611.22052）、Advantage-Gated Adaptation（2611.23038）、T2I 奖励推理损伤（2611.17585）、运动感知视频编辑奖励（2611.22495）。下午先读 26627，其余留 11:15/13:13 补充。"
+      "line": "SibPO、BlockAlign维持既判；Activation Steering新增值得看，限“固定reward收益可由输入无关偏置充分重现”的诊断。**90.0–96.3%不是通用质量；teacher/fit多样性仅base .517/.522。** SPM仅了解即可，实际是黑盒signed residual regression surrogate，不称无偏保证。四篇均不要求立即改配方。"
     },
     {
       "title": "EmoReward v2 勘误（维持了解即可）",
       "line": "[EmoReward](https://arxiv.org/abs/2611.06518) 不是新发现。v2 把 Dance+EmoReward 的 VideoAlign Overall 改为 −1.3930，已低于 Dance 基线 −1.2812；旧值 −0.9594 不能再当现行结果。11-06 公开卡未写入该 Overall 旧值，但结论需按 v2 理解：Dance 分支综合分不再显示为改进。人评情感 Good 53.0%→60.0%、Bad 31.5%→15.4% 未改。未见补上 global/shuffled-memory 等强度对照，不升级。"
     },
     {
-      "title": "没过线 / 观察（先列已精读）",
-      "line": "EmoReward 见上。其余初筛 IN/EDGE 待分片回收后写完整落选原因；重做与 reward 问题两类将在完整版补全。"
+      "title": "了解即可 / 未完成队列",
+      "line": "SPM已全文成卡、归本追踪RL主评；EmoReward维持了解即可。CANDOR25457、Keystone25530、RiDEx22052、Advantage-Gated23038、T2I RM17585、Motion-Aware RM22495仅登记待精读，未定级、不伪装全部查完。"
     },
     {
       "title": "没覆盖的来源",
-      "line": "本槽未做 X 按 arXiv 号搜索、GitHub 近 30 天 fork/issue、种子共引、作者实验室全量追踪；G11 正式脚本将在完整版补跑。HF Daily 已查 16–20 日（21/22 为空，23 日接口 400，因新批次未出）。周一新 mailing 未出，约 09:00 后再接。"
+      "line": "周一23日mailing尚未计覆盖；08:41（Asia/Shanghai）CV/LG仍Friday20，fresh API429，不能写最新API0。X、GitHub、种子共引、作者实验室全量追踪仍缺，G11正式脚本未跑，不改未批准G10/G11。HF Daily16–20已查，21/22空，23接口400。11-20周报仍延误，仅有提纲，不报虚构漏检率/分歧胜率。"
     }
-  ]
+  ],
+  "trend_summary": "本轮新知识是受限干预的诊断，而非立刻采用新配方：Activation Steering显示特定reward收益未必需要新的输入相关变换，但副作用也可被同样复制。SPM进一步区分少步采样器速度与分布forward velocity；其实际surrogate及部署输入匹配机制仍待更强实证。无新增已确立的跨篇普遍原理。"
 }
