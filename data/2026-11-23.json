@@ -1,0 +1,177 @@
+{
+  "date": "2026-11-23",
+  "version": "v0.1-minimal",
+  "fyi_open": false,
+  "headline": "不立刻改训练配方。积压补扫有两篇值得看：SibPO 说明「只奖励唯一记录的未来」会学错结果频率；BlockAlign 说明少步模型监督错接口，偏好训练可能比不训更差。",
+  "revision_note": "本页是 11-16 午后至 11-20 的积压补发（11-17 至 11-20 例行失败，原因为账号当时没有可用的 Grok Bot 额度），不是周一 23 日新批次。周一列表仍写 Friday 20 November，API 窗口计数为 0，北京时间约 09:00 才会翻页。今早已把两篇补读结论发给 Henry（t88s434），本日正式上站。EmoReward v2 维持了解即可，Dance 分支 VideoAlign Overall 现为 −1.3930，已低于 Dance 基线 −1.2812；11-06 卡未写入旧 Overall 数字，此处补记，旧卡本日暂不改评级。强诊断候选 2611.26627（扩散 Transformer 的 RL 增益大部分可被常数激活平移恢复）进 D2，尚未定级。",
+  "notice": {
+    "file": "2026-11-23/notice.md"
+  },
+  "overview": {
+    "file": "2026-11-23/overview.md"
+  },
+  "papers": [
+    {
+      "id": "sibpo",
+      "rating": "worth",
+      "originality": "mechanism",
+      "credibility": "solid",
+      "directions": [
+        "video-rl",
+        "online-rl"
+      ],
+      "title": "Comparing Each Generation with Independent Siblings Gives Video World Model Post-Training a Proper Objective for Outcome Frequencies",
+      "rating_reason": "新机制+诊断 × 站得住，限于结果频率目标：等预算、三 seed，并用跨历史/共享噪声/组标准差做了可证伪干预。不宣称全面画质最优，无代码，不改现有训练配方。",
+      "coverage": {
+        "paper": "full",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "HTML/PDF 与表已源核；预测先于结果登记（摘要含数字，不计入严格盲命中率）。Codex closest-prior 已跑。无作者代码或自有权重。essence 盲审本轮未跑。"
+      },
+      "institutions": [
+        "University of Southern California",
+        "Shanghai University of Sport"
+      ],
+      "published": "arXiv 2026-11-18 (v1)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.24512"
+      },
+      "tldr": "只奖励「像唯一记录的那一个未来」，期望目标会对模型分布线性，模型就会总选最常见结果，反而把各种结果该出现的频率学错。",
+      "delta": "相对 RLVR-World / Flow-GRPO 的记录奖励，以及 DPH-RL 等多样性保持：用同历史、独立噪声的 siblings 估计逆频率，再减去「同权重 × 与 siblings 的一致」，并把基线改成留一、固定尺度，避免 GRPO 的组均值/标准差改写目标。",
+      "lineage": {
+        "equivalent_form": "在有限 sibling 组上，截断后的期望目标仍对准格子上的条件频率散度（记录结果的加权对数似然），而不是「命中那一条记录轨迹」的线性奖励。组标准差归一或跨历史配对会破坏该驻点。",
+        "rows": [
+          {
+            "work": "RLVR-World / Flow-GRPO 记录奖励",
+            "how": "用是否接近唯一记录的未来当奖励，在 PPO/GRPO 容器里更新视频世界模型。",
+            "change": "指出该奖励对模型分布线性，会把质量推到众数；改为对准条件频率。"
+          },
+          {
+            "work": "DPH-RL 等多样性保持",
+            "how": "在策略梯度里加入多样性项或约束，缓解塌缩。",
+            "change": "SibPO 的主目标是校准条件频率，不是把分布均匀拉宽；spread-matched 的 Flow-GRPO† 可把 IQR 拉到 0.95，但 KS 仍差、真实视频误差变差。"
+          },
+          {
+            "work": "PISA-ORO / EBFT 等同家族配对奖励",
+            "how": "也用 sibling 或配对构造奖励。",
+            "change": "增益大部分来自真评分项（M=0），逆频率权重再降一点；跨历史配对、共享噪声、组标准差是破坏方式对照。"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "「对单一记录打分会倒向众数」方向可预期；有限组估计器如何被组标准化/共享噪声/跨历史配对破坏，以及视频上的量级，不是事先一目了然的。摘要已含 9.1–10.2% 与 13%，预测有污染。"
+        }
+      },
+      "insight": "记录奖励的驻点不是数据的条件频率。要学对「这个历史下各种结果各出现多少」，需要对记录结果做逆频率加权，并扣掉与同组独立样本的一致性；再保持留一基线和固定尺度，别让组统计量把目标改掉。",
+      "method": "同一 Cosmos-Predict2.5-2B、同一数据与 LoRA、G=8、150 次更新、同一采样器；训练 readout 为 CoTracker3 + SAM 2。主项是 sibling 估计的逆频率加权真评分，减去组内一致性；基线为留一，尺度固定。对照包括记录奖励、多样性保持、SFT、spread-matched，以及 M=0、λ、组均值、共享噪声、跨历史配对、组标准差归一。",
+      "evidence": "源核（HTML 表与正文一致，作者自报；三 seed 与 95% 两层 bootstrap）：\n- Cosmos-2B PisaBench KS↓：Base 0.585；Flow-GRPO 0.329；DPH-RL 0.276（正文称最强已发表）；EBFT 0.268；SibPO M=0 0.256；SibPO 0.241（相对 DPH-RL −0.035，CI −0.052 至 −0.018）。IQR：记录奖励 0.55–0.70，SibPO 0.86（目标 1）。\n- Physion Brier↓：记录奖励升至 0.258–0.281（比 Base 0.255 更差）；SibPO 0.239，优于 SFT 0.250（差 −0.011，CI −0.017 至 −0.005）。\n- 摘要 9.1–10.2% 是相对 **EBFT**（Wan2.2 9.06%，Cosmos-14B 10.25%，Cosmos-2B 10.07%），不是相对 DPH-RL（2B 上约 12.7%）。CogVideoX 对 DPH-RL 的 CI 含 0，正文承认打平。\n- 机器人 13% 是成功率估计 MAE 相对 DPH-RL（11.2 vs 12.9 ×10⁻²），不是像素重建；单样本 MSE 0.520 差于 RLVR-World 已发布 0.486。\n- 跨历史配对：IQR 降到 0.41；共享噪声 IQR 0.76；组标准差归一 KS 走到 0.293–0.322，接近 Flow-GRPO。spread-matched Flow-GRPO† IQR 0.95 但 KS 仍 0.297，真实视频误差 8.9→9.9。",
+      "solidity": "等预算（21.6 GPU-h，与 SFT / Flow-GRPO 相同）、三 seed、有独立评测（Physion、Kubric、PisaBench）。单视频质量大致持平（VBench 25.4 vs Base 25.3，DynamicsBoost 27.2 更高），不能说全面质量最优。无开源代码或自有权重；格子 readout 与评测结果语义可能相近；未核训练脚本。",
+      "reward_check": {
+        "train_reward": "CoTracker3 + SAM 2 格子 readout 上的 sibling 加权频率目标",
+        "eval_reward": "PisaBench KS/IQR、Physion Brier、Kubric、Physics-IQ、VBench-I2V 等",
+        "overlap": "partial",
+        "heldout": "评测工具链与训练 readout 不同，但都围绕物理落地/轨迹；机器人为另域",
+        "hacking_signs": "未见明显过饱和证据；多样性用 IQR/分散度跟踪，记录奖励会压频率、SibPO 恢复。未目视作者样例视频。"
+      },
+      "samples": "未获取作者样例视频，未做目视 hacking 检查。",
+      "code_analysis": "未见作者代码或自有权重。Appendix E 分析的是 PISA/ORO 与 RLVR-World 已发布他人 checkpoint。",
+      "concerns": "无代码；CogVideoX 未显著优于 DPH-RL；机器人 CI 刚过零；第四个视频模型证据弱；摘要比较对象写的是 EBFT，需读正文才知道。essence 盲审未跑，影子判断不升格。",
+      "principle": "对单一记录结果打线性奖励，会把生成器推向最常见结局；要校准条件频率，需要逆频率加权，并且不能让组统计量或共享噪声改写目标。均匀拉宽多样性替代不了这件事。",
+      "takeaway": "不要立刻改现有视频 RL 配方。只有在做世界模型/物理后训练、并且真正关心「各种结果该出现多少」时才值得试：保留独立 siblings、留一+固定尺度，避开组标准差与共享初始噪声。缺代码，不开训练票，不升必读。"
+    },
+    {
+      "id": "blockalign",
+      "rating": "worth",
+      "originality": "mechanism",
+      "credibility": "solid",
+      "directions": [
+        "distill-rl",
+        "video-rl",
+        "offline-dpo"
+      ],
+      "title": "BlockAlign: Preference Optimization for Trajectory-Distilled Video Generation",
+      "rating_reason": "新机制部分 × 站得住，限于同一管线只换监督接口的对照与人评：错误接口（DirectAlign）可以明显差于不对齐的 PDD。自动分增量很小，两条骨干配方不同，无代码，不改训练配方。MiniMax-H3 不是 Loopit H3。",
+      "coverage": {
+        "paper": "full",
+        "samples": "none",
+        "code": "unavailable",
+        "note": "v2 HTML/PDF 源核；预测先于结果登记（摘要含人胜率，有污染）。Codex closest-prior 已跑。文中无 GitHub/项目页。essence 盲审本轮未跑。"
+      },
+      "institutions": [
+        "Alibaba Group"
+      ],
+      "published": "arXiv 2026-11-16 (v2, updated 2026-11-17)",
+      "links": {
+        "paper": "https://arxiv.org/abs/2611.20351"
+      },
+      "tldr": "少步块蒸馏模型如果在训练时监督了部署根本不用的内部子头，偏好优化可以比不训练更差。",
+      "delta": "相对把多步瞬时速度偏好直接套到未融合子头上的 DirectAlign：BlockAlign 只在合法块边界构造状态，监督融合块速度的跨度归一残差，再接 DPO/NFT/rollout。同一数据与块调度下，唯一差异是监督接口。",
+      "lineage": {
+        "equivalent_form": "训练查询必须等于部署时真正使用的融合块速度；对未融合子头做偏好更新，等于在一个推理不用的接口上改参数，可以把偏好打坏。",
+        "rows": [
+          {
+            "work": "PDD/PTD 轨迹蒸馏少步生成器",
+            "how": "用块平均速度把多步教师蒸馏成少步学生，部署走融合块速度。",
+            "change": "本文不改蒸法本身，只问：后训练的偏好监督该打在哪个接口上。"
+          },
+          {
+            "work": "DirectAlign（同文消融）",
+            "how": "在子步重加噪，监督未融合子头，再做 DPO/NFT。",
+            "change": "这是错误接口：人评明显差于未对齐 PDD。BlockAlign 改为块入口的融合速度。"
+          },
+          {
+            "work": "标准 DPO / NFT / 在线成对偏好",
+            "how": "在可似然的模型输出上做离线或半在线偏好优化。",
+            "change": "增量不在新的偏好损失，而在少步蒸馏器上「监督接口必须与部署一致」。"
+          }
+        ],
+        "counterfactual": {
+          "value": "partly",
+          "text": "「训练接口要和部署一致」并不意外；真正有增量的是：在少步块模型上，错误接口的人评可以明确差于不训练，而且作者用同一管线只换接口把它孤立出来。自动分只 +0.04–0.05，若只看自动表会低估这件事。"
+        }
+      },
+      "insight": "有限区间块平均速度的学生，若在子步重加噪并监督未融合子头，训练时看见的输出和上线时用的融合输出不是一回事。偏好信号会打到错误位置。",
+      "method": "两条骨干、两套配方，作者写明不是跨骨干策略对比。RefVid-V4（内部 30B）：离线对人 + 半在线纹理/构图、BlockAlign-NFT。MiniMax-H3（MiniMax/Hailuo 的 Ref2VA 33B，**不是 Loopit H3**）：在线 G=4、gemini-4-argon 分层选择、BlockAlign-DPO。§5.1：DirectAlign 与 BlockAlign 共用数据制度与块调度，只更新共享 Attention/MLP LoRA，推理都用融合输出和同一 10 步日程；唯一差异是监督接口。",
+      "evidence": "源核（人评与自动表与摘要一致）：\n- 人评：150 个 held-out 条件，每对 5 名标注者，条件级聚类。RefVid-V4：BlockAlign vs PDD 非平局胜率 61.8%（81/50/19，CI [53.3, 69.7]，p=0.0085）；vs DirectAlign 82.7%。PDD vs DirectAlign 为 70.0% vs 20.7%（DirectAlign 更差）。MiniMax-H3：vs PDD 59.7%（CI [51.1, 67.8]，p=0.0342）。\n- 自动分（gpt-6-astra，1–5）：RefVid-V4 均值 PDD 3.67 / DirectAlign 3.67 / BlockAlign 3.71（+0.04）；MiniMax-H3：PDD 3.65 / DirectAlign 3.62（低于 PDD）/ BlockAlign 3.70。成对自动胜率：DirectAlign vs PDD 有一侧 39.7%，跌破基线。\n- 多样性（VideoMAE / V-JEPA 跨 seed）：RefVid-V4 略升，MiniMax-H3 略降，区间重叠，不能说都更多样，也不能说明显塌缩。\n- 文中 5×/3× 是相对多步教师 rollout/墙钟，不是相对 DirectAlign，不能记成接口本身的训练加速。",
+      "solidity": "有 held-out 人评和条件级检验，接口对照清楚。自动增量很小；两条骨干配方不同，不能当成统一算法迁移成功。MiniMax-H3 训练用 gemini-4-argon 选对，评测协议也使用该裁判族（主表用 gpt-6-astra），存在部分裁判重叠。无训练 seed 报表，无代码。域是电商多参考视频，不是通用 T2V。",
+      "reward_check": {
+        "train_reward": "离线对人偏好；MiniMax-H3 在线对由 gemini-4-argon 分层选择",
+        "eval_reward": "人评（150 条件×5 标注）+ gpt-6-astra 自动分；协议中也出现 gemini-4-argon",
+        "overlap": "partial",
+        "heldout": "人评相对更独立；H3 路径与训练裁判族有重叠",
+        "hacking_signs": "未见明显多样性塌缩；未目视样例。自动分与人评幅度不一致，作者解释为人更惩罚被帧平均稀释的局部结构缺陷。"
+      },
+      "samples": "文中无公开样例仓库；未做目视检查。",
+      "code_analysis": "论文与 PDF 首页均无 GitHub 或项目页，无法核损失或采样实现。",
+      "concerns": "自动分很小；配方不统一；H3 裁判部分重叠；无代码无 seed；域窄。若更看重自动增量与可复现性，可降了解即可。不把 MiniMax-H3 写成 Loopit H3。",
+      "principle": "偏好或 RL 更新必须打在部署真正使用的输出上。监督一个推理时会被融合掉的内部头，不但浪费，还可能把模型推到比不训练更差的点。",
+      "takeaway": "不要立刻改配方，也不要开训练票。若正在对 PDD/PTD 这类块蒸馏少步模型做偏好对齐，先核对监督接口是不是部署用的融合块速度；不要在子头上直接套 DPO。底物蒸法归少步同事。"
+    }
+  ],
+  "brief": [
+    {
+      "title": "扫了多少 / 成卡",
+      "line": "补扫 Mon16–Fri20 五次 mailing。pastweek 去重 3,269；API 窗口 378+986+555+539+589=3,047（各窗 G9a 均过，newest 均在截止前 1h 内）。周五 /new 去重 615（new 486 / cross 283，age=0），API Fri20=589；列表多出 26 篇经逐个 published 核对全部落在窗口外（晚公告或跨列），G9b 用列表替代过期 RSS 后通过。关键词初筛 194 条（含 HF Daily 11-16..20 共 221 条榜，21/22 为空）。本页成卡 2 篇值得看；另有诊断候选进精读。周一 23 日批次未公告。"
+    },
+    {
+      "title": "为什么是值得看、不要立刻改配方",
+      "line": "[SibPO](https://arxiv.org/abs/2611.24512) 的价值在目标设计（频率校准），不是全面画质领先，无代码。[BlockAlign](https://arxiv.org/abs/2611.20351) 的价值在错误监督接口可劣于不对齐；自动分只有 +0.04–0.05，两条骨干配方不同，MiniMax-H3 不是 Loopit H3。"
+    },
+    {
+      "title": "待 D2，不是静默观察",
+      "line": "[RL Post-Training Is Activation Steering](https://arxiv.org/abs/2611.26627)：与 prompt/token/seed 无关的块输出平移（0.29M vs LoRA 18.8M）恢复六张图像 RL 模型 90.0–96.3% 的奖励增益，两条视频为 89.8% 与 111.9%。这是本批优先精读的诊断候选，本页不定级，数字待源核。同批进入精读队列的还有 CANDOR（2611.25457）、Keystone（2611.25530）、Shadow Posterior Matching（2611.25998）、RiDEx（2611.22052）、Advantage-Gated Adaptation（2611.23038）、T2I 奖励推理损伤（2611.17585）、运动感知视频编辑奖励（2611.22495）。下午先读 26627，其余留 11:15/13:13 补充。"
+    },
+    {
+      "title": "EmoReward v2 勘误（维持了解即可）",
+      "line": "[EmoReward](https://arxiv.org/abs/2611.06518) 不是新发现。v2 把 Dance+EmoReward 的 VideoAlign Overall 改为 −1.3930，已低于 Dance 基线 −1.2812；旧值 −0.9594 不能再当现行结果。11-06 公开卡未写入该 Overall 旧值，但结论需按 v2 理解：Dance 分支综合分不再显示为改进。人评情感 Good 53.0%→60.0%、Bad 31.5%→15.4% 未改。未见补上 global/shuffled-memory 等强度对照，不升级。"
+    },
+    {
+      "title": "没过线 / 观察（先列已精读）",
+      "line": "EmoReward 见上。其余初筛 IN/EDGE 待分片回收后写完整落选原因；重做与 reward 问题两类将在完整版补全。"
+    },
+    {
+      "title": "没覆盖的来源",
+      "line": "本槽未做 X 按 arXiv 号搜索、GitHub 近 30 天 fork/issue、种子共引、作者实验室全量追踪；G11 正式脚本将在完整版补跑。HF Daily 已查 16–20 日（21/22 为空，23 日接口 400，因新批次未出）。周一新 mailing 未出，约 09:00 后再接。"
+    }
+  ]
+}
